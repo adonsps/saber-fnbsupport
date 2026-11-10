@@ -7,6 +7,7 @@ on:
       - main
   push:
     branches:
+      - staging
       - 'feat/**'
       - 'fix/**'
 
@@ -36,4 +37,3 @@ jobs:
 
       - name: Production Build Check
         run: npm run build
-
