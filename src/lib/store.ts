@@ -28,7 +28,8 @@ export interface DatabaseState {
   whatsappLogs: WhatsAppWebhookLog[];
 }
 
-const DATA_FILE = path.join(process.cwd(), '.saber-fnb-db.json');
+const DATA_DIR = fs.existsSync('/app/data') ? '/app/data' : process.cwd();
+const DATA_FILE = path.join(DATA_DIR, '.saber-fnb-db.json');
 
 const DEFAULT_HOURS: DaySchedule[] = [
   { day: 'Senin / Monday', isOpen: true, openTime: '08:00', closeTime: '22:00' },
