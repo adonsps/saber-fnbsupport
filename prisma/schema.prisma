@@ -1,0 +1,191 @@
+// Prisma Schema for Saber UMKM F&B Direct Commerce & Table QR Platform
+// Strict Schema-First PostgreSQL Definition
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderType {
+  WALK_IN_TABLE
+  PRE_ORDER_PICKUP
+  SELF_DELIVERY
+
+  @@map("order_type_enum")
+}
+
+enum OrderStatus {
+  PENDING_STOCK_CONFIRMATION
+  AWAITING_PAYMENT
+  PAYMENT_PENDING_APPROVAL
+  IN_KITCHEN
+  READY_FOR_DELIVERY
+  COMPLETED
+  CANCELLED
+
+  @@map("order_status_enum")
+}
+
+enum PaymentType {
+  CASH
+  BANK_TRANSFER_QRIS
+
+  @@map("payment_type_enum")
+}
+
+enum PaymentStatus {
+  UNPAID
+  PROOF_UPLOADED
+  VERIFIED
+  REJECTED
+
+  @@map("payment_status_enum")
+}
+
+model Merchant {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String   @db.VarChar(255)
+  slug          String   @unique(map: "idx_merchants_slug") @db.VarChar(100)
+  ownerName     String   @map("owner_name") @db.VarChar(255)
+  ownerWhatsapp String   @map("owner_whatsapp") @db.VarChar(50)
+  isStoreOpen   Boolean  @default(true) @map("is_store_open")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  branches Branch[]
+
+  @@map("merchants")
+}
+
+model Branch {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchantId            String   @map("merchant_id") @db.Uuid
+  address               String   @db.Text
+  logoUrl               String?  @map("logo_url") @db.Text
+  operationalHours      Json     @default("{}") @map("operational_hours") @db.JsonB
+  isSelfDeliveryEnabled Boolean  @default(false) @map("is_self_delivery_enabled")
+  maxDeliveryRadiusKm   Decimal  @default(0.00) @map("max_delivery_radius_km") @db.Decimal(5, 2)
+  deliveryFeeIdr        Decimal  @default(0.00) @map("delivery_fee_idr") @db.Decimal(12, 2)
+  qrisImageUrl          String?  @map("qris_image_url") @db.Text
+  bankName              String?  @map("bank_name") @db.VarChar(100)
+  bankAccountNumber     String?  @map("bank_account_number") @db.VarChar(100)
+  bankAccountHolder     String?  @map("bank_account_holder") @db.VarChar(255)
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  merchant      Merchant       @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  tableSessions TableSession[]
+  categories    Category[]
+  orders        Order[]
+
+  @@map("branches")
+}
+
+model TableSession {
+  id            String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branchId      String  @map("branch_id") @db.Uuid
+  tableNumber   String  @map("table_number") @db.VarChar(50)
+  qrCodeUrl     String  @map("qr_code_url") @db.Text
+  isOccupied    Boolean @default(false) @map("is_occupied")
+  activeOrderId String? @map("active_order_id") @db.Uuid
+
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([branchId, tableNumber])
+  @@map("table_sessions")
+}
+
+model Category {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branchId     String     @map("branch_id") @db.Uuid
+  nameId       String     @map("name_id") @db.VarChar(255)
+  nameEn       String?    @map("name_en") @db.VarChar(255)
+  displayOrder Int        @default(0) @map("display_order")
+
+  branch    Branch     @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  menuItems MenuItem[]
+
+  @@map("categories")
+}
+
+model MenuItem {
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  categoryId    String      @map("category_id") @db.Uuid
+  titleId       String      @map("title_id") @db.VarChar(255)
+  titleEn       String?     @map("title_en") @db.VarChar(255)
+  descriptionId String?     @map("description_id") @db.Text
+  descriptionEn String?     @map("description_en") @db.Text
+  priceIdr      Decimal     @map("price_idr") @db.Decimal(12, 2)
+  imageUrl      String?     @map("image_url") @db.Text
+  isSoldOut     Boolean     @default(false) @map("is_sold_out")
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  category   Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@index([categoryId], map: "idx_menu_items_category")
+  @@map("menu_items")
+}
+
+model Order {
+  id                  String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branchId            String        @map("branch_id") @db.Uuid
+  orderNumber         String        @map("order_number") @db.VarChar(50)
+  orderType           OrderType     @map("order_type")
+  orderStatus         OrderStatus   @default(PENDING_STOCK_CONFIRMATION) @map("order_status")
+  customerName        String        @map("customer_name") @db.VarChar(255)
+  customerWhatsapp    String        @map("customer_whatsapp") @db.VarChar(50)
+  tableNumber         String?       @map("table_number") @db.VarChar(50)
+  deliveryAddress     String?       @map("delivery_address") @db.Text
+  scheduledPickupTime DateTime?     @map("scheduled_pickup_time") @db.Timestamptz(6)
+  subtotalIdr         Decimal       @map("subtotal_idr") @db.Decimal(12, 2)
+  deliveryFeeIdr      Decimal       @default(0.00) @map("delivery_fee_idr") @db.Decimal(12, 2)
+  totalAmountIdr      Decimal       @map("total_amount_idr") @db.Decimal(12, 2)
+  specialNotes        String?       @map("special_notes") @db.Text
+  paymentType         PaymentType   @map("payment_type")
+  paymentStatus       PaymentStatus @default(UNPAID) @map("payment_status")
+  magicToken          String?       @unique @map("magic_token") @db.VarChar(128)
+  createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  branch          Branch           @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  orderItems      OrderItem[]
+  paymentReceipts PaymentReceipt[]
+
+  @@index([branchId, orderStatus], map: "idx_orders_branch_status")
+  @@map("orders")
+}
+
+model OrderItem {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId           String   @map("order_id") @db.Uuid
+  menuItemId        String   @map("menu_item_id") @db.Uuid
+  itemTitleSnapshot String   @map("item_title_snapshot") @db.VarChar(255)
+  unitPriceIdr      Decimal  @map("unit_price_idr") @db.Decimal(12, 2)
+  quantity          Int
+  totalPriceIdr     Decimal  @map("total_price_idr") @db.Decimal(12, 2)
+  notes             String?  @db.Text
+
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@map("order_items")
+}
+
+model PaymentReceipt {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId           String    @map("order_id") @db.Uuid
+  receiptImageUrl   String    @map("receipt_image_url") @db.Text
+  uploadedAt        DateTime  @default(now()) @map("uploaded_at") @db.Timestamptz(6)
+  verifiedAt        DateTime? @map("verified_at") @db.Timestamptz(6)
+  verifiedByStaffId String?   @map("verified_by_staff_id") @db.VarChar(255)
+  rejectionReason   String?   @map("rejection_reason") @db.Text
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("payment_receipts")
+}
+

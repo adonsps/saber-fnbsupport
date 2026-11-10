@@ -1,0 +1,19 @@
+{
+  "name": "Saber UMKM F&B Direct Commerce & Table QR Platform",
+  "short_name": "Saber F&B",
+  "description": "Zero-Commission Direct Commerce, Dynamic Table QR & Cashier Kanban PWA for Indonesian F&B Merchants",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F5F5F7",
+  "theme_color": "#0071E3",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
+

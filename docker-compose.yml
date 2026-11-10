@@ -1,0 +1,40 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ${CONTAINER_NAME:-saber-fnbsupport-app}
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3040}:3040"
+    environment:
+      - NODE_ENV=production
+      - PORT=3040
+      - DATABASE_URL=${DATABASE_URL:-postgresql://saber:saber@postgres:5432/saber_fnbsupport}
+      - NEXT_PUBLIC_APP_DOMAIN=${NEXT_PUBLIC_APP_DOMAIN:-saberconsulting.id}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - fnb_data:/app/data
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: ${CONTAINER_NAME:-saber-fnbsupport}-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-saber}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-saber_local_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-saber_fnbsupport}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-saber} -d ${POSTGRES_DB:-saber_fnbsupport}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  fnb_data:
+

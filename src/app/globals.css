@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --surface: #F5F5F7;
+  --accent: #0071E3;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  background-color: #F5F5F7;
+  color: #1D1D1F;
+}
+
+body {
+  background-color: #F5F5F7;
+  color: #1D1D1F;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Modern Web Guidance: Native dialog scroll containment without removing root scrollbar */
+dialog:modal {
+  overscroll-behavior: contain;
+}
+
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background: rgba(29, 29, 31, 0.42);
+  backdrop-filter: blur(8px);
+}
+
+/* Modern Web Guidance: Accessible form control sizing & user-invalid styling */
+input,
+textarea,
+select {
+  font: inherit;
+  font-size: max(1rem, 1em);
+}
+
+input:user-invalid,
+textarea:user-invalid,
+select:user-invalid {
+  border-color: #FF3B30;
+}
+
+/* Modern Web Guidance: Tablist underline & horizontal scroller affordances */
+[role="tab"] {
+  position: relative;
+}
+
+[role="tab"][aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  inset: auto 12px 0 12px;
+  border-block-end: 2.5px solid #0071E3;
+  border-radius: 999px;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #FFFFFF !important;
+  }
+}
+
