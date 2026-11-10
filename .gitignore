@@ -1,0 +1,25 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# Next.js build output
+/.next/
+/out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Environment variables (Zero committed .env policy)
+.env*
+!.env.example
+
+# Local runtime state & logs
+.saber-fnb-db.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+*.pem
+

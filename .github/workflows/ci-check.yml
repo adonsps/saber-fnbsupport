@@ -1,0 +1,39 @@
+name: CI Pre-Flight & Type Verification
+
+on:
+  pull_request:
+    branches:
+      - staging
+      - main
+  push:
+    branches:
+      - 'feat/**'
+      - 'fix/**'
+
+jobs:
+  verify:
+    name: TypeScript, Prisma & Next.js Build Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Generate Prisma Client & Validate Schema
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci_check
+        run: npx prisma generate && npx prisma validate && npm audit --audit-level=high
+
+      - name: TypeScript Strict Check (tsc --noEmit)
+        run: npm run lint
+
+      - name: Production Build Check
+        run: npm run build
+
