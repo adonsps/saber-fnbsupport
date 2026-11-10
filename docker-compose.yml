@@ -6,7 +6,7 @@ services:
     container_name: ${CONTAINER_NAME:-saber-fnbsupport-app}
     restart: unless-stopped
     ports:
-      - "${PORT:-3040}:3040"
+      - "127.0.0.1:${PORT:-3040}:3040"
     environment:
       - NODE_ENV=production
       - PORT=3040
