@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Check,
@@ -29,7 +29,26 @@ const INDONESIAN_BANKS = [
 ];
 
 export default function OnboardingPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <p className="font-mono text-xs font-medium text-[#515154]">Loading onboarding...</p>
+        </div>
+      }
+    >
+      <OnboardingWizardContent />
+    </Suspense>
+  );
+}
+
+function OnboardingWizardContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialMode = searchParams.get('mode') === 'new' ? 'new' : 'edit';
+  const [onboardingMode, setOnboardingMode] = useState<'new' | 'edit'>(initialMode);
+  const [editingMerchantId, setEditingMerchantId] = useState<string | null>(null);
+  const [editingOriginalSlug, setEditingOriginalSlug] = useState<string>('');
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [submitting, setSubmitting] = useState(false);
   const [launchSuccess, setLaunchSuccess] = useState<{
@@ -39,10 +58,10 @@ export default function OnboardingPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Step 1: Merchant Profile
-  const [businessName, setBusinessName] = useState('Warung Kopi & Roastery Nusantara');
-  const [slug, setSlug] = useState('warungmakan');
-  const [ownerName, setOwnerName] = useState('Bapak Hendra Wijaya');
-  const [ownerWhatsapp, setOwnerWhatsapp] = useState('+6281288990011');
+  const [businessName, setBusinessName] = useState('');
+  const [slug, setSlug] = useState('');
+  const [ownerName, setOwnerName] = useState('');
+  const [ownerWhatsapp, setOwnerWhatsapp] = useState('');
   const [slugStatus, setSlugStatus] = useState<{
     checking: boolean;
     valid: boolean;
@@ -50,42 +69,60 @@ export default function OnboardingPage() {
     message: string;
   }>({
     checking: false,
-    valid: true,
-    available: true,
-    message: 'Tersedia! URL toko /warungmakan siap digunakan tanpa perlu setting DNS.',
+    valid: false,
+    available: false,
+    message: 'Masukkan nama restoran Anda untuk membuat alamat URL toko.',
   });
 
   // Step 2: Operations & Delivery
-  const [address, setAddress] = useState(
-    'Jl. Wolter Monginsidi No. 42, Kebayoran Baru, Jakarta Selatan 12170'
-  );
+  const [address, setAddress] = useState('');
   const [logoUrl, setLogoUrl] = useState(
     'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80'
   );
   const [logoProgress, setLogoProgress] = useState<number>(0);
   const [operationalHours, setOperationalHours] = useState<DaySchedule[]>(DEFAULT_HOURS);
   const [isSelfDeliveryEnabled, setIsSelfDeliveryEnabled] = useState(true);
-  const [maxDeliveryRadiusKm, setMaxDeliveryRadiusKm] = useState(8);
-  const [deliveryFeeIdr, setDeliveryFeeIdr] = useState(12000);
+  const [maxDeliveryRadiusKm, setMaxDeliveryRadiusKm] = useState(5);
+  const [deliveryFeeIdr, setDeliveryFeeIdr] = useState(10000);
 
   // Step 3: Payment Credentials
   const [qrisImageUrl, setQrisImageUrl] = useState(DEFAULT_QRIS_SVG);
   const [qrisProgress, setQrisProgress] = useState<number>(0);
   const [bankName, setBankName] = useState('BCA (Bank Central Asia)');
-  const [bankAccountNumber, setBankAccountNumber] = useState('5240998172');
-  const [bankAccountHolder, setBankAccountHolder] = useState('PT SABER KULINER NUSANTARA');
+  const [bankAccountNumber, setBankAccountNumber] = useState('');
+  const [bankAccountHolder, setBankAccountHolder] = useState('');
 
   const [appDisplayOrigin, setAppDisplayOrigin] = useState(
     process.env.NEXT_PUBLIC_APP_DOMAIN || 'fnbsupport.saberconsulting.id'
   );
 
-  // Hydrate existing merchant data if present
+  // Sync mode changes or hydrate active merchant when editing
   useEffect(() => {
     setAppDisplayOrigin(window.location.origin.replace(/^https?:\/\//i, ''));
+    setLaunchSuccess(null);
+    setErrorMsg(null);
+    setStep(1);
+
+    if (onboardingMode === 'new') {
+      setEditingMerchantId(null);
+      setEditingOriginalSlug('');
+      setBusinessName('');
+      setSlug('');
+      setOwnerName('');
+      setOwnerWhatsapp('');
+      setAddress('');
+      setBankAccountNumber('');
+      setBankAccountHolder('');
+      setQrisImageUrl(DEFAULT_QRIS_SVG);
+      return;
+    }
+
     fetch('/api/v1/merchants/onboard', { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {
         if (data.merchant) {
+          setEditingMerchantId(data.merchant.id);
+          setEditingOriginalSlug(data.merchant.slug);
           setBusinessName(data.merchant.name);
           setSlug(data.merchant.slug);
           setOwnerName(data.merchant.ownerName);
@@ -112,9 +149,9 @@ export default function OnboardingPage() {
         }
       })
       .catch(() => {});
-  }, []);
+  }, [onboardingMode]);
 
-  // Live Subdomain Availability Check
+  // Live Slug Availability Check
   useEffect(() => {
     const clean = slug.trim().toLowerCase();
     if (!clean) {
@@ -122,14 +159,19 @@ export default function OnboardingPage() {
         checking: false,
         valid: false,
         available: false,
-        message: 'Subdomain slug wajib diisi.',
+        message: 'Slug URL toko wajib diisi (contoh: kedai-kopi-senja).',
       });
       return;
     }
 
     setSlugStatus((prev) => ({ ...prev, checking: true }));
     const timer = setTimeout(() => {
-      fetch(`/api/v1/validate-slug?slug=${encodeURIComponent(clean)}`)
+      const qs = new URLSearchParams({
+        slug: clean,
+        mode: onboardingMode,
+        currentSlug: editingOriginalSlug,
+      });
+      fetch(`/api/v1/validate-slug?${qs.toString()}`)
         .then((res) => res.json())
         .then((res) => {
           setSlugStatus({
@@ -144,19 +186,21 @@ export default function OnboardingPage() {
             checking: false,
             valid: false,
             available: false,
-            message: 'Gagal memvalidasi subdomain.',
+            message: 'Gagal memvalidasi alamat URL toko.',
           });
         });
-    }, 300);
+    }, 280);
 
     return () => clearTimeout(timer);
-  }, [slug]);
+  }, [slug, onboardingMode, editingOriginalSlug]);
 
   const handleBusinessNameChange = (val: string) => {
     setBusinessName(val);
-    const auto = slugify(val);
-    if (auto.length >= 3) {
-      setSlug(auto);
+    if (onboardingMode === 'new') {
+      const auto = slugify(val);
+      if (auto.length >= 3) {
+        setSlug(auto);
+      }
     }
   };
 
@@ -234,6 +278,8 @@ export default function OnboardingPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          mode: onboardingMode === 'new' ? 'create' : 'update',
+          merchantId: onboardingMode === 'edit' ? editingMerchantId || undefined : undefined,
           businessName,
           slug,
           ownerName,
@@ -275,15 +321,46 @@ export default function OnboardingPage() {
     <div className="mx-auto max-w-4xl px-4 pt-8 sm:px-6">
       <div className="mb-8 text-center">
         <p className="hig-caption text-xs font-semibold uppercase tracking-[0.06em] text-[#515154]">
-          Merchant Self-Onboarding
+          {onboardingMode === 'new' ? 'Pendaftaran Restoran Baru' : 'Pengaturan Profil Restoran'}
         </p>
         <h1 className="hig-culinary-serif mt-2 text-3xl text-[#1D1D1F] sm:text-4xl">
-          Launch Your Direct Commerce Storefront
+          {onboardingMode === 'new'
+            ? 'Daftarkan Restoran Anda dalam 3 Langkah'
+            : 'Kelola & Perbarui Profil Restoran Anda'}
         </h1>
         <p className="mx-auto mt-2 max-w-xl text-sm text-[#515154]">
-          Zero marketplace commission and zero proprietary POS hardware. Complete three guided steps
-          to activate your instant subdomain and automated WhatsApp order loop.
+          {onboardingMode === 'new'
+            ? 'Buat URL pemesanan mandiri /[nama-resto], cetak QR meja otomatis, dan terima notifikasi WhatsApp Fonnte tanpa komisi marketplace.'
+            : 'Perbarui identitas toko, jam operasional, rekening transfer / QRIS Statis, dan nomor WhatsApp penerima order.'}
         </p>
+
+        {/* Explicit Mode Switcher: New Restaurant vs Configure Existing */}
+        <div className="mx-auto mt-5 inline-flex rounded-full border border-black/[0.08] bg-white p-1 shadow-apple-sm">
+          <button
+            type="button"
+            onClick={() => setOnboardingMode('new')}
+            className={cn(
+              'min-h-[38px] rounded-full px-4 py-1.5 text-xs font-bold transition-colors',
+              onboardingMode === 'new'
+                ? 'bg-[#0F1E36] text-white shadow-sm'
+                : 'text-[#515154] hover:text-[#1D1D1F]'
+            )}
+          >
+            + Daftar Restoran Baru
+          </button>
+          <button
+            type="button"
+            onClick={() => setOnboardingMode('edit')}
+            className={cn(
+              'min-h-[38px] rounded-full px-4 py-1.5 text-xs font-bold transition-colors',
+              onboardingMode === 'edit'
+                ? 'bg-[#0F1E36] text-white shadow-sm'
+                : 'text-[#515154] hover:text-[#1D1D1F]'
+            )}
+          >
+            Edit Restoran Aktif
+          </button>
+        </div>
       </div>
 
       {/* Apple-Grade Progress Stepper */}
@@ -374,14 +451,21 @@ export default function OnboardingPage() {
               onClick={() => router.push('/admin/menu')}
               className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-zinc-950 px-6 py-3 text-sm font-semibold text-white hover:bg-zinc-800"
             >
-              Kelola Menu Bilingual
+              Atur Menu &amp; Stok
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/admin/tables')}
+              className="apple-interactive inline-flex min-h-[44px] items-center rounded-full border border-black/15 bg-white px-6 py-3 text-sm font-semibold text-[#1D1D1F] hover:bg-zinc-50"
+            >
+              Cetak QR Meja PDF
             </button>
             <button
               type="button"
               onClick={() => router.push(`/${launchSuccess.slug}`)}
               className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-6 py-3 text-sm font-semibold text-white hover:bg-apple-blueHover"
             >
-              Lihat Mini-Site Pelanggan
+              Lihat Menu Pelanggan (QR View)
             </button>
           </div>
         </motion.div>
@@ -447,6 +531,7 @@ export default function OnboardingPage() {
                         spellCheck={false}
                         value={slug}
                         onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                        placeholder="contoh-kedai-kopi"
                         className="min-h-[48px] w-full bg-transparent px-3 font-mono text-sm font-semibold text-zinc-950 outline-none"
                       />
                     </div>

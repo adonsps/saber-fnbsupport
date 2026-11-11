@@ -3,14 +3,18 @@ import './globals.css';
 import { SaberWorkspaceBar } from '@/components/SaberWorkspaceBar';
 
 export const metadata: Metadata = {
-  title: 'Saber UMKM F&B Direct Commerce & Table QR Platform',
+  title: 'Saber Culinary — Zero-Commission Table QR & Cashier Platform',
   description:
-    'Zero-commission direct ordering PWA, dynamic Table QR generator, frictionless guest checkout, and real-time Cashier Kanban with Saber Central WhatsApp Bot.',
+    'Zero-commission direct ordering PWA, dynamic Table QR generator, frictionless guest checkout, and real-time Cashier Kanban with Fonnte WhatsApp automation.',
   manifest: '/manifest.json',
+  icons: {
+    icon: '/icon.svg',
+    apple: '/icon.svg',
+  },
 };
 
 export const viewport: Viewport = {
-  themeColor: '#0071E3',
+  themeColor: '#0F1E36',
   width: 'device-width',
   initialScale: 1,
 };
@@ -29,4 +33,3 @@ export default function RootLayout({
     </html>
   );
 }
-

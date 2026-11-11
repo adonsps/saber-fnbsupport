@@ -563,6 +563,7 @@ function createInitialSeed(): DatabaseState {
         ownerName: 'Bapak Hendra Wijaya',
         ownerWhatsapp: '+6281288990011',
         isStoreOpen: true,
+        isDemo: true,
         createdAt: now,
         updatedAt: now,
       },
@@ -601,6 +602,20 @@ declare global {
   var __saberFnbStore: DatabaseState | undefined;
 }
 
+export const ACTIVE_MERCHANT_COOKIE = 'saber_active_merchant';
+
+const DEMO_MERCHANT_ID = '11111111-1111-4111-8111-111111111111';
+
+const DEMO_PLACEHOLDER_PHONES = new Set([
+  '+6281288990011',
+  '+6281294827110',
+  '+628118239104',
+  '+6281377819200',
+  '+6281908223112',
+  '+628159918273',
+  '+628128837162',
+]);
+
 export function getStore(): DatabaseState {
   if (global.__saberFnbStore) {
     return global.__saberFnbStore;
@@ -611,6 +626,10 @@ export function getStore(): DatabaseState {
       const raw = fs.readFileSync(DATA_FILE, 'utf-8');
       const parsed = JSON.parse(raw) as DatabaseState;
       if (parsed && Array.isArray(parsed.merchants) && parsed.merchants.length > 0) {
+        parsed.merchants = parsed.merchants.map((m) => ({
+          ...m,
+          isDemo: m.isDemo ?? (m.id === DEMO_MERCHANT_ID || m.slug === 'warungmakan'),
+        }));
         global.__saberFnbStore = parsed;
         return parsed;
       }
@@ -634,6 +653,104 @@ export function saveStore(state: DatabaseState): void {
   }
 }
 
+export function isDemoMerchant(merchant?: Merchant | null): boolean {
+  if (!merchant) return false;
+  return Boolean(merchant.isDemo || merchant.id === DEMO_MERCHANT_ID || merchant.slug === 'warungmakan');
+}
+
+export function getMerchantBySlug(store: DatabaseState, slug?: string | null): Merchant | undefined {
+  if (!slug) return undefined;
+  const normalized = slug.trim().toLowerCase();
+  return store.merchants.find((m) => m.slug.toLowerCase() === normalized);
+}
+
+export function resolveWorkspaceMerchant(
+  store: DatabaseState,
+  preferredSlug?: string | null
+): Merchant {
+  return (
+    getMerchantBySlug(store, preferredSlug) ||
+    store.merchants.find((m) => isDemoMerchant(m)) ||
+    store.merchants[0]
+  );
+}
+
+export function getScopedMerchantBundle(store: DatabaseState, merchant: Merchant) {
+  const branch =
+    store.branches.find((b) => b.merchantId === merchant.id) || store.branches[0];
+  const categories = [...store.categories]
+    .filter((c) => c.branchId === branch?.id)
+    .sort((a, b) => a.displayOrder - b.displayOrder);
+  const categoryIds = new Set(categories.map((c) => c.id));
+  const menuItems = store.menuItems.filter((item) => categoryIds.has(item.categoryId));
+  const tables = store.tableSessions.filter((t) => t.branchId === branch?.id);
+  const orders = store.orders.filter((o) => o.branchId === branch?.id);
+  const orderNumbers = new Set(orders.map((o) => o.orderNumber));
+  const whatsappLogs = store.whatsappLogs.filter(
+    (log) => log.merchantId === merchant.id || (!log.merchantId && orderNumbers.has(log.orderNumber))
+  );
+
+  return {
+    merchant,
+    branch,
+    categories,
+    menuItems,
+    tables,
+    orders,
+    whatsappLogs,
+  };
+}
+
+export function createStarterCatalogForBranch(branchId: string, merchantName: string) {
+  const catMainId = createUuid();
+  const catDrinkId = createUuid();
+  const catSnackId = createUuid();
+
+  const categories: Category[] = [
+    { id: catMainId, branchId, nameId: 'Menu Andalan', nameEn: 'Signature Dishes', displayOrder: 1 },
+    { id: catDrinkId, branchId, nameId: 'Minuman & Kopi', nameEn: 'Beverages & Coffee', displayOrder: 2 },
+    { id: catSnackId, branchId, nameId: 'Camilan & Pendamping', nameEn: 'Light Bites', displayOrder: 3 },
+  ];
+
+  const menuItems: MenuItem[] = [
+    {
+      id: createUuid(),
+      categoryId: catMainId,
+      titleId: `Menu Spesial ${merchantName}`,
+      titleEn: `${merchantName} House Special`,
+      descriptionId: 'Contoh hidangan utama siap diedit atau diganti lewat menu Admin → Menu & Stok.',
+      descriptionEn: 'Editable starter dish configured during onboarding.',
+      priceIdr: 38000,
+      imageUrl: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=900&q=80',
+      isSoldOut: false,
+    },
+    {
+      id: createUuid(),
+      categoryId: catDrinkId,
+      titleId: 'Kopi Susu Gula Aren',
+      titleEn: 'Palm Sugar Iced Latte',
+      descriptionId: 'Minuman favorit kafe — ubah nama, harga, dan foto kapan saja dari dasbor merchant.',
+      descriptionEn: 'House palm sugar latte — customize anytime from Merchant Menu Manager.',
+      priceIdr: 25000,
+      imageUrl: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&w=900&q=80',
+      isSoldOut: false,
+    },
+    {
+      id: createUuid(),
+      categoryId: catSnackId,
+      titleId: 'Camilan Gurih Pilihan',
+      titleEn: 'Crispy Savory Platter',
+      descriptionId: 'Menu pendamping siap dipesan tamu lewat scan QR meja.',
+      descriptionEn: 'Ready for instant table QR ordering.',
+      priceIdr: 22000,
+      imageUrl: 'https://images.unsplash.com/photo-1541592106381-b31e9677c0e5?auto=format&fit=crop&w=900&q=80',
+      isSoldOut: false,
+    },
+  ];
+
+  return { categories, menuItems };
+}
+
 export function createUuid(): string {
   return crypto.randomUUID();
 }
@@ -644,26 +761,102 @@ export function createMagicToken(orderNumber: string): string {
   return `mgtk_${clean}_${rand}`;
 }
 
-export function dispatchWhatsAppNotification(params: {
+export function formatPhoneForFonnte(phone: string): string {
+  const digits = phone.replace(/[^\d]/g, '');
+  if (digits.startsWith('0')) {
+    return digits;
+  }
+  if (digits.startsWith('62')) {
+    return digits;
+  }
+  return `62${digits}`;
+}
+
+export async function dispatchWhatsAppNotification(params: {
   recipientPhone: string;
   recipientRole: 'MERCHANT' | 'CUSTOMER';
   eventType: WhatsAppWebhookLog['eventType'];
   orderNumber: string;
   messageBody: string;
   magicLinkUrl?: string;
-}): WhatsAppWebhookLog {
+  merchantId?: string;
+  forceRealSend?: boolean;
+}): Promise<WhatsAppWebhookLog> {
   const store = getStore();
+  const fullMessage =
+    params.magicLinkUrl && !params.messageBody.includes(params.magicLinkUrl)
+      ? `${params.messageBody}\n\n🔗 Tautan langsung:\n${params.magicLinkUrl}`
+      : params.messageBody;
+
   const log: WhatsAppWebhookLog = {
     id: createUuid(),
     timestamp: new Date().toISOString(),
+    merchantId: params.merchantId,
     recipientPhone: params.recipientPhone,
     recipientRole: params.recipientRole,
     eventType: params.eventType,
     orderNumber: params.orderNumber,
-    messageBody: params.messageBody,
+    messageBody: fullMessage,
     magicLinkUrl: params.magicLinkUrl,
-    deliveryStatus: 'DELIVERED',
+    deliveryStatus: 'DISPATCHED',
   };
+
+  const fonnteToken = (process.env.FONNTE_API_TOKEN || '').trim();
+  const isSyntheticDemoPhone =
+    DEMO_PLACEHOLDER_PHONES.has(params.recipientPhone) && !params.forceRealSend;
+
+  if (isSyntheticDemoPhone) {
+    log.deliveryStatus = 'DELIVERED';
+    log.providerMessage =
+      'Sandbox demo number logged locally — masukkan nomor WhatsApp aktif Anda saat checkout/onboarding untuk pengiriman Fonnte nyata.';
+  } else if (!fonnteToken) {
+    log.deliveryStatus = 'FAILED';
+    log.providerMessage = 'FONNTE_API_TOKEN belum dikonfigurasi pada environment server.';
+  } else {
+    try {
+      const target = formatPhoneForFonnte(params.recipientPhone);
+      const response = await fetch('https://api.fonnte.com/send', {
+        method: 'POST',
+        headers: {
+          Authorization: fonnteToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          target,
+          message: fullMessage,
+          countryCode: '62',
+        }),
+        signal: AbortSignal.timeout(8000),
+      });
+
+      const rawText = await response.text();
+      let result: { status?: boolean; detail?: string; reason?: string; id?: string[] | string } = {};
+      try {
+        result = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        result = { detail: rawText };
+      }
+
+      if (response.ok && result.status !== false) {
+        log.deliveryStatus = 'DELIVERED';
+        log.providerMessage = result.detail || 'Terkirim via Fonnte WhatsApp API';
+        log.providerId = Array.isArray(result.id)
+          ? result.id[0]
+          : result.id
+          ? String(result.id)
+          : undefined;
+      } else {
+        log.deliveryStatus = 'FAILED';
+        log.providerMessage =
+          result.reason || result.detail || `Fonnte HTTP ${response.status}`;
+      }
+    } catch (err) {
+      log.deliveryStatus = 'FAILED';
+      log.providerMessage =
+        err instanceof Error ? `Fonnte network error: ${err.message}` : 'Fonnte dispatch error';
+    }
+  }
+
   store.whatsappLogs.unshift(log);
   saveStore(store);
   return log;

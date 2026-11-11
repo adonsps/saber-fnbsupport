@@ -51,6 +51,7 @@ export function CustomerStorefrontClient({
   const [categories, setCategories] = useState<Category[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [storeNotFound, setStoreNotFound] = useState(false);
 
   const [orderType, setOrderType] = useState<OrderType>(OrderType.WALK_IN_TABLE);
   const [tableNumber, setTableNumber] = useState(initialTable || '');
@@ -86,11 +87,20 @@ export function CustomerStorefrontClient({
     }
   }, [initialTable]);
 
-  // Load Storefront Data
+  // Load Storefront Data scoped strictly to requested restaurant slug
   useEffect(() => {
-    fetch('/api/v1/menu-items', { cache: 'no-store' })
-      .then((res) => res.json())
+    setLoading(true);
+    setStoreNotFound(false);
+    fetch(`/api/v1/menu-items?slug=${encodeURIComponent(slug)}`, { cache: 'no-store' })
+      .then(async (res) => {
+        if (!res.ok) {
+          setStoreNotFound(true);
+          return null;
+        }
+        return res.json();
+      })
       .then((data) => {
+        if (!data) return;
         setMerchant(data.merchant);
         setBranch(data.branch);
         setCategories(data.categories || []);
@@ -321,6 +331,7 @@ export function CustomerStorefrontClient({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          slug,
           customerName,
           customerWhatsapp,
           orderType,
@@ -359,6 +370,25 @@ export function CustomerStorefrontClient({
     return (
       <div className="flex min-h-[70vh] items-center justify-center">
         <p className="font-mono text-xs font-medium text-[#515154]">Loading menu...</p>
+      </div>
+    );
+  }
+
+  if (storeNotFound || !merchant) {
+    return (
+      <div className="mx-auto flex min-h-[70vh] max-w-md flex-col items-center justify-center px-6 text-center">
+        <div className="rounded-[24px] border border-black/[0.08] bg-white p-8 shadow-apple-sm">
+          <p className="font-mono text-xs font-bold uppercase tracking-wider text-[#515154]">
+            /{slug}
+          </p>
+          <h1 className="mt-2 font-serif text-xl font-bold text-[#1D1D1F]">
+            Menu Restoran Tidak Ditemukan
+          </h1>
+          <p className="mt-2 text-xs leading-relaxed text-[#515154]">
+            Pastikan Anda memindai ulang QR Code resmi pada meja restoran, atau hubungi kasir
+            setempat untuk bantuan pemesanan.
+          </p>
+        </div>
       </div>
     );
   }
@@ -592,7 +622,7 @@ export function CustomerStorefrontClient({
       </div>
 
       {/* Sticky Category Navigation & Search Bar (Regular Liquid Glass Functional Layer per liquid-glass.md + Snap Scroller) */}
-      <div className="liquid-glass-regular sticky top-[60px] z-30 mt-4 px-4 py-3 sm:rounded-2xl sm:border sm:border-black/[0.08]">
+      <div className="liquid-glass-regular sticky top-2 z-30 mt-4 px-4 py-3 sm:top-3 sm:rounded-2xl sm:border sm:border-black/[0.08]">
         <search className="relative mb-2.5 block">
           <MagnifyingGlass
             aria-hidden="true"

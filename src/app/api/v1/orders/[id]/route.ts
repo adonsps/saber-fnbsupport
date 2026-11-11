@@ -17,11 +17,15 @@ export async function GET(
     return NextResponse.json({ error: 'Pesanan tidak ditemukan' }, { status: 404 });
   }
 
+  const branch = store.branches.find((b) => b.id === order.branchId) || store.branches[0];
+  const merchant =
+    store.merchants.find((m) => m.id === branch?.merchantId) || store.merchants[0];
+
   return NextResponse.json(
     {
       order,
-      merchant: store.merchants[0],
-      branch: store.branches[0],
+      merchant,
+      branch,
     },
     { headers: { 'Cache-Control': 'no-store' } }
   );

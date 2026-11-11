@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createUuid, getStore, saveStore } from '@/lib/store';
+import {
+  ACTIVE_MERCHANT_COOKIE,
+  createUuid,
+  getScopedMerchantBundle,
+  getStore,
+  resolveWorkspaceMerchant,
+  saveStore,
+} from '@/lib/store';
 import { buildStorefrontUrl, getOriginFromHeaders } from '@/lib/utils';
 import { TableSession } from '@/types/schema';
 
@@ -21,17 +28,17 @@ function resolveTablesWithQrUrls(
 
 export async function GET(req: NextRequest) {
   const store = getStore();
-  const merchant = store.merchants[0];
+  const explicitSlug = req.nextUrl.searchParams.get('slug');
+  const cookieSlug = req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
+  const merchant = resolveWorkspaceMerchant(store, explicitSlug || cookieSlug);
+  const bundle = getScopedMerchantBundle(store, merchant);
   const origin = getOriginFromHeaders(req.headers);
-  const resolvedTables = resolveTablesWithQrUrls(
-    store.tableSessions,
-    merchant?.slug || 'warungmakan',
-    origin
-  );
+
+  const resolvedTables = resolveTablesWithQrUrls(bundle.tables, merchant.slug, origin);
   return NextResponse.json(
     {
-      merchant,
-      branch: store.branches[0],
+      merchant: bundle.merchant,
+      branch: bundle.branch,
       tables: resolvedTables,
     },
     { headers: { 'Cache-Control': 'no-store' } }
@@ -42,11 +49,13 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const store = getStore();
-    const merchant = store.merchants[0];
+    const cookieSlug = req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
+    const merchant = resolveWorkspaceMerchant(store, body.slug || cookieSlug);
+    const bundle = getScopedMerchantBundle(store, merchant);
     const origin = getOriginFromHeaders(req.headers);
-    const branchId = store.branches[0]?.id || '22222222-2222-4222-8222-222222222222';
-    const wifiName = String(body.wifiName || 'KopiNusantara_5G').trim();
-    const wifiPassword = String(body.wifiPassword || 'kopi100persen').trim();
+    const branchId = bundle.branch?.id || '22222222-2222-4222-8222-222222222222';
+    const wifiName = String(body.wifiName || 'RestoGuest_WiFi').trim();
+    const wifiPassword = String(body.wifiPassword || 'tamuresto').trim();
 
     if (body.mode === 'bulk_generate') {
       const count = Math.min(Math.max(Number(body.count || 5), 1), 50);
@@ -56,7 +65,7 @@ export async function POST(req: NextRequest) {
       for (let i = 1; i <= count; i++) {
         const numStr = i < 10 ? `0${i}` : `${i}`;
         const label = `${prefix} ${numStr}`;
-        if (!store.tableSessions.some((t) => t.tableNumber.toUpperCase() === label)) {
+        if (!bundle.tables.some((t) => t.tableNumber.toUpperCase() === label)) {
           const table = {
             id: createUuid(),
             branchId,
@@ -74,10 +83,11 @@ export async function POST(req: NextRequest) {
         }
       }
       saveStore(store);
+      const updated = getScopedMerchantBundle(store, merchant);
       return NextResponse.json({
         success: true,
         created,
-        tables: resolveTablesWithQrUrls(store.tableSessions, merchant.slug, origin),
+        tables: resolveTablesWithQrUrls(updated.tables, merchant.slug, origin),
       });
     }
 
@@ -86,7 +96,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Label meja wajib diisi' }, { status: 400 });
     }
 
-    if (store.tableSessions.some((t) => t.tableNumber.toUpperCase() === label)) {
+    if (bundle.tables.some((t) => t.tableNumber.toUpperCase() === label)) {
       return NextResponse.json({ error: `Meja "${label}" sudah terdaftar` }, { status: 400 });
     }
 
@@ -105,11 +115,12 @@ export async function POST(req: NextRequest) {
 
     store.tableSessions.push(newTable);
     saveStore(store);
+    const updated = getScopedMerchantBundle(store, merchant);
 
     return NextResponse.json({
       success: true,
       table: newTable,
-      tables: resolveTablesWithQrUrls(store.tableSessions, merchant.slug, origin),
+      tables: resolveTablesWithQrUrls(updated.tables, merchant.slug, origin),
     });
   } catch (err) {
     return NextResponse.json(
@@ -123,23 +134,34 @@ export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
     const store = getStore();
+    const cookieSlug = req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
+    const merchant = resolveWorkspaceMerchant(store, body.slug || cookieSlug);
+    const bundle = getScopedMerchantBundle(store, merchant);
+    const origin = getOriginFromHeaders(req.headers);
 
     if (body.action === 'update_wifi') {
-      store.tableSessions = store.tableSessions.map((t) => ({
-        ...t,
-        wifiName: String(body.wifiName || t.wifiName || ''),
-        wifiPassword: String(body.wifiPassword || t.wifiPassword || ''),
-      }));
+      store.tableSessions = store.tableSessions.map((t) =>
+        t.branchId === bundle.branch.id
+          ? {
+              ...t,
+              wifiName: String(body.wifiName || t.wifiName || ''),
+              wifiPassword: String(body.wifiPassword || t.wifiPassword || ''),
+            }
+          : t
+      );
       saveStore(store);
-      const origin = getOriginFromHeaders(req.headers);
-      const slug = store.merchants[0]?.slug || 'warungmakan';
+      const updated = getScopedMerchantBundle(store, merchant);
       return NextResponse.json({
         success: true,
-        tables: resolveTablesWithQrUrls(store.tableSessions, slug, origin),
+        tables: resolveTablesWithQrUrls(updated.tables, merchant.slug, origin),
       });
     }
 
-    const table = store.tableSessions.find((t) => t.id === body.tableId || t.tableNumber === body.tableNumber);
+    const table = store.tableSessions.find(
+      (t) =>
+        t.branchId === bundle.branch.id &&
+        (t.id === body.tableId || t.tableNumber === body.tableNumber)
+    );
     if (!table) {
       return NextResponse.json({ error: 'Meja tidak ditemukan' }, { status: 404 });
     }
@@ -152,12 +174,11 @@ export async function PATCH(req: NextRequest) {
     }
 
     saveStore(store);
-    const origin = getOriginFromHeaders(req.headers);
-    const slug = store.merchants[0]?.slug || 'warungmakan';
+    const updated = getScopedMerchantBundle(store, merchant);
     return NextResponse.json({
       success: true,
       table,
-      tables: resolveTablesWithQrUrls(store.tableSessions, slug, origin),
+      tables: resolveTablesWithQrUrls(updated.tables, merchant.slug, origin),
     });
   } catch (err) {
     return NextResponse.json(
@@ -173,13 +194,15 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'ID meja diperlukan' }, { status: 400 });
   }
   const store = getStore();
+  const cookieSlug = req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
+  const merchant = resolveWorkspaceMerchant(store, cookieSlug);
+
   store.tableSessions = store.tableSessions.filter((t) => t.id !== id);
   saveStore(store);
   const origin = getOriginFromHeaders(req.headers);
-  const slug = store.merchants[0]?.slug || 'warungmakan';
+  const updated = getScopedMerchantBundle(store, merchant);
   return NextResponse.json({
     success: true,
-    tables: resolveTablesWithQrUrls(store.tableSessions, slug, origin),
+    tables: resolveTablesWithQrUrls(updated.tables, merchant.slug, origin),
   });
 }
-
