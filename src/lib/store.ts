@@ -624,6 +624,13 @@ const DEMO_PLACEHOLDER_PHONES = new Set([
   '+628128837162',
 ]);
 
+export function sanitizeGatewayProviderMessage(message?: string): string | undefined {
+  if (!message) return message;
+  return message
+    .replace(/pengiriman\s+fonnte\s+nyata/gi, 'pengiriman WhatsApp otomatis')
+    .replace(/\bfonnte\b/gi, 'Gateway WhatsApp');
+}
+
 export function getStore(): DatabaseState {
   if (global.__saberFnbStore) {
     return global.__saberFnbStore;
@@ -639,6 +646,11 @@ export function getStore(): DatabaseState {
           isDemo: m.isDemo ?? (m.id === DEMO_MERCHANT_ID || m.slug === 'warungmakan'),
         }));
         parsed.passwordResets = parsed.passwordResets || [];
+        parsed.whatsappLogs = (parsed.whatsappLogs || []).map((log) =>
+          log.providerMessage
+            ? { ...log, providerMessage: sanitizeGatewayProviderMessage(log.providerMessage) }
+            : log
+        );
         global.__saberFnbStore = parsed;
         return parsed;
       }
@@ -760,9 +772,15 @@ export function getScopedMerchantBundle(store: DatabaseState, merchant: Merchant
   const tables = store.tableSessions.filter((t) => t.branchId === branch?.id);
   const orders = store.orders.filter((o) => o.branchId === branch?.id);
   const orderNumbers = new Set(orders.map((o) => o.orderNumber));
-  const whatsappLogs = store.whatsappLogs.filter(
-    (log) => log.merchantId === merchant.id || (!log.merchantId && orderNumbers.has(log.orderNumber))
-  );
+  const whatsappLogs = store.whatsappLogs
+    .filter(
+      (log) => log.merchantId === merchant.id || (!log.merchantId && orderNumbers.has(log.orderNumber))
+    )
+    .map((log) =>
+      log.providerMessage
+        ? { ...log, providerMessage: sanitizeGatewayProviderMessage(log.providerMessage) }
+        : log
+    );
 
   return {
     merchant,
@@ -913,7 +931,8 @@ export async function dispatchWhatsAppNotification(params: {
 
       if (response.ok && result.status !== false) {
         log.deliveryStatus = 'DELIVERED';
-        log.providerMessage = result.detail || 'Terkirim via Gateway WhatsApp Saber';
+        log.providerMessage =
+          sanitizeGatewayProviderMessage(result.detail) || 'Terkirim via Gateway WhatsApp Saber';
         log.providerId = Array.isArray(result.id)
           ? result.id[0]
           : result.id
@@ -922,14 +941,17 @@ export async function dispatchWhatsAppNotification(params: {
       } else {
         log.deliveryStatus = 'FAILED';
         log.providerMessage =
-          result.reason || result.detail || `Gateway WhatsApp HTTP ${response.status}`;
+          sanitizeGatewayProviderMessage(result.reason || result.detail) ||
+          `Gateway WhatsApp HTTP ${response.status}`;
       }
     } catch (err) {
       log.deliveryStatus = 'FAILED';
       log.providerMessage =
-        err instanceof Error
-          ? `Gangguan jaringan WhatsApp Gateway: ${err.message}`
-          : 'Gagal mengirim pesan WhatsApp';
+        sanitizeGatewayProviderMessage(
+          err instanceof Error
+            ? `Gangguan jaringan WhatsApp Gateway: ${err.message}`
+            : 'Gagal mengirim pesan WhatsApp'
+        );
     }
   }
 
