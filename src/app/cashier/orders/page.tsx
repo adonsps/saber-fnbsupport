@@ -21,6 +21,7 @@ import {
   WhatsAppWebhookLog,
 } from '@/types/schema';
 import { cn, formatIdr } from '@/lib/utils';
+import { useDialogLightDismiss } from '@/lib/client-helpers';
 import { APPLE_SPRINGS, triggerCausalHaptic } from '@/lib/apple-motion';
 
 type KanbanColumnId =
@@ -96,6 +97,14 @@ export default function CashierKanbanPage() {
   const [moveTargetTable, setMoveTargetTable] = useState('');
   const [mergeTargetOrderId, setMergeTargetOrderId] = useState('');
 
+  useDialogLightDismiss(stockDialogRef);
+  useDialogLightDismiss(receiptDialogRef);
+  useDialogLightDismiss(tableDialogRef);
+
+  const currentActiveOrder = activeOrder
+    ? orders.find((o) => o.id === activeOrder.id) || activeOrder
+    : null;
+
   // Apple Design §13 Multimodal Feedback: Web Audio API Chime + Haptic Harmony on the same frame
   const playChime = () => {
     triggerCausalHaptic([10, 30, 12]);
@@ -128,7 +137,7 @@ export default function CashierKanbanPage() {
       const params = new URLSearchParams(window.location.search);
       const magicToken = params.get('magicToken');
       const query = magicToken ? `?magicToken=${encodeURIComponent(magicToken)}` : '';
-      const res = await fetch(`/api/v1/orders${query}`);
+      const res = await fetch(`/api/v1/orders${query}`, { cache: 'no-store' });
       const data = await res.json();
 
       const fetchedOrders: Order[] = data.orders || [];
@@ -511,13 +520,18 @@ export default function CashierKanbanPage() {
                               {col.id === 'AWAITING_PAYMENT' && (
                                 <>
                                   {hasProof ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => openReceiptModal(order)}
-                                      className="apple-interactive flex min-h-[42px] w-full items-center justify-center rounded-xl bg-apple-blue px-3 text-xs font-bold text-white hover:bg-apple-blueHover"
-                                    >
-                                      Inspect Payment Proof
-                                    </button>
+                                    <div className="space-y-1.5">
+                                      <div className="rounded-xl border border-emerald-500/20 bg-emerald-50 px-2.5 py-1.5 text-center text-[11px] font-bold text-[#1D7D32]">
+                                        Bukti Transfer Diterima • Siap Diperiksa
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => openReceiptModal(order)}
+                                        className="apple-interactive flex min-h-[42px] w-full items-center justify-center rounded-xl bg-apple-blue px-3 text-xs font-bold text-white hover:bg-apple-blueHover"
+                                      >
+                                        Inspect Payment Proof
+                                      </button>
+                                    </div>
                                   ) : order.paymentType === PaymentType.CASH ? (
                                     <button
                                       type="button"
@@ -658,6 +672,7 @@ export default function CashierKanbanPage() {
       {/* Modal 1: Partial Stock Confirmation & Line-Item Editing (HIG Sheet Anatomy per sheets.md) */}
       <dialog
         ref={stockDialogRef}
+        closedby="any"
         aria-labelledby="stock-modal-title"
         className="w-full max-w-lg rounded-[26px] border border-black/10 bg-white p-0 shadow-apple-lg"
       >
@@ -671,7 +686,7 @@ export default function CashierKanbanPage() {
           </button>
           <div className="text-center">
             <h3 id="stock-modal-title" className="text-sm font-bold text-[#1D1D1F]">
-              Verify Stock #{activeOrder?.orderNumber}
+              Verify Stock #{currentActiveOrder?.orderNumber}
             </h3>
             <p className="hig-caption text-[11px] font-medium text-[#515154]">
               Step 2 • Partial Stock Audit
@@ -752,6 +767,7 @@ export default function CashierKanbanPage() {
       {/* Modal 2: Payment Proof Verification Modal (HIG Sheet Anatomy per sheets.md) */}
       <dialog
         ref={receiptDialogRef}
+        closedby="any"
         aria-labelledby="receipt-modal-title"
         className="w-full max-w-lg rounded-[26px] border border-black/10 bg-white p-0 shadow-apple-lg"
       >
@@ -765,7 +781,7 @@ export default function CashierKanbanPage() {
           </button>
           <div className="text-center">
             <h3 id="receipt-modal-title" className="text-sm font-bold text-[#1D1D1F]">
-              Verify Receipt #{activeOrder?.orderNumber}
+              Verify Receipt #{currentActiveOrder?.orderNumber}
             </h3>
             <p className="hig-caption text-[11px] font-medium text-[#515154]">
               Step 4 • Payment Proof Audit
@@ -778,14 +794,14 @@ export default function CashierKanbanPage() {
           <div className="flex items-center justify-between rounded-2xl bg-[#F5F5F7] px-4 py-3 text-xs">
             <span className="font-semibold text-[#515154]">Expected Order Total</span>
             <span className="font-mono text-base font-bold text-apple-blue">
-              {activeOrder ? formatIdr(activeOrder.totalAmountIdr) : '-'}
+              {currentActiveOrder ? formatIdr(currentActiveOrder.totalAmountIdr) : '-'}
             </span>
           </div>
 
-          {activeOrder?.receipts[0]?.receiptImageUrl ? (
+          {currentActiveOrder?.receipts[0]?.receiptImageUrl ? (
             <div className="overflow-hidden rounded-2xl border border-black/10 bg-zinc-50 p-2">
               <img
-                src={activeOrder.receipts[0].receiptImageUrl}
+                src={currentActiveOrder.receipts[0].receiptImageUrl}
                 alt="Uploaded Payment Receipt"
                 className="mx-auto max-h-72 rounded-xl object-contain"
               />
@@ -830,6 +846,7 @@ export default function CashierKanbanPage() {
       {/* Modal 3: Table Management Controls (Move Table & Merge Tables) */}
       <dialog
         ref={tableDialogRef}
+        closedby="any"
         aria-labelledby="table-ctrl-title"
         className="w-full max-w-md rounded-[26px] border border-black/10 bg-white p-0 shadow-apple-lg"
       >
@@ -842,7 +859,7 @@ export default function CashierKanbanPage() {
             Cancel
           </button>
           <h3 id="table-ctrl-title" className="text-sm font-bold text-[#1D1D1F]">
-            Manage Table #{activeOrder?.orderNumber}
+            Manage Table #{currentActiveOrder?.orderNumber}
           </h3>
           <span className="min-w-[44px]" />
         </div>

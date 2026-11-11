@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createUuid, getStore, saveStore } from '@/lib/store';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const store = getStore();
   const sortedCategories = [...store.categories].sort((a, b) => a.displayOrder - b.displayOrder);
-  return NextResponse.json({
-    merchant: store.merchants[0],
-    branch: store.branches[0],
-    categories: sortedCategories,
-    menuItems: store.menuItems,
-  });
+  return NextResponse.json(
+    {
+      merchant: store.merchants[0],
+      branch: store.branches[0],
+      categories: sortedCategories,
+      menuItems: store.menuItems,
+    },
+    { headers: { 'Cache-Control': 'no-store' } }
+  );
 }
 
 export async function POST(req: NextRequest) {

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { dispatchWhatsAppNotification, getStore } from '@/lib/store';
 import { normalizeWhatsapp } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const store = getStore();
   return NextResponse.json({

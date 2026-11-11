@@ -1,13 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createUuid, getStore, saveStore } from '@/lib/store';
+import { buildStorefrontUrl, getOriginFromHeaders } from '@/lib/utils';
+import { TableSession } from '@/types/schema';
 
-export async function GET() {
+export const dynamic = 'force-dynamic';
+
+function resolveTablesWithQrUrls(
+  tables: TableSession[],
+  merchantSlug: string,
+  origin?: string
+): TableSession[] {
+  return tables.map((t) => ({
+    ...t,
+    qrCodeUrl: buildStorefrontUrl(merchantSlug, {
+      tableNumber: t.tableNumber,
+      baseOrigin: origin,
+    }),
+  }));
+}
+
+export async function GET(req: NextRequest) {
   const store = getStore();
-  return NextResponse.json({
-    merchant: store.merchants[0],
-    branch: store.branches[0],
-    tables: store.tableSessions,
-  });
+  const merchant = store.merchants[0];
+  const origin = getOriginFromHeaders(req.headers);
+  const resolvedTables = resolveTablesWithQrUrls(
+    store.tableSessions,
+    merchant?.slug || 'warungmakan',
+    origin
+  );
+  return NextResponse.json(
+    {
+      merchant,
+      branch: store.branches[0],
+      tables: resolvedTables,
+    },
+    { headers: { 'Cache-Control': 'no-store' } }
+  );
 }
 
 export async function POST(req: NextRequest) {
@@ -15,6 +43,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const store = getStore();
     const merchant = store.merchants[0];
+    const origin = getOriginFromHeaders(req.headers);
     const branchId = store.branches[0]?.id || '22222222-2222-4222-8222-222222222222';
     const wifiName = String(body.wifiName || 'KopiNusantara_5G').trim();
     const wifiPassword = String(body.wifiPassword || 'kopi100persen').trim();
@@ -32,7 +61,10 @@ export async function POST(req: NextRequest) {
             id: createUuid(),
             branchId,
             tableNumber: label,
-            qrCodeUrl: `https://${merchant.slug}.saberconsulting.id?table=${encodeURIComponent(label)}`,
+            qrCodeUrl: buildStorefrontUrl(merchant.slug, {
+              tableNumber: label,
+              baseOrigin: origin,
+            }),
             isOccupied: false,
             wifiName,
             wifiPassword,
@@ -42,7 +74,11 @@ export async function POST(req: NextRequest) {
         }
       }
       saveStore(store);
-      return NextResponse.json({ success: true, created, tables: store.tableSessions });
+      return NextResponse.json({
+        success: true,
+        created,
+        tables: resolveTablesWithQrUrls(store.tableSessions, merchant.slug, origin),
+      });
     }
 
     const label = String(body.tableNumber || '').trim().toUpperCase();
@@ -58,7 +94,10 @@ export async function POST(req: NextRequest) {
       id: createUuid(),
       branchId,
       tableNumber: label,
-      qrCodeUrl: `https://${merchant.slug}.saberconsulting.id?table=${encodeURIComponent(label)}`,
+      qrCodeUrl: buildStorefrontUrl(merchant.slug, {
+        tableNumber: label,
+        baseOrigin: origin,
+      }),
       isOccupied: false,
       wifiName,
       wifiPassword,
@@ -67,7 +106,11 @@ export async function POST(req: NextRequest) {
     store.tableSessions.push(newTable);
     saveStore(store);
 
-    return NextResponse.json({ success: true, table: newTable, tables: store.tableSessions });
+    return NextResponse.json({
+      success: true,
+      table: newTable,
+      tables: resolveTablesWithQrUrls(store.tableSessions, merchant.slug, origin),
+    });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Gagal membuat meja' },
@@ -88,7 +131,12 @@ export async function PATCH(req: NextRequest) {
         wifiPassword: String(body.wifiPassword || t.wifiPassword || ''),
       }));
       saveStore(store);
-      return NextResponse.json({ success: true, tables: store.tableSessions });
+      const origin = getOriginFromHeaders(req.headers);
+      const slug = store.merchants[0]?.slug || 'warungmakan';
+      return NextResponse.json({
+        success: true,
+        tables: resolveTablesWithQrUrls(store.tableSessions, slug, origin),
+      });
     }
 
     const table = store.tableSessions.find((t) => t.id === body.tableId || t.tableNumber === body.tableNumber);
@@ -104,7 +152,13 @@ export async function PATCH(req: NextRequest) {
     }
 
     saveStore(store);
-    return NextResponse.json({ success: true, table, tables: store.tableSessions });
+    const origin = getOriginFromHeaders(req.headers);
+    const slug = store.merchants[0]?.slug || 'warungmakan';
+    return NextResponse.json({
+      success: true,
+      table,
+      tables: resolveTablesWithQrUrls(store.tableSessions, slug, origin),
+    });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Gagal memperbarui meja' },
@@ -121,6 +175,11 @@ export async function DELETE(req: NextRequest) {
   const store = getStore();
   store.tableSessions = store.tableSessions.filter((t) => t.id !== id);
   saveStore(store);
-  return NextResponse.json({ success: true, tables: store.tableSessions });
+  const origin = getOriginFromHeaders(req.headers);
+  const slug = store.merchants[0]?.slug || 'warungmakan';
+  return NextResponse.json({
+    success: true,
+    tables: resolveTablesWithQrUrls(store.tableSessions, slug, origin),
+  });
 }
 

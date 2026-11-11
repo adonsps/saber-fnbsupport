@@ -150,7 +150,7 @@ export function TableQrPdfDocument({
               >
                 <Text style={styles.merchantName}>{merchant.name}</Text>
                 <Text style={styles.subdomainText}>
-                  https://{merchant.slug}.saberconsulting.id
+                  {tbl.qrCodeUrl.split('?')[0]}
                 </Text>
 
                 <View style={styles.qrFrame}>

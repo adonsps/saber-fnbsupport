@@ -52,7 +52,7 @@ export default function OnboardingPage() {
     checking: false,
     valid: true,
     available: true,
-    message: 'Tersedia! warungmakan.saberconsulting.id siap digunakan.',
+    message: 'Tersedia! URL toko /warungmakan siap digunakan tanpa perlu setting DNS.',
   });
 
   // Step 2: Operations & Delivery
@@ -75,9 +75,14 @@ export default function OnboardingPage() {
   const [bankAccountNumber, setBankAccountNumber] = useState('5240998172');
   const [bankAccountHolder, setBankAccountHolder] = useState('PT SABER KULINER NUSANTARA');
 
+  const [appDisplayOrigin, setAppDisplayOrigin] = useState(
+    process.env.NEXT_PUBLIC_APP_DOMAIN || 'fnbsupport.saberconsulting.id'
+  );
+
   // Hydrate existing merchant data if present
   useEffect(() => {
-    fetch('/api/v1/merchants/onboard')
+    setAppDisplayOrigin(window.location.origin.replace(/^https?:\/\//i, ''));
+    fetch('/api/v1/merchants/onboard', { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {
         if (data.merchant) {
@@ -261,7 +266,7 @@ export default function OnboardingPage() {
   };
 
   const stepsMeta = [
-    { num: 1, title: 'Merchant Profile', subtitle: 'Identity & Subdomain', icon: Storefront },
+    { num: 1, title: 'Merchant Profile', subtitle: 'Identity & Store URL', icon: Storefront },
     { num: 2, title: 'Branch & Delivery', subtitle: 'Hours & Courier Radius', icon: Clock },
     { num: 3, title: 'QRIS & Settlement', subtitle: 'Static QRIS & Bank', icon: CreditCard },
   ];
@@ -350,15 +355,15 @@ export default function OnboardingPage() {
             Toko Anda Siap Menerima Pesanan!
           </h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-zinc-600">
-            Subdomain mini-site telah aktif secara instan dan siap digunakan untuk cetak QR meja
-            serta menerima pembayaran QRIS 0% komisi.
+            Mini-site toko Anda telah aktif secara instan dan siap digunakan untuk cetak QR meja
+            serta menerima pembayaran QRIS 0% komisi tanpa konfigurasi DNS.
           </p>
 
           <div className="mx-auto mt-6 max-w-md rounded-2xl border border-black/[0.06] bg-[#F5F5F7] p-4">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
-              Live Subdomain Mini-Site
+              Live Storefront URL
             </p>
-            <p className="mt-1 font-mono text-base font-bold text-apple-blue">
+            <p className="mt-1 break-all font-mono text-sm font-bold text-apple-blue">
               {launchSuccess.subdomainUrl}
             </p>
           </div>
@@ -396,10 +401,10 @@ export default function OnboardingPage() {
               >
                 <div>
                   <h2 className="text-xl font-bold tracking-tight text-zinc-950">
-                    Profil Merchant & Subdomain Instan
+                    Profil Merchant & Link Mini-Site Instan
                   </h2>
                   <p className="mt-1 text-xs text-zinc-500">
-                    Data ini digunakan untuk menghasilkan URL toko unik Anda dan rute bot WhatsApp.
+                    Data ini menghasilkan link QR toko unik Anda secara otomatis dan rute bot WhatsApp.
                   </p>
                 </div>
 
@@ -425,12 +430,12 @@ export default function OnboardingPage() {
 
                   <div className="sm:col-span-2">
                     <label htmlFor="slug" className="block text-xs font-semibold text-zinc-800">
-                      Subdomain Slug (<code className="text-apple-blue">^[a-z0-9-]+$</code>){' '}
+                      Storefront URL Slug (<code className="text-apple-blue">^[a-z0-9-]+$</code>){' '}
                       <span className="text-red-500">*</span>
                     </label>
                     <div className="mt-1.5 flex overflow-hidden rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 focus-within:border-apple-blue focus-within:bg-white focus-within:ring-4 focus-within:ring-apple-blue/10">
-                      <span className="flex items-center pl-4 font-mono text-xs font-semibold text-[#515154]">
-                        https://
+                      <span className="flex shrink-0 items-center border-r border-zinc-200 bg-zinc-100/80 px-3.5 font-mono text-xs font-medium text-zinc-600">
+                        {appDisplayOrigin}/
                       </span>
                       <input
                         id="slug"
@@ -442,11 +447,8 @@ export default function OnboardingPage() {
                         spellCheck={false}
                         value={slug}
                         onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                        className="min-h-[48px] w-full bg-transparent px-1.5 font-mono text-sm font-semibold text-zinc-950 outline-none"
+                        className="min-h-[48px] w-full bg-transparent px-3 font-mono text-sm font-semibold text-zinc-950 outline-none"
                       />
-                      <span className="flex shrink-0 items-center border-l border-zinc-200 bg-zinc-100/80 px-3.5 font-mono text-xs font-medium text-zinc-600">
-                        .saberconsulting.id
-                      </span>
                     </div>
 
                     {/* Live Availability Status Banner */}

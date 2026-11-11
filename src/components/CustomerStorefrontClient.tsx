@@ -18,6 +18,7 @@ import {
   PaymentType,
 } from '@/types/schema';
 import { cn, formatIdr } from '@/lib/utils';
+import { useDialogLightDismiss } from '@/lib/client-helpers';
 import {
   APPLE_SPRINGS,
   projectMomentum,
@@ -87,7 +88,7 @@ export function CustomerStorefrontClient({
 
   // Load Storefront Data
   useEffect(() => {
-    fetch('/api/v1/menu-items')
+    fetch('/api/v1/menu-items', { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {
         setMerchant(data.merchant);
@@ -97,6 +98,19 @@ export function CustomerStorefrontClient({
       })
       .finally(() => setLoading(false));
   }, [slug]);
+
+  const resetSheetDragState = () => {
+    setIsDraggingSheet(false);
+    setSheetDragY(0);
+    pointerHistoryRef.current = [];
+  };
+
+  useDialogLightDismiss(checkoutDialogRef, resetSheetDragState);
+
+  const closeCheckoutDialog = () => {
+    resetSheetDragState();
+    checkoutDialogRef.current?.close();
+  };
 
   // Hydrate Cart from localStorage
   useEffect(() => {
@@ -228,6 +242,10 @@ export function CustomerStorefrontClient({
 
   // Apple Design §2, §5, §6, §9: 1:1 Pointer Tracking + Rubber-Banding + Momentum Projection on Sheet Handle
   const handleSheetPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    // Allow interactive controls (e.g. Batal/Cancel button) inside the sheet header to handle clicks normally
+    if ((e.target as HTMLElement | null)?.closest('button, a, input, select, textarea, label')) {
+      return;
+    }
     e.currentTarget.setPointerCapture(e.pointerId);
     setIsDraggingSheet(true);
     dragStartYRef.current = e.clientY - sheetDragY;
@@ -798,6 +816,7 @@ export function CustomerStorefrontClient({
       {/* Screen 5: Frictionless Guest Checkout Native <dialog> Modal with 1:1 Drag & Rubber-Banding */}
       <dialog
         ref={checkoutDialogRef}
+        closedby="any"
         aria-labelledby="checkout-modal-title"
         style={{
           transform: sheetDragY !== 0 ? `translateY(${sheetDragY}px)` : undefined,
@@ -820,8 +839,8 @@ export function CustomerStorefrontClient({
           <div className="flex items-center justify-between gap-2">
             <button
               type="button"
-              onClick={() => checkoutDialogRef.current?.close()}
-              className="apple-interactive inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-apple-blue hover:underline"
+              onClick={closeCheckoutDialog}
+              className="apple-interactive relative z-20 inline-flex min-h-[44px] items-center px-2 text-sm font-semibold text-apple-blue hover:underline"
             >
               {lang === 'ID' ? 'Batal' : 'Cancel'}
             </button>

@@ -1,15 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStore } from '@/lib/store';
+import {
+  buildStorefrontUrl,
+  formatStorefrontDisplayUrl,
+  getOriginFromHeaders,
+  isReservedSlug,
+} from '@/lib/utils';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const slug = (req.nextUrl.searchParams.get('slug') || '').toLowerCase().trim();
   const slugRegex = /^[a-z0-9-]+$/;
+  const origin = getOriginFromHeaders(req.headers);
 
   if (!slug || slug.length < 3) {
     return NextResponse.json({
       valid: false,
       available: false,
-      message: 'Subdomain slug minimal 3 karakter huruf kecil, angka, atau tanda hubung (-).',
+      message: 'Slug URL toko minimal 3 karakter huruf kecil, angka, atau tanda hubung (-).',
     });
   }
 
@@ -21,12 +30,13 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const reserved = new Set(['admin', 'cashier', 'api', 'www', 'staging', 'onboarding', 'order', 'checkout']);
-  if (reserved.has(slug)) {
+  const displayUrl = formatStorefrontDisplayUrl(slug, origin);
+
+  if (isReservedSlug(slug)) {
     return NextResponse.json({
       valid: true,
       available: false,
-      message: `Subdomain "${slug}.saberconsulting.id" dicadangkan oleh sistem.`,
+      message: `URL "${displayUrl}" dicadangkan oleh sistem.`,
     });
   }
 
@@ -36,10 +46,11 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     valid: true,
     available: !exists,
-    subdomain: `${slug}.saberconsulting.id`,
+    subdomain: displayUrl,
+    storefrontUrl: buildStorefrontUrl(slug, { baseOrigin: origin }),
     message: exists
-      ? `Subdomain "${slug}.saberconsulting.id" sudah digunakan merchant lain.`
-      : `Tersedia! ${slug}.saberconsulting.id siap digunakan.`,
+      ? `URL "${displayUrl}" sudah digunakan merchant lain.`
+      : `Tersedia! ${displayUrl} siap digunakan tanpa perlu setting DNS.`,
   });
 }
 

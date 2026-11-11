@@ -9,7 +9,7 @@ import {
   Storefront,
 } from '@phosphor-icons/react/dist/ssr';
 import { getStore } from '@/lib/store';
-import { formatIdr } from '@/lib/utils';
+import { buildStorefrontUrl, formatIdr, formatStorefrontDisplayUrl } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +17,8 @@ export default function HomePage() {
   const store = getStore();
   const merchant = store.merchants[0];
   const branch = store.branches[0];
+  const storefrontDisplay = formatStorefrontDisplayUrl(merchant.slug);
+  const storefrontHref = buildStorefrontUrl(merchant.slug, { baseOrigin: '' });
   const activeOrders = store.orders.filter(
     (o) => o.orderStatus !== 'COMPLETED' && o.orderStatus !== 'CANCELLED'
   );
@@ -29,7 +31,7 @@ export default function HomePage() {
       title: 'Self-Onboarding Wizard',
       route: '/onboarding',
       description:
-        'Configure business identity, live subdomain ([slug].saberconsulting.id), self-delivery radius, and static QRIS or bank settlement credentials in three guided steps.',
+        'Configure business identity, instant mini-site URL (/[slug]), self-delivery radius, and static QRIS or bank settlement credentials in three guided steps.',
       icon: Storefront,
       metric: '3-Step Setup',
     },
@@ -53,12 +55,12 @@ export default function HomePage() {
     },
     {
       domain: 'Guest Direct Commerce',
-      title: 'Customer Subdomain Storefront & Checkout',
+      title: 'Customer Mini-Site Storefront & Checkout',
       route: `/${merchant.slug}?table=TABLE%2004`,
       description:
         'Account-free mobile storefront with bilingual toggle, Dine-In QR / Pre-Order / Delivery modes, persistent local basket, and tactile sheet checkout.',
       icon: ForkKnife,
-      metric: `${merchant.slug}.saberconsulting.id`,
+      metric: `/${merchant.slug}`,
     },
     {
       domain: 'Live Order Pass',
@@ -158,10 +160,10 @@ export default function HomePage() {
             </div>
 
             <dl className="mt-4 space-y-3 text-xs">
-              <div className="flex items-center justify-between">
-                <dt className="font-medium text-[#515154]">Live Subdomain</dt>
-                <dd className="font-mono font-semibold text-apple-blue">
-                  {merchant.slug}.saberconsulting.id
+              <div className="flex items-center justify-between gap-3">
+                <dt className="font-medium text-[#515154]">Live Mini-Site URL</dt>
+                <dd className="truncate font-mono font-semibold text-apple-blue" title={storefrontHref}>
+                  {storefrontDisplay}
                 </dd>
               </div>
               <div className="flex items-center justify-between">

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const RESERVED_SUBDOMAINS = new Set(['www', 'staging', 'fnbsupport', 'staging-fnbsupport', 'app', 'admin', 'cashier', 'api']);
+import { isReservedSlug } from '@/lib/utils';
 
 export function proxy(req: NextRequest) {
   const url = req.nextUrl.clone();
@@ -32,7 +31,7 @@ export function proxy(req: NextRequest) {
     subdomain = cleanHost.replace('.localhost', '');
   }
 
-  if (subdomain && !subdomain.includes('.') && !RESERVED_SUBDOMAINS.has(subdomain)) {
+  if (subdomain && !subdomain.includes('.') && !isReservedSlug(subdomain)) {
     url.pathname = `/${subdomain}${url.pathname === '/' ? '' : url.pathname}`;
     return NextResponse.rewrite(url);
   }
