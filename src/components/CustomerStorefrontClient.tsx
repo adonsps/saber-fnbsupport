@@ -20,7 +20,6 @@ import {
   Truck,
   User,
   Utensils,
-  X,
 } from 'lucide-react';
 import {
   Branch,
@@ -371,8 +370,8 @@ export function CustomerStorefrontClient({
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
         </div>
 
-        {/* Floating Dual-Language Pill Toggle (ID | EN) with Critically Damped Spring (§3, §4) */}
-        <div className="absolute right-4 top-4 z-10 flex items-center rounded-full border border-white/25 bg-black/50 p-1 backdrop-blur-xl">
+        {/* Floating Dual-Language Pill Toggle (ID | EN) using Clear Liquid Glass + 35% Dimming Layer (liquid-glass.md › Which variant) + Emil Spring (§3, §4) */}
+        <div className="liquid-glass-clear absolute right-4 top-4 z-10 flex items-center rounded-full p-1">
           {(['ID', 'EN'] as const).map((code) => {
             const isSelected = lang === code;
             return (
@@ -384,8 +383,8 @@ export function CustomerStorefrontClient({
                   setLang(code);
                 }}
                 className={cn(
-                  'relative rounded-full px-3 py-1 text-xs font-bold transition-colors',
-                  isSelected ? 'text-zinc-950' : 'text-white/85 hover:text-white'
+                  'relative min-h-[36px] min-w-[44px] rounded-full px-3.5 py-1 text-xs font-bold transition-colors',
+                  isSelected ? 'text-[#1D1D1F]' : 'text-white hover:text-white/90'
                 )}
               >
                 {isSelected && (
@@ -418,8 +417,8 @@ export function CustomerStorefrontClient({
                   className={cn(
                     'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold',
                     merchant?.isStoreOpen
-                      ? 'bg-emerald-500/90 text-white'
-                      : 'bg-red-600/95 text-white'
+                      ? 'bg-[#1D7D32] text-white'
+                      : 'bg-[#D70015] text-white'
                   )}
                 >
                   <span className="h-1.5 w-1.5 rounded-full bg-white" />
@@ -439,10 +438,10 @@ export function CustomerStorefrontClient({
                 )}
               </div>
 
-              <h1 className="mt-1.5 truncate text-xl font-bold tracking-tight sm:text-2xl">
+              <h1 className="mt-1.5 truncate font-serif text-xl font-bold tracking-tight sm:text-2xl">
                 {merchant?.name}
               </h1>
-              <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-zinc-300">
+              <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-zinc-200">
                 <MapPin className="h-3.5 w-3.5 shrink-0" />
                 <span className="truncate">{branch?.address}</span>
               </p>
@@ -594,16 +593,16 @@ export function CustomerStorefrontClient({
         </div>
       </div>
 
-      {/* Sticky Category Navigation & Search Bar (Translucent Material §12 + Snap Scroller) */}
-      <div className="apple-material-toolbar sticky top-[56px] z-30 mt-4 px-4 py-3 sm:rounded-2xl sm:border sm:border-black/[0.06]">
+      {/* Sticky Category Navigation & Search Bar (Regular Liquid Glass Functional Layer per liquid-glass.md + Snap Scroller) */}
+      <div className="liquid-glass-regular sticky top-[60px] z-30 mt-4 px-4 py-3 sm:rounded-2xl sm:border sm:border-black/[0.08]">
         <search className="relative mb-2.5 block">
-          <Search className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
+          <Search className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-[#515154]" />
           <input
             type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={lang === 'ID' ? 'Cari nasi goreng, kopi, matcha...' : 'Search menu items...'}
-            className="min-h-[42px] w-full rounded-full border border-black/[0.08] bg-white/95 pl-10 pr-4 text-xs text-zinc-950 outline-none focus:border-apple-blue"
+            className="min-h-[44px] w-full rounded-full border border-black/[0.1] bg-white pl-10 pr-4 text-xs text-[#1D1D1F] outline-none focus:border-apple-blue"
           />
         </search>
 
@@ -615,17 +614,17 @@ export function CustomerStorefrontClient({
               setActiveCategoryId('ALL');
             }}
             className={cn(
-              'relative z-10 shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors',
+              'relative z-10 min-h-[40px] shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition-colors',
               activeCategoryId === 'ALL'
                 ? 'text-white'
-                : 'bg-white/85 text-zinc-700 hover:bg-zinc-200/70'
+                : 'bg-white text-[#515154] hover:bg-black/[0.05] hover:text-[#1D1D1F]'
             )}
           >
             {activeCategoryId === 'ALL' && (
               <motion.span
                 layoutId="storefront-category-pill"
                 transition={APPLE_SPRINGS.default}
-                className="absolute inset-0 -z-10 rounded-full bg-zinc-950 shadow-sm"
+                className="absolute inset-0 -z-10 rounded-full bg-[#1D1D1F] shadow-sm"
               />
             )}
             {lang === 'ID' ? 'Semua Menu' : 'All Items'}
@@ -641,15 +640,17 @@ export function CustomerStorefrontClient({
                   setActiveCategoryId(cat.id);
                 }}
                 className={cn(
-                  'relative z-10 shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors',
-                  isSelected ? 'text-white' : 'bg-white/85 text-zinc-700 hover:bg-zinc-200/70'
+                  'relative z-10 min-h-[40px] shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition-colors',
+                  isSelected
+                    ? 'text-white'
+                    : 'bg-white text-[#515154] hover:bg-black/[0.05] hover:text-[#1D1D1F]'
                 )}
               >
                 {isSelected && (
                   <motion.span
                     layoutId="storefront-category-pill"
                     transition={APPLE_SPRINGS.default}
-                    className="absolute inset-0 -z-10 rounded-full bg-zinc-950 shadow-sm"
+                    className="absolute inset-0 -z-10 rounded-full bg-[#1D1D1F] shadow-sm"
                   />
                 )}
                 {lang === 'ID' ? cat.nameId : cat.nameEn || cat.nameId}
@@ -659,11 +660,11 @@ export function CustomerStorefrontClient({
         </div>
       </div>
 
-      {/* Menu Cards Feed */}
+      {/* Menu Cards Feed (Opaque Grouped Content Layer per liquid-glass.md) */}
       <div className="mt-5 space-y-8 px-4 sm:px-0">
         {filteredMenuByCategory.map(({ category, items }) => (
           <section key={category.id} className="space-y-3">
-            <h2 className="text-base font-bold tracking-tight text-zinc-950">
+            <h2 className="font-serif text-lg font-bold tracking-tight text-[#1D1D1F]">
               {lang === 'ID' ? category.nameId : category.nameEn || category.nameId}
             </h2>
 
@@ -680,10 +681,10 @@ export function CustomerStorefrontClient({
                   <article
                     key={item.id}
                     className={cn(
-                      'flex gap-3.5 rounded-[22px] border bg-white p-3.5 shadow-apple-sm transition-all',
+                      'flex gap-3.5 rounded-[20px] border bg-white p-3.5 shadow-apple-sm transition-all',
                       item.isSoldOut
                         ? 'border-zinc-200 opacity-65'
-                        : 'border-black/[0.06] hover:shadow-apple-md'
+                        : 'border-black/[0.08] hover:shadow-apple-md'
                     )}
                   >
                     <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-[16px] bg-zinc-100 ring-1 ring-black/5">
@@ -698,7 +699,7 @@ export function CustomerStorefrontClient({
                         />
                       )}
                       {item.isSoldOut && (
-                        <span className="absolute inset-x-1 bottom-1 rounded-full bg-red-600/95 py-0.5 text-center text-[10px] font-bold uppercase text-white">
+                        <span className="absolute inset-x-1 bottom-1 rounded-full bg-[#D70015] py-0.5 text-center text-[10px] font-bold uppercase text-white">
                           {lang === 'ID' ? 'Habis' : 'Sold Out'}
                         </span>
                       )}
@@ -706,50 +707,50 @@ export function CustomerStorefrontClient({
 
                     <div className="flex min-w-0 flex-1 flex-col justify-between">
                       <div>
-                        <h3 className="text-sm font-bold leading-snug text-zinc-950">{title}</h3>
+                        <h3 className="text-sm font-bold leading-snug text-[#1D1D1F]">{title}</h3>
                         {desc && (
-                          <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-zinc-500">
+                          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[#515154]">
                             {desc}
                           </p>
                         )}
                       </div>
 
                       <div className="mt-2.5 flex items-center justify-between gap-2">
-                        <span className="font-mono text-sm font-bold tabular-nums text-zinc-950">
+                        <span className="font-mono text-sm font-bold tabular-nums text-[#1D1D1F]">
                           {formatIdr(item.priceIdr)}
                         </span>
 
                         {item.isSoldOut ? (
-                          <span className="rounded-full bg-zinc-100 px-3 py-1 text-[11px] font-semibold text-zinc-500">
-                            Sold Out
+                          <span className="rounded-full bg-[#F5F5F7] px-3 py-1.5 text-xs font-semibold text-[#515154]">
+                            {lang === 'ID' ? 'Stok Habis' : 'Sold Out'}
                           </span>
                         ) : qty === 0 ? (
                           <button
                             type="button"
                             onClick={() => updateCartQty(item.id, 1)}
-                            className="apple-interactive inline-flex min-h-[38px] items-center gap-1 rounded-full bg-zinc-950 px-4 py-1.5 text-xs font-bold text-white hover:bg-apple-blue"
+                            className="apple-interactive inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-apple-blue px-4 py-2 text-xs font-bold text-white hover:bg-apple-blueHover"
                           >
                             <Plus className="h-3.5 w-3.5" />
                             <span>{lang === 'ID' ? 'Tambah' : 'Add'}</span>
                           </button>
                         ) : (
-                          <div className="inline-flex items-center gap-2 rounded-full bg-apple-blue/10 p-1 ring-1 ring-apple-blue/30">
+                          <div className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-apple-blue/10 px-1.5 py-1 ring-1 ring-apple-blue/30">
                             <button
                               type="button"
                               aria-label={`Kurangi ${title}`}
                               onClick={() => updateCartQty(item.id, -1)}
-                              className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-zinc-950 shadow-sm"
+                              className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#1D1D1F] shadow-sm"
                             >
                               <Minus className="h-3.5 w-3.5" />
                             </button>
-                            <span className="min-w-[18px] text-center font-mono text-xs font-bold tabular-nums text-apple-blue">
+                            <span className="min-w-[22px] text-center font-mono text-xs font-bold tabular-nums text-apple-blue">
                               {qty}
                             </span>
                             <button
                               type="button"
                               aria-label={`Tambah ${title}`}
                               onClick={() => updateCartQty(item.id, 1)}
-                              className="flex h-7 w-7 items-center justify-center rounded-full bg-apple-blue text-white shadow-sm"
+                              className="flex h-9 w-9 items-center justify-center rounded-full bg-apple-blue text-white shadow-sm"
                             >
                               <Plus className="h-3.5 w-3.5" />
                             </button>
@@ -819,32 +820,37 @@ export function CustomerStorefrontClient({
         }}
         className="w-full max-w-lg rounded-[28px] border border-black/10 bg-white p-0 shadow-apple-lg"
       >
-        {/* Direct Manipulation Sheet Grab Handle (§2, §6, §9) */}
+        {/* Apple HIG Sheet Navigation Header (sheets.md › Platform considerations) + Emil 1:1 Drag & Rubber-Banding (§2, §6, §9) */}
         <div
           onPointerDown={handleSheetPointerDown}
           onPointerMove={handleSheetPointerMove}
           onPointerUp={handleSheetPointerUp}
           onPointerCancel={handleSheetPointerUp}
-          className="cursor-grab touch-none select-none border-b border-black/[0.06] px-6 pb-3.5 pt-2.5 active:cursor-grabbing"
+          className="liquid-glass-regular sticky top-0 z-10 cursor-grab touch-none select-none px-5 pb-3 pt-2 active:cursor-grabbing"
         >
-          <div className="mx-auto mb-2.5 h-1.5 w-11 rounded-full bg-zinc-300/90" />
-          <div className="flex items-center justify-between">
-            <div>
-              <span className="apple-caption text-[10px] font-bold uppercase text-apple-blue">
-                100% Zero-Login Checkout • Drag Down to Dismiss
-              </span>
-              <h2 id="checkout-modal-title" className="text-lg font-bold text-zinc-950">
-                {lang === 'ID' ? 'Konfirmasi Pesanan Anda' : 'Confirm Your Order'}
-              </h2>
-            </div>
+          <div
+            aria-hidden="true"
+            className="mx-auto mb-2 h-1.5 w-10 rounded-full bg-black/20"
+          />
+          <div className="flex items-center justify-between gap-2">
             <button
               type="button"
-              aria-label="Tutup checkout"
               onClick={() => checkoutDialogRef.current?.close()}
-              className="rounded-full p-2 text-zinc-500 hover:bg-zinc-100"
+              className="apple-interactive inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-apple-blue hover:underline"
             >
-              <X className="h-4 w-4" />
+              {lang === 'ID' ? 'Batal' : 'Cancel'}
             </button>
+            <div className="text-center">
+              <h2 id="checkout-modal-title" className="text-sm font-bold text-[#1D1D1F]">
+                {lang === 'ID' ? 'Konfirmasi Pesanan' : 'Confirm Order'}
+              </h2>
+              <p className="hig-caption text-[11px] font-medium text-[#515154]">
+                {lang === 'ID' ? 'Tanpa Login • Geser untuk Tutup' : 'Zero-Login • Swipe Down to Close'}
+              </p>
+            </div>
+            <span className="inline-flex min-w-[44px] justify-end font-mono text-xs font-bold tabular-nums text-[#515154]">
+              {cartSummary.totalItems}×
+            </span>
           </div>
         </div>
 

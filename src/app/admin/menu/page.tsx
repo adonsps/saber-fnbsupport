@@ -15,7 +15,6 @@ import {
   Power,
   Trash2,
   UtensilsCrossed,
-  X,
 } from 'lucide-react';
 import { Category, MenuItem, Merchant } from '@/types/schema';
 import { cn, formatIdr } from '@/lib/utils';
@@ -293,29 +292,30 @@ export default function AdminMenuPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          {/* HIG Button Hierarchy (buttons.md › Style): Secondary bordered destructive/resume toggle + 1 prominent primary CTA */}
           <button
             type="button"
             onClick={handleToggleStoreOpen}
             className={cn(
-              'inline-flex min-h-[44px] items-center gap-2 rounded-full px-5 py-2.5 text-xs font-bold shadow-sm transition-all active:scale-[0.98]',
+              'apple-interactive inline-flex min-h-[44px] items-center gap-2 rounded-full border px-5 py-2.5 text-xs font-bold transition-all',
               merchant?.isStoreOpen
-                ? 'bg-zinc-950 text-white hover:bg-red-600'
-                : 'bg-apple-green text-white hover:bg-emerald-600'
+                ? 'border-[#D70015]/30 bg-red-50 text-[#D70015] hover:bg-red-100'
+                : 'border-[#1D7D32]/30 bg-emerald-50 text-[#1D7D32] hover:bg-emerald-100'
             )}
           >
             <Power className="h-4 w-4" />
             <span>
-              {merchant?.isStoreOpen ? 'Pause Store Orders' : 'Resume Store Orders (OPEN)'}
+              {merchant?.isStoreOpen ? 'Pause Store Orders' : 'Resume Store Orders'}
             </span>
           </button>
 
           <button
             type="button"
             onClick={openNewItemModal}
-            className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-apple-blue px-5 py-2.5 text-xs font-bold text-white shadow-apple-sm transition-all hover:bg-apple-blueHover active:scale-[0.98]"
+            className="apple-interactive inline-flex min-h-[44px] items-center gap-2 rounded-full bg-apple-blue px-5 py-2.5 text-xs font-bold text-white shadow-apple-sm hover:bg-apple-blueHover"
           >
             <Plus className="h-4 w-4" />
-            <span>Tambah Menu Baru</span>
+            <span>Add Menu Item</span>
           </button>
         </div>
       </div>
@@ -441,8 +441,21 @@ export default function AdminMenuPage() {
                 </div>
 
                 {catItems.length === 0 ? (
-                  <div className="rounded-[22px] border border-dashed border-zinc-300 bg-white/60 p-8 text-center text-xs text-zinc-500">
-                    Belum ada menu pada kategori ini. Klik &ldquo;Tambah Menu Baru&rdquo;.
+                  <div className="rounded-[22px] border border-dashed border-zinc-300 bg-white p-8 text-center">
+                    <p className="text-xs font-medium text-[#515154]">
+                      No dishes in this category yet.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveCatId(category.id);
+                        openNewItemModal();
+                      }}
+                      className="apple-interactive mt-3 inline-flex min-h-[40px] items-center gap-1.5 rounded-full bg-apple-blue/10 px-4 py-2 text-xs font-bold text-apple-blue hover:bg-apple-blue hover:text-white"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      <span>Add Dish to {category.nameId}</span>
+                    </button>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -565,30 +578,30 @@ export default function AdminMenuPage() {
         </section>
       </div>
 
-      {/* Native <dialog> Category Modal */}
+      {/* Native <dialog> Category Modal (HIG Sheet Anatomy per sheets.md) */}
       <dialog
         ref={catDialogRef}
         aria-labelledby="cat-modal-title"
-        className="w-full max-w-md rounded-[26px] border border-black/10 bg-white p-6 shadow-apple-lg"
+        className="w-full max-w-md rounded-[26px] border border-black/10 bg-white p-0 shadow-apple-lg"
       >
-        <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
-          <h2 id="cat-modal-title" className="text-lg font-bold text-zinc-950">
-            Tambah Kategori Bilingual
-          </h2>
+        <div className="liquid-glass-regular flex items-center justify-between px-5 py-3">
           <button
             type="button"
             onClick={() => catDialogRef.current?.close()}
-            aria-label="Tutup modal kategori"
-            className="rounded-full p-1.5 text-zinc-500 hover:bg-zinc-100"
+            className="apple-interactive inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-apple-blue hover:underline"
           >
-            <X className="h-4 w-4" />
+            Cancel
           </button>
+          <h2 id="cat-modal-title" className="text-sm font-bold text-[#1D1D1F]">
+            Add Bilingual Category
+          </h2>
+          <span className="min-w-[44px]" />
         </div>
 
-        <form onSubmit={handleSaveCategory} className="mt-4 space-y-4">
+        <form onSubmit={handleSaveCategory} className="space-y-4 p-6">
           <div>
-            <label htmlFor="catNameId" className="block text-xs font-semibold text-zinc-800">
-              Nama Kategori (Bahasa Indonesia) <span className="text-red-500">*</span>
+            <label htmlFor="catNameId" className="block text-xs font-semibold text-[#1D1D1F]">
+              Category Name (Bahasa Indonesia) <span className="text-[#D70015]">*</span>
             </label>
             <input
               id="catNameId"
@@ -597,14 +610,14 @@ export default function AdminMenuPage() {
               autoFocus
               value={catNameId}
               onChange={(e) => setCatNameId(e.target.value)}
-              placeholder="Contoh: Minuman Segar"
+              placeholder="e.g. Minuman Segar"
               className="mt-1 min-h-[44px] w-full rounded-xl border border-zinc-200 px-3.5 text-sm outline-none focus:border-apple-blue"
             />
           </div>
 
           <div>
-            <label htmlFor="catNameEn" className="block text-xs font-semibold text-zinc-800">
-              Category Name (English — Opsional)
+            <label htmlFor="catNameEn" className="block text-xs font-semibold text-[#1D1D1F]">
+              Category Name (English — Optional)
             </label>
             <input
               id="catNameEn"
@@ -617,8 +630,8 @@ export default function AdminMenuPage() {
           </div>
 
           <div>
-            <label htmlFor="catOrder" className="block text-xs font-semibold text-zinc-800">
-              Urutan Tampil (Display Order)
+            <label htmlFor="catOrder" className="block text-xs font-semibold text-[#1D1D1F]">
+              Display Order
             </label>
             <input
               id="catOrder"
@@ -630,46 +643,37 @@ export default function AdminMenuPage() {
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={() => catDialogRef.current?.close()}
-              className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-700"
-            >
-              Batal
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="rounded-full bg-apple-blue px-5 py-2 text-xs font-semibold text-white hover:bg-apple-blueHover"
-            >
-              Simpan Kategori
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={saving}
+            className="apple-interactive flex min-h-[44px] w-full items-center justify-center rounded-full bg-apple-blue px-5 py-2.5 text-xs font-bold text-white hover:bg-apple-blueHover"
+          >
+            Save Category
+          </button>
         </form>
       </dialog>
 
-      {/* Native <dialog> Menu Item Modal */}
+      {/* Native <dialog> Menu Item Modal (HIG Sheet Anatomy per sheets.md) */}
       <dialog
         ref={itemDialogRef}
         aria-labelledby="item-modal-title"
-        className="w-full max-w-2xl rounded-[28px] border border-black/10 bg-white p-6 shadow-apple-lg"
+        className="w-full max-w-2xl rounded-[26px] border border-black/10 bg-white p-0 shadow-apple-lg"
       >
-        <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
-          <h2 id="item-modal-title" className="text-lg font-bold text-zinc-950">
-            {editingItemId ? 'Edit Menu Item (ID | EN)' : 'Tambah Menu Item Baru (ID | EN)'}
-          </h2>
+        <div className="liquid-glass-regular flex items-center justify-between px-5 py-3">
           <button
             type="button"
             onClick={() => itemDialogRef.current?.close()}
-            aria-label="Tutup modal menu"
-            className="rounded-full p-1.5 text-zinc-500 hover:bg-zinc-100"
+            className="apple-interactive inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-apple-blue hover:underline"
           >
-            <X className="h-4 w-4" />
+            Cancel
           </button>
+          <h2 id="item-modal-title" className="text-sm font-bold text-[#1D1D1F]">
+            {editingItemId ? 'Edit Menu Item (ID | EN)' : 'Add Menu Item (ID | EN)'}
+          </h2>
+          <span className="min-w-[44px]" />
         </div>
 
-        <form onSubmit={handleSaveMenuItem} className="mt-4 space-y-4">
+        <form onSubmit={handleSaveMenuItem} className="space-y-4 p-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="itemCat" className="block text-xs font-semibold text-zinc-800">

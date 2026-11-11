@@ -274,9 +274,9 @@ export default function OnboardingPage() {
   };
 
   const stepsMeta = [
-    { num: 1, title: '1. Profil Merchant', subtitle: 'Identitas & Subdomain', icon: Store },
-    { num: 2, title: '2. Operasional', subtitle: 'Jam Buka & Pengiriman', icon: Clock },
-    { num: 3, title: '3. Pembayaran', subtitle: 'QRIS Statis & Bank', icon: CreditCard },
+    { num: 1, title: 'Merchant Profile', subtitle: 'Identity & Subdomain', icon: Store },
+    { num: 2, title: 'Branch & Delivery', subtitle: 'Hours & Courier Radius', icon: Clock },
+    { num: 3, title: 'QRIS & Settlement', subtitle: 'Static QRIS & Bank', icon: CreditCard },
   ];
 
   return (
@@ -284,14 +284,14 @@ export default function OnboardingPage() {
       <div className="mb-8 text-center">
         <div className="inline-flex items-center gap-1.5 rounded-full border border-black/[0.08] bg-white px-3.5 py-1 text-xs font-semibold text-apple-blue shadow-apple-sm">
           <Sparkles className="h-3.5 w-3.5" />
-          <span>Sprint 1 • Rapid 10-Minute Self-Onboarding</span>
+          <span>Merchant Self-Onboarding • Zero-Commission Setup</span>
         </div>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">
-          Aktivasi Toko Direct Commerce Anda
+        <h1 className="hig-culinary-serif mt-3 text-3xl text-[#1D1D1F] sm:text-4xl">
+          Launch Your Direct Commerce Storefront
         </h1>
-        <p className="mx-auto mt-2 max-w-xl text-sm text-zinc-600">
-          Tanpa komisi aplikasi, tanpa mesin POS mahal. Lengkapi 3 langkah singkat untuk
-          mendapatkan subdomain instan & sistem pesanan WhatsApp otomatis.
+        <p className="mx-auto mt-2 max-w-xl text-sm text-[#515154]">
+          Zero marketplace commission and zero proprietary POS hardware. Complete three guided steps
+          to activate your instant subdomain and automated WhatsApp order loop.
         </p>
       </div>
 
