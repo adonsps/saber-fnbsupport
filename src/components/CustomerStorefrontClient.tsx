@@ -17,8 +17,6 @@ import {
   Plus,
   Search,
   ShoppingBag,
-  Sparkles,
-  Store,
   Truck,
   User,
   Utensils,
@@ -33,11 +31,22 @@ import {
   PaymentType,
 } from '@/types/schema';
 import { cn, formatIdr } from '@/lib/utils';
+import {
+  APPLE_SPRINGS,
+  projectMomentum,
+  rubberband,
+  triggerCausalHaptic,
+} from '@/lib/apple-motion';
 
 interface CartEntry {
   menuItemId: string;
   quantity: number;
   notes?: string;
+}
+
+interface PointerSample {
+  y: number;
+  t: number;
 }
 
 export function CustomerStorefrontClient({
@@ -65,8 +74,13 @@ export function CustomerStorefrontClient({
   const [activeCategoryId, setActiveCategoryId] = useState<string>('ALL');
   const [cart, setCart] = useState<Record<string, CartEntry>>({});
 
-  // Checkout Modal State (Native <dialog>)
+  // Checkout Modal State (Native <dialog>) + Apple 1:1 Direct Manipulation & Rubber-Banding (§2, §6, §9)
   const checkoutDialogRef = useRef<HTMLDialogElement>(null);
+  const [sheetDragY, setSheetDragY] = useState(0);
+  const [isDraggingSheet, setIsDraggingSheet] = useState(false);
+  const dragStartYRef = useRef(0);
+  const pointerHistoryRef = useRef<PointerSample[]>([]);
+
   const [customerName, setCustomerName] = useState('');
   const [customerWhatsapp, setCustomerWhatsapp] = useState('');
   const [specialNotes, setSpecialNotes] = useState('');
@@ -119,6 +133,7 @@ export function CustomerStorefrontClient({
   }, [cart, cartStorageKey]);
 
   const updateCartQty = (menuItemId: string, delta: number) => {
+    triggerCausalHaptic(8);
     setCart((prev) => {
       const current = prev[menuItemId]?.quantity || 0;
       const nextQty = current + delta;
@@ -196,7 +211,9 @@ export function CustomerStorefrontClient({
   }, [categories, menuItems, activeCategoryId, searchQuery]);
 
   const handleOpenCheckout = () => {
+    triggerCausalHaptic(10);
     setCheckoutError(null);
+    setSheetDragY(0);
     if (!merchant?.isStoreOpen) {
       alert(
         lang === 'ID'
@@ -220,6 +237,57 @@ export function CustomerStorefrontClient({
       );
     }
     checkoutDialogRef.current?.showModal();
+  };
+
+  // Apple Design §2, §5, §6, §9: 1:1 Pointer Tracking + Rubber-Banding + Momentum Projection on Sheet Handle
+  const handleSheetPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setIsDraggingSheet(true);
+    dragStartYRef.current = e.clientY - sheetDragY;
+    pointerHistoryRef.current = [{ y: e.clientY, t: performance.now() }];
+  };
+
+  const handleSheetPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingSheet) return;
+    const rawDelta = e.clientY - dragStartYRef.current;
+    const now = performance.now();
+    pointerHistoryRef.current = [
+      ...pointerHistoryRef.current.slice(-4),
+      { y: e.clientY, t: now },
+    ];
+
+    const dialogHeight = checkoutDialogRef.current?.offsetHeight || 560;
+    if (rawDelta < 0) {
+      // Dragging upward past top bound -> progressive rubber-banding resistance (§9)
+      setSheetDragY(rubberband(rawDelta, dialogHeight, 0.55));
+    } else {
+      // 1:1 downward tracking (§2)
+      setSheetDragY(rawDelta);
+    }
+  };
+
+  const handleSheetPointerUp = () => {
+    if (!isDraggingSheet) return;
+    setIsDraggingSheet(false);
+
+    const samples = pointerHistoryRef.current;
+    let releaseVelocityPxPerSec = 0;
+    if (samples.length >= 2) {
+      const first = samples[0];
+      const last = samples[samples.length - 1];
+      const dtMs = Math.max(1, last.t - first.t);
+      releaseVelocityPxPerSec = ((last.y - first.y) / dtMs) * 1000;
+    }
+
+    // §6 Momentum Projection: project landing position from finger velocity
+    const projectedEndpoint = sheetDragY + projectMomentum(releaseVelocityPxPerSec, 0.992);
+    if (projectedEndpoint > 140 || releaseVelocityPxPerSec > 680) {
+      triggerCausalHaptic(8);
+      setSheetDragY(0);
+      checkoutDialogRef.current?.close();
+    } else {
+      setSheetDragY(0);
+    }
   };
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
@@ -269,6 +337,7 @@ export function CustomerStorefrontClient({
         throw new Error(data.error || 'Gagal mengirim pesanan');
       }
 
+      triggerCausalHaptic([10, 40, 12]);
       // Clear local cart after successful submission
       setCart({});
       localStorage.removeItem(cartStorageKey);
@@ -292,7 +361,7 @@ export function CustomerStorefrontClient({
   return (
     <div className="mx-auto max-w-3xl pb-32">
       {/* Store Banner & Hero Header */}
-      <div className="relative overflow-hidden bg-zinc-950 sm:mt-4 sm:rounded-t-[28px]">
+      <div className="relative overflow-hidden bg-zinc-950 sm:mt-4 sm:rounded-t-[28px] shadow-apple-md">
         <div className="h-44 w-full overflow-hidden sm:h-52">
           <img
             src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=1200&q=80"
@@ -302,21 +371,34 @@ export function CustomerStorefrontClient({
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
         </div>
 
-        {/* Floating Dual-Language Pill Toggle (ID | EN) */}
+        {/* Floating Dual-Language Pill Toggle (ID | EN) with Critically Damped Spring (§3, §4) */}
         <div className="absolute right-4 top-4 z-10 flex items-center rounded-full border border-white/25 bg-black/50 p-1 backdrop-blur-xl">
-          {(['ID', 'EN'] as const).map((code) => (
-            <button
-              key={code}
-              type="button"
-              onClick={() => setLang(code)}
-              className={cn(
-                'rounded-full px-3 py-1 text-xs font-bold transition-all',
-                lang === code ? 'bg-white text-zinc-950 shadow-sm' : 'text-white/80 hover:text-white'
-              )}
-            >
-              {code}
-            </button>
-          ))}
+          {(['ID', 'EN'] as const).map((code) => {
+            const isSelected = lang === code;
+            return (
+              <button
+                key={code}
+                type="button"
+                onClick={() => {
+                  triggerCausalHaptic(6);
+                  setLang(code);
+                }}
+                className={cn(
+                  'relative rounded-full px-3 py-1 text-xs font-bold transition-colors',
+                  isSelected ? 'text-zinc-950' : 'text-white/85 hover:text-white'
+                )}
+              >
+                {isSelected && (
+                  <motion.span
+                    layoutId="storefront-lang-pill"
+                    transition={APPLE_SPRINGS.default}
+                    className="absolute inset-0 -z-10 rounded-full bg-white shadow-sm"
+                  />
+                )}
+                {code}
+              </button>
+            );
+          })}
         </div>
 
         {/* Store Identity Overlay */}
@@ -328,7 +410,7 @@ export function CustomerStorefrontClient({
                 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80'
               }
               alt={merchant?.name || 'Logo'}
-              className="h-20 w-20 shrink-0 rounded-[20px] border-2 border-white/80 bg-white object-cover shadow-apple-md"
+              className="h-20 w-20 shrink-0 rounded-[20px] border-2 border-white/85 bg-white object-cover shadow-apple-md"
             />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
@@ -388,7 +470,7 @@ export function CustomerStorefrontClient({
         </div>
       )}
 
-      {/* Order Type Selector Tabs */}
+      {/* Order Type Selector Tabs with Critically Damped Spring Pill (§3, §4) */}
       <div className="mx-4 mt-4 rounded-[24px] border border-black/[0.06] bg-white p-4 shadow-apple-sm sm:mx-0">
         <div
           role="tablist"
@@ -423,14 +505,22 @@ export function CustomerStorefrontClient({
                 type="button"
                 role="tab"
                 aria-selected={active}
-                onClick={() => setOrderType(tab.type)}
+                onClick={() => {
+                  triggerCausalHaptic(6);
+                  setOrderType(tab.type);
+                }}
                 className={cn(
-                  'flex min-h-[44px] flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-[11px] font-bold transition-all sm:flex-row sm:text-xs',
-                  active
-                    ? 'bg-white text-zinc-950 shadow-sm'
-                    : 'text-zinc-500 hover:text-zinc-900'
+                  'relative z-10 flex min-h-[44px] flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-[11px] font-bold transition-colors sm:flex-row sm:text-xs',
+                  active ? 'text-zinc-950' : 'text-zinc-500 hover:text-zinc-900'
                 )}
               >
+                {active && (
+                  <motion.span
+                    layoutId="storefront-channel-pill"
+                    transition={APPLE_SPRINGS.default}
+                    className="absolute inset-0 -z-10 rounded-xl bg-white shadow-sm"
+                  />
+                )}
                 <Icon className="h-3.5 w-3.5" />
                 <span>{lang === 'ID' ? tab.labelId : tab.labelEn}</span>
               </button>
@@ -504,8 +594,8 @@ export function CustomerStorefrontClient({
         </div>
       </div>
 
-      {/* Sticky Category Navigation & Search Bar */}
-      <div className="sticky top-[56px] z-30 mt-4 border-y border-black/[0.06] bg-[#F5F5F7]/90 px-4 py-3 backdrop-blur-xl sm:rounded-2xl sm:border">
+      {/* Sticky Category Navigation & Search Bar (Translucent Material §12 + Snap Scroller) */}
+      <div className="apple-material-toolbar sticky top-[56px] z-30 mt-4 px-4 py-3 sm:rounded-2xl sm:border sm:border-black/[0.06]">
         <search className="relative mb-2.5 block">
           <Search className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
           <input
@@ -513,38 +603,59 @@ export function CustomerStorefrontClient({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={lang === 'ID' ? 'Cari nasi goreng, kopi, matcha...' : 'Search menu items...'}
-            className="min-h-[42px] w-full rounded-full border border-black/[0.08] bg-white pl-10 pr-4 text-xs text-zinc-950 outline-none focus:border-apple-blue"
+            className="min-h-[42px] w-full rounded-full border border-black/[0.08] bg-white/95 pl-10 pr-4 text-xs text-zinc-950 outline-none focus:border-apple-blue"
           />
         </search>
 
-        <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto pb-0.5">
+        <div className="no-scrollbar apple-snap-scroller items-center gap-1.5 pb-0.5">
           <button
             type="button"
-            onClick={() => setActiveCategoryId('ALL')}
+            onClick={() => {
+              triggerCausalHaptic(6);
+              setActiveCategoryId('ALL');
+            }}
             className={cn(
-              'shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all',
+              'relative z-10 shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors',
               activeCategoryId === 'ALL'
-                ? 'bg-zinc-950 text-white shadow-sm'
-                : 'bg-white text-zinc-700 hover:bg-zinc-200/70'
+                ? 'text-white'
+                : 'bg-white/85 text-zinc-700 hover:bg-zinc-200/70'
             )}
           >
+            {activeCategoryId === 'ALL' && (
+              <motion.span
+                layoutId="storefront-category-pill"
+                transition={APPLE_SPRINGS.default}
+                className="absolute inset-0 -z-10 rounded-full bg-zinc-950 shadow-sm"
+              />
+            )}
             {lang === 'ID' ? 'Semua Menu' : 'All Items'}
           </button>
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => setActiveCategoryId(cat.id)}
-              className={cn(
-                'shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all',
-                activeCategoryId === cat.id
-                  ? 'bg-zinc-950 text-white shadow-sm'
-                  : 'bg-white text-zinc-700 hover:bg-zinc-200/70'
-              )}
-            >
-              {lang === 'ID' ? cat.nameId : cat.nameEn || cat.nameId}
-            </button>
-          ))}
+          {categories.map((cat) => {
+            const isSelected = activeCategoryId === cat.id;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => {
+                  triggerCausalHaptic(6);
+                  setActiveCategoryId(cat.id);
+                }}
+                className={cn(
+                  'relative z-10 shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors',
+                  isSelected ? 'text-white' : 'bg-white/85 text-zinc-700 hover:bg-zinc-200/70'
+                )}
+              >
+                {isSelected && (
+                  <motion.span
+                    layoutId="storefront-category-pill"
+                    transition={APPLE_SPRINGS.default}
+                    className="absolute inset-0 -z-10 rounded-full bg-zinc-950 shadow-sm"
+                  />
+                )}
+                {lang === 'ID' ? cat.nameId : cat.nameEn || cat.nameId}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -616,7 +727,7 @@ export function CustomerStorefrontClient({
                           <button
                             type="button"
                             onClick={() => updateCartQty(item.id, 1)}
-                            className="inline-flex min-h-[38px] items-center gap-1 rounded-full bg-zinc-950 px-4 py-1.5 text-xs font-bold text-white transition-transform hover:bg-apple-blue active:scale-95"
+                            className="apple-interactive inline-flex min-h-[38px] items-center gap-1 rounded-full bg-zinc-950 px-4 py-1.5 text-xs font-bold text-white hover:bg-apple-blue"
                           >
                             <Plus className="h-3.5 w-3.5" />
                             <span>{lang === 'ID' ? 'Tambah' : 'Add'}</span>
@@ -627,7 +738,7 @@ export function CustomerStorefrontClient({
                               type="button"
                               aria-label={`Kurangi ${title}`}
                               onClick={() => updateCartQty(item.id, -1)}
-                              className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-zinc-950 shadow-sm active:scale-90"
+                              className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-zinc-950 shadow-sm"
                             >
                               <Minus className="h-3.5 w-3.5" />
                             </button>
@@ -638,7 +749,7 @@ export function CustomerStorefrontClient({
                               type="button"
                               aria-label={`Tambah ${title}`}
                               onClick={() => updateCartQty(item.id, 1)}
-                              className="flex h-7 w-7 items-center justify-center rounded-full bg-apple-blue text-white shadow-sm active:scale-90"
+                              className="flex h-7 w-7 items-center justify-center rounded-full bg-apple-blue text-white shadow-sm"
                             >
                               <Plus className="h-3.5 w-3.5" />
                             </button>
@@ -654,30 +765,30 @@ export function CustomerStorefrontClient({
         ))}
       </div>
 
-      {/* Sticky Bottom Floating Cart Bar */}
+      {/* Sticky Bottom Floating Cart Bar (Materialize Glass Layer §12 + Sheet Spring §4) */}
       <AnimatePresence>
         {cartSummary.totalItems > 0 && (
           <motion.div
-            initial={{ y: 90, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 90, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+            initial={{ y: 76, opacity: 0, scale: 0.94 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 76, opacity: 0, scale: 0.94 }}
+            transition={APPLE_SPRINGS.sheet}
             className="fixed inset-x-0 bottom-4 z-40 mx-auto max-w-2xl px-4"
           >
             <button
               type="button"
               onClick={handleOpenCheckout}
-              className="flex w-full items-center justify-between rounded-full bg-zinc-950/95 px-5 py-3.5 text-white shadow-apple-float backdrop-blur-xl transition-transform hover:bg-zinc-900 active:scale-[0.98]"
+              className="apple-material-dark apple-interactive flex w-full items-center justify-between rounded-full px-5 py-3.5 text-white hover:brightness-110"
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-apple-blue font-mono text-xs font-bold tabular-nums text-white">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-apple-blue font-mono text-xs font-bold tabular-nums text-white shadow-sm">
                   {cartSummary.totalItems}
                 </div>
                 <div className="text-left">
-                  <p className="text-xs font-bold">
+                  <p className="text-xs font-bold tracking-tight">
                     {lang === 'ID' ? 'Lihat Keranjang & Pesan' : 'View Order Basket'}
                   </p>
-                  <p className="text-[11px] text-zinc-300">
+                  <p className="apple-caption text-[11px] text-zinc-300">
                     {orderType === OrderType.WALK_IN_TABLE
                       ? tableNumber || 'Dine-In'
                       : orderType === OrderType.SELF_DELIVERY
@@ -698,32 +809,46 @@ export function CustomerStorefrontClient({
         )}
       </AnimatePresence>
 
-      {/* Screen 5: Frictionless Guest Checkout Native <dialog> Modal */}
+      {/* Screen 5: Frictionless Guest Checkout Native <dialog> Modal with 1:1 Drag & Rubber-Banding */}
       <dialog
         ref={checkoutDialogRef}
         aria-labelledby="checkout-modal-title"
+        style={{
+          transform: sheetDragY !== 0 ? `translateY(${sheetDragY}px)` : undefined,
+          transition: isDraggingSheet ? 'none' : 'transform 280ms cubic-bezier(0.22, 1, 0.36, 1)',
+        }}
         className="w-full max-w-lg rounded-[28px] border border-black/10 bg-white p-0 shadow-apple-lg"
       >
-        <div className="flex items-center justify-between border-b border-black/[0.06] px-6 py-4">
-          <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-apple-blue">
-              100% Zero-Login Checkout
-            </span>
-            <h2 id="checkout-modal-title" className="text-lg font-bold text-zinc-950">
-              {lang === 'ID' ? 'Konfirmasi Pesanan Anda' : 'Confirm Your Order'}
-            </h2>
+        {/* Direct Manipulation Sheet Grab Handle (§2, §6, §9) */}
+        <div
+          onPointerDown={handleSheetPointerDown}
+          onPointerMove={handleSheetPointerMove}
+          onPointerUp={handleSheetPointerUp}
+          onPointerCancel={handleSheetPointerUp}
+          className="cursor-grab touch-none select-none border-b border-black/[0.06] px-6 pb-3.5 pt-2.5 active:cursor-grabbing"
+        >
+          <div className="mx-auto mb-2.5 h-1.5 w-11 rounded-full bg-zinc-300/90" />
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="apple-caption text-[10px] font-bold uppercase text-apple-blue">
+                100% Zero-Login Checkout • Drag Down to Dismiss
+              </span>
+              <h2 id="checkout-modal-title" className="text-lg font-bold text-zinc-950">
+                {lang === 'ID' ? 'Konfirmasi Pesanan Anda' : 'Confirm Your Order'}
+              </h2>
+            </div>
+            <button
+              type="button"
+              aria-label="Tutup checkout"
+              onClick={() => checkoutDialogRef.current?.close()}
+              className="rounded-full p-2 text-zinc-500 hover:bg-zinc-100"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
-          <button
-            type="button"
-            aria-label="Tutup checkout"
-            onClick={() => checkoutDialogRef.current?.close()}
-            className="rounded-full p-2 text-zinc-500 hover:bg-zinc-100"
-          >
-            <X className="h-4 w-4" />
-          </button>
         </div>
 
-        <form onSubmit={handlePlaceOrder} className="max-h-[82vh] overflow-y-auto p-6 space-y-5">
+        <form onSubmit={handlePlaceOrder} className="max-h-[80vh] space-y-5 overflow-y-auto p-6">
           {checkoutError && (
             <div
               role="alert"
@@ -920,22 +1045,17 @@ export function CustomerStorefrontClient({
           <button
             type="submit"
             disabled={submitting}
-            className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full bg-apple-blue px-6 py-3 text-sm font-bold text-white shadow-apple-sm transition-all hover:bg-apple-blueHover active:scale-[0.98] disabled:opacity-60"
+            className="apple-interactive flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full bg-apple-blue px-6 py-3 text-sm font-bold text-white shadow-apple-sm hover:bg-apple-blueHover disabled:opacity-60"
           >
             {submitting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <CheckCircle2 className="h-4 w-4" />
             )}
-            <span>
-              {lang === 'ID'
-                ? 'Place Order & Request Confirmation'
-                : 'Place Order & Request Confirmation'}
-            </span>
+            <span>Place Order & Request Confirmation</span>
           </button>
         </form>
       </dialog>
     </div>
   );
 }
-

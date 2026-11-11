@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { Category, MenuItem, Merchant } from '@/types/schema';
 import { cn, formatIdr } from '@/lib/utils';
+import { motion } from 'framer-motion';
+import { APPLE_SPRINGS, triggerCausalHaptic } from '@/lib/apple-motion';
 
 export default function AdminMenuPage() {
   const [merchant, setMerchant] = useState<Merchant | null>(null);
@@ -509,17 +511,19 @@ export default function AdminMenuPage() {
                               type="button"
                               role="switch"
                               aria-checked={!item.isSoldOut}
-                              onClick={() => handleToggleSoldOut(item)}
+                              onClick={() => {
+                                triggerCausalHaptic(8);
+                                handleToggleSoldOut(item);
+                              }}
                               className={cn(
-                                'relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors',
-                                item.isSoldOut ? 'bg-red-500' : 'bg-apple-green'
+                                'relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full p-1 transition-colors',
+                                item.isSoldOut ? 'justify-start bg-red-500' : 'justify-end bg-apple-green'
                               )}
                             >
-                              <span
-                                className={cn(
-                                  'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
-                                  item.isSoldOut ? 'translate-x-1' : 'translate-x-6'
-                                )}
+                              <motion.span
+                                layout
+                                transition={APPLE_SPRINGS.default}
+                                className="inline-block h-4 w-4 rounded-full bg-white shadow"
                               />
                             </button>
                             <span

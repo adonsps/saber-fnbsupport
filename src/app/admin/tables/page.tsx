@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { Branch, Merchant, TableSession } from '@/types/schema';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
+import { APPLE_SPRINGS, triggerCausalHaptic } from '@/lib/apple-motion';
 import { TableQrPdfDocument, TableWithQrDataUrl } from '@/components/TableQrPdfDocument';
 
 export default function AdminTablesPage() {
@@ -198,19 +200,32 @@ export default function AdminTablesPage() {
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="inline-flex rounded-full border border-zinc-200 bg-[#F5F5F7] p-1">
-            {(['A4', 'A5'] as const).map((sz) => (
-              <button
-                key={sz}
-                type="button"
-                onClick={() => setPageSize(sz)}
-                className={cn(
-                  'rounded-full px-3.5 py-1.5 text-xs font-bold transition-all',
-                  pageSize === sz ? 'bg-white text-zinc-950 shadow-sm' : 'text-zinc-500'
-                )}
-              >
-                {sz} Sheet
-              </button>
-            ))}
+            {(['A4', 'A5'] as const).map((sz) => {
+              const active = pageSize === sz;
+              return (
+                <button
+                  key={sz}
+                  type="button"
+                  onClick={() => {
+                    triggerCausalHaptic(6);
+                    setPageSize(sz);
+                  }}
+                  className={cn(
+                    'relative z-10 rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors',
+                    active ? 'text-zinc-950' : 'text-zinc-500 hover:text-zinc-900'
+                  )}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="tables-pagesize-pill"
+                      transition={APPLE_SPRINGS.default}
+                      className="absolute inset-0 -z-10 rounded-full bg-white shadow-sm"
+                    />
+                  )}
+                  {sz} Sheet
+                </button>
+              );
+            })}
           </div>
 
           <button

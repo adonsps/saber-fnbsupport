@@ -35,13 +35,17 @@ const config: Config = {
         },
       },
       boxShadow: {
-        'apple-sm': '0 2px 10px -2px rgba(0, 0, 0, 0.04), 0 1px 3px 0 rgba(0, 0, 0, 0.03)',
-        'apple-md': '0 8px 24px -4px rgba(0, 0, 0, 0.06), 0 2px 6px -1px rgba(0, 0, 0, 0.04)',
-        'apple-lg': '0 20px 44px -10px rgba(0, 0, 0, 0.12), 0 4px 12px -2px rgba(0, 0, 0, 0.06)',
-        'apple-float': '0 24px 48px -12px rgba(0, 0, 0, 0.22), 0 0 1px 1px rgba(255, 255, 255, 0.12)',
+        'apple-sm':
+          '0 2px 10px -2px rgba(0, 0, 0, 0.04), 0 1px 3px 0 rgba(0, 0, 0, 0.03), inset 0 1px 0 0 rgba(255, 255, 255, 0.75)',
+        'apple-md':
+          '0 10px 28px -6px rgba(0, 0, 0, 0.07), 0 2px 6px -1px rgba(0, 0, 0, 0.04), inset 0 1px 0 0 rgba(255, 255, 255, 0.85)',
+        'apple-lg':
+          '0 22px 48px -12px rgba(0, 0, 0, 0.14), 0 4px 14px -2px rgba(0, 0, 0, 0.06), inset 0 1px 0 0 rgba(255, 255, 255, 0.9)',
+        'apple-float':
+          '0 24px 48px -12px rgba(0, 0, 0, 0.26), 0 4px 12px 0 rgba(0, 0, 0, 0.12), inset 0 1px 0 0 rgba(255, 255, 255, 0.22)',
       },
       borderRadius: {
-        'apple': '22px',
+        apple: '22px',
         'apple-sm': '14px',
       },
     },
@@ -50,4 +54,3 @@ const config: Config = {
 };
 
 export default config;
-
