@@ -3,10 +3,13 @@
 import React, { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 import {
   Check,
   Clock,
   CreditCard,
+  Eye,
+  EyeSlash,
   QrCode,
   Storefront,
   Truck,
@@ -57,11 +60,15 @@ function OnboardingWizardContent() {
   } | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Step 1: Merchant Profile
+  // Step 1: Merchant Profile & Protected Login Credentials
   const [businessName, setBusinessName] = useState('');
   const [slug, setSlug] = useState('');
   const [ownerName, setOwnerName] = useState('');
   const [ownerWhatsapp, setOwnerWhatsapp] = useState('');
+  const [accountEmail, setAccountEmail] = useState('');
+  const [accountPassword, setAccountPassword] = useState('');
+  const [showAccountPassword, setShowAccountPassword] = useState(false);
+  const [isEditingDemo, setIsEditingDemo] = useState(false);
   const [slugStatus, setSlugStatus] = useState<{
     checking: boolean;
     valid: boolean;
@@ -106,10 +113,13 @@ function OnboardingWizardContent() {
     if (onboardingMode === 'new') {
       setEditingMerchantId(null);
       setEditingOriginalSlug('');
+      setIsEditingDemo(false);
       setBusinessName('');
       setSlug('');
       setOwnerName('');
       setOwnerWhatsapp('');
+      setAccountEmail('');
+      setAccountPassword('');
       setAddress('');
       setBankAccountNumber('');
       setBankAccountHolder('');
@@ -123,10 +133,13 @@ function OnboardingWizardContent() {
         if (data.merchant) {
           setEditingMerchantId(data.merchant.id);
           setEditingOriginalSlug(data.merchant.slug);
+          setIsEditingDemo(Boolean(data.merchant.isDemo || data.merchant.slug === 'warungmakan'));
           setBusinessName(data.merchant.name);
           setSlug(data.merchant.slug);
           setOwnerName(data.merchant.ownerName);
           setOwnerWhatsapp(data.merchant.ownerWhatsapp);
+          setAccountEmail(data.merchant.email || '');
+          setAccountPassword('');
         }
         if (data.branch) {
           setAddress(data.branch.address);
@@ -254,6 +267,16 @@ function OnboardingWizardContent() {
         setErrorMsg('Lengkapi Nama Bisnis, Nama Pemilik, dan Nomor WhatsApp.');
         return;
       }
+      if (onboardingMode === 'new') {
+        if (!accountEmail.trim() || !accountEmail.includes('@')) {
+          setErrorMsg('Masukkan email pemilik yang valid untuk akun login restoran Anda.');
+          return;
+        }
+        if (accountPassword.length < 8) {
+          setErrorMsg('Kata sandi akun minimal 8 karakter.');
+          return;
+        }
+      }
       if (!slugStatus.valid || !slugStatus.available) {
         setErrorMsg('Pastikan subdomain slug valid dan tersedia sebelum melanjutkan.');
         return;
@@ -280,6 +303,8 @@ function OnboardingWizardContent() {
         body: JSON.stringify({
           mode: onboardingMode === 'new' ? 'create' : 'update',
           merchantId: onboardingMode === 'edit' ? editingMerchantId || undefined : undefined,
+          email: accountEmail.trim() ? accountEmail.trim().toLowerCase() : undefined,
+          password: accountPassword || undefined,
           businessName,
           slug,
           ownerName,
@@ -436,14 +461,27 @@ function OnboardingWizardContent() {
             serta menerima pembayaran QRIS 0% komisi tanpa konfigurasi DNS.
           </p>
 
-          <div className="mx-auto mt-6 max-w-md rounded-2xl border border-black/[0.06] bg-[#F5F5F7] p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
-              Live Storefront URL
-            </p>
-            <p className="mt-1 break-all font-mono text-sm font-bold text-apple-blue">
-              {launchSuccess.subdomainUrl}
-            </p>
-          </div>
+            <div className="mx-auto mt-6 max-w-md space-y-3 rounded-2xl border border-black/[0.06] bg-[#F5F5F7] p-4">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                  Live Storefront URL
+                </p>
+                <p className="mt-1 break-all font-mono text-sm font-bold text-apple-blue">
+                  {launchSuccess.subdomainUrl}
+                </p>
+              </div>
+              {accountEmail && !isEditingDemo && (
+                <div className="border-t border-black/[0.08] pt-3">
+                  <p className="text-[11px] text-[#515154]">
+                    Akun dilindungi login:{' '}
+                    <strong className="font-mono text-[#1D1D1F]">{accountEmail}</strong> ·{' '}
+                    <Link href="/login" className="font-semibold text-apple-blue hover:underline">
+                      Halaman Login
+                    </Link>
+                  </p>
+                </div>
+              )}
+            </div>
 
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <button
@@ -591,6 +629,86 @@ function OnboardingWizardContent() {
                       Saber Central WA Bot akan mengirim Magic Link pesanan baru ke nomor ini.
                     </p>
                   </div>
+
+                  {!isEditingDemo && (
+                    <>
+                      <div>
+                        <label
+                          htmlFor="accountEmail"
+                          className="block text-xs font-semibold text-zinc-800"
+                        >
+                          Email Akun Login Pemilik{' '}
+                          {onboardingMode === 'new' && <span className="text-red-500">*</span>}
+                        </label>
+                        <input
+                          id="accountEmail"
+                          name="email"
+                          type="email"
+                          autoComplete="username"
+                          spellCheck={false}
+                          autoCorrect="off"
+                          autoCapitalize="none"
+                          required={onboardingMode === 'new'}
+                          value={accountEmail}
+                          onChange={(e) => setAccountEmail(e.target.value)}
+                          placeholder="pemilik@restorananda.com"
+                          className="mt-1.5 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 px-4 text-sm text-zinc-950 outline-none transition-all focus:border-apple-blue focus:bg-white focus:ring-4 focus:ring-apple-blue/10"
+                        />
+                        <p className="mt-1 text-[11px] text-zinc-500">
+                          Digunakan untuk masuk secara privat ke dasbor restoran Anda.
+                        </p>
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="accountPassword"
+                          className="block text-xs font-semibold text-zinc-800"
+                        >
+                          {onboardingMode === 'new'
+                            ? 'Kata Sandi Akun (Min. 8 Karakter)'
+                            : 'Kata Sandi Baru (Opsional)'}{' '}
+                          {onboardingMode === 'new' && <span className="text-red-500">*</span>}
+                        </label>
+                        <div className="relative mt-1.5">
+                          <input
+                            id="accountPassword"
+                            name="new-password"
+                            type={showAccountPassword ? 'text' : 'password'}
+                            autoComplete="new-password"
+                            minLength={onboardingMode === 'new' ? 8 : undefined}
+                            required={onboardingMode === 'new'}
+                            aria-describedby="onboarding-pw-help"
+                            value={accountPassword}
+                            onChange={(e) => setAccountPassword(e.target.value)}
+                            placeholder={
+                              onboardingMode === 'new'
+                                ? 'Minimal 8 karakter'
+                                : 'Kosongkan jika tidak diubah'
+                            }
+                            className="min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 pl-4 pr-12 text-sm text-zinc-950 outline-none transition-all focus:border-apple-blue focus:bg-white focus:ring-4 focus:ring-apple-blue/10"
+                          />
+                          <button
+                            type="button"
+                            aria-pressed={showAccountPassword}
+                            aria-label={
+                              showAccountPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'
+                            }
+                            onClick={() => setShowAccountPassword((prev) => !prev)}
+                            className="absolute right-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl text-[#515154] hover:bg-black/[0.05]"
+                          >
+                            {showAccountPassword ? (
+                              <EyeSlash aria-hidden="true" className="h-4 w-4" />
+                            ) : (
+                              <Eye aria-hidden="true" className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
+                        <p id="onboarding-pw-help" className="mt-1 text-[11px] text-zinc-500">
+                          Melindungi dasbor restoran Anda dari akses pengguna lain.
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </div>
               </motion.div>
             )}

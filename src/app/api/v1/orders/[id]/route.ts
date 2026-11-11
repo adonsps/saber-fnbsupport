@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getStore } from '@/lib/store';
+import { getStore, sanitizeMerchant } from '@/lib/store';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +24,7 @@ export async function GET(
   return NextResponse.json(
     {
       order,
-      merchant,
+      merchant: sanitizeMerchant(merchant),
       branch,
     },
     { headers: { 'Cache-Control': 'no-store' } }

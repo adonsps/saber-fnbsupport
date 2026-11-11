@@ -37,12 +37,23 @@ export interface Merchant {
   id: string;
   name: string;
   slug: string;
+  email?: string;
+  passwordHash?: string;
+  passwordSalt?: string;
   ownerName: string;
   ownerWhatsapp: string;
   isStoreOpen: boolean;
   isDemo?: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export type PublicMerchant = Omit<Merchant, 'passwordHash' | 'passwordSalt'>;
+
+export interface PasswordResetRecord {
+  merchantId: string;
+  otpHash: string;
+  expiresAt: string;
 }
 
 export interface Branch {

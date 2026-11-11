@@ -1,10 +1,12 @@
 import { cookies, headers } from 'next/headers';
 import {
   ACTIVE_MERCHANT_COOKIE,
+  SESSION_COOKIE,
+  getDemoMerchant,
   getScopedMerchantBundle,
   getStore,
   isDemoMerchant,
-  resolveWorkspaceMerchant,
+  resolveAuthorizedWorkspaceMerchant,
 } from '@/lib/store';
 import { getOriginFromHeaders } from '@/lib/utils';
 import {
@@ -18,9 +20,17 @@ export default async function HomePage() {
   const store = getStore();
   const cookieStore = await cookies();
   const reqHeaders = await headers();
+
+  const sessionCookie = cookieStore.get(SESSION_COOKIE)?.value;
   const activeSlugCookie = cookieStore.get(ACTIVE_MERCHANT_COOKIE)?.value;
 
-  const activeMerchant = resolveWorkspaceMerchant(store, activeSlugCookie);
+  const { merchant: activeMerchant, authenticatedMerchant } =
+    resolveAuthorizedWorkspaceMerchant(store, {
+      sessionCookie,
+      activeSlugCookie,
+    });
+
+  const demoMerchant = getDemoMerchant(store);
   const origin = getOriginFromHeaders(reqHeaders);
   const displayHost = (
     origin ||
@@ -40,6 +50,7 @@ export default async function HomePage() {
       id: m.id,
       name: m.name,
       slug: m.slug,
+      email: m.email,
       ownerName: m.ownerName,
       ownerWhatsapp: m.ownerWhatsapp,
       bankName: bundle.branch?.bankName || 'QRIS / Transfer Bank',
@@ -53,14 +64,13 @@ export default async function HomePage() {
     };
   };
 
-  const summaries = store.merchants.map(buildSummary);
-  const activeSummary =
-    summaries.find((s) => s.id === activeMerchant.id) || buildSummary(activeMerchant);
-
   return (
     <PortalLandingClient
-      activeMerchant={activeSummary}
-      merchants={summaries}
+      activeMerchant={buildSummary(activeMerchant)}
+      authenticatedMerchant={
+        authenticatedMerchant ? buildSummary(authenticatedMerchant) : null
+      }
+      demoMerchant={buildSummary(demoMerchant)}
       displayHost={displayHost}
       fonnteConfigured={Boolean(process.env.FONNTE_API_TOKEN)}
     />

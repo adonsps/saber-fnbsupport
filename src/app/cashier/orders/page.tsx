@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import {
   Minus,
@@ -77,6 +78,7 @@ const KANBAN_COLUMNS: Array<{
 ];
 
 export default function CashierKanbanPage() {
+  const router = useRouter();
   const [merchant, setMerchant] = useState<Merchant | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [tables, setTables] = useState<TableSession[]>([]);
@@ -144,6 +146,12 @@ export default function CashierKanbanPage() {
       const query = magicToken ? `?magicToken=${encodeURIComponent(magicToken)}` : '';
       const res = await fetch(`/api/v1/orders${query}`, { cache: 'no-store' });
       const data = await res.json();
+
+      if ((res.status === 401 || res.status === 403) && data.requiresAuth) {
+        const nextUrl = `${window.location.pathname}${window.location.search}`;
+        router.replace(`/login?next=${encodeURIComponent(nextUrl)}`);
+        return;
+      }
 
       const fetchedOrders: Order[] = data.orders || [];
       const pendingCount = fetchedOrders.filter(

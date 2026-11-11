@@ -1,21 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { hashPassword, sanitizeMerchant, signSessionToken } from '@/lib/auth';
 import {
   ACTIVE_MERCHANT_COOKIE,
+  SESSION_COOKIE,
   createStarterCatalogForBranch,
   createUuid,
   DEFAULT_QRIS_SVG,
+  dispatchWhatsAppNotification,
+  getAuthenticatedMerchant,
+  getDemoMerchant,
   getMerchantBySlug,
   getScopedMerchantBundle,
   getStore,
   isDemoMerchant,
-  resolveWorkspaceMerchant,
+  resolveAuthorizedWorkspaceMerchant,
   saveStore,
 } from '@/lib/store';
 import {
   buildStorefrontUrl,
   getOriginFromHeaders,
   isReservedSlug,
+  normalizeBaseOrigin,
   normalizeWhatsapp,
 } from '@/lib/utils';
 import { TableSession } from '@/types/schema';
@@ -25,6 +31,8 @@ export const dynamic = 'force-dynamic';
 const OnboardSchema = z.object({
   mode: z.enum(['create', 'update']).optional(),
   merchantId: z.string().optional(),
+  email: z.string().email('Masukkan alamat email akun yang valid.').optional(),
+  password: z.string().optional(),
   businessName: z.string().min(2, 'Nama bisnis wajib diisi'),
   slug: z.string().regex(/^[a-z0-9-]+$/, 'Slug tidak valid'),
   ownerName: z.string().min(2, 'Nama pemilik wajib diisi'),
@@ -41,20 +49,44 @@ const OnboardSchema = z.object({
   bankAccountHolder: z.string().min(2, 'Nama pemilik rekening wajib diisi'),
 });
 
+function isHttpsRequest(req: NextRequest): boolean {
+  const proto = req.headers.get('x-forwarded-proto')?.split(',')[0].trim();
+  if (proto) return proto === 'https';
+  return req.url.startsWith('https://');
+}
+
 export async function GET(req: NextRequest) {
   const store = getStore();
   const explicitSlug = req.nextUrl.searchParams.get('slug');
-  const cookieSlug = req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
-  const merchant = resolveWorkspaceMerchant(store, explicitSlug || cookieSlug);
+  const { merchant, authenticatedMerchant, deniedRequestedSlug } =
+    resolveAuthorizedWorkspaceMerchant(store, {
+      sessionCookie: req.cookies.get(SESSION_COOKIE)?.value,
+      activeSlugCookie: req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value,
+      requestedSlug: explicitSlug,
+    });
+
+  if (deniedRequestedSlug) {
+    return NextResponse.json(
+      { error: 'Akses ditolak. Anda harus masuk ke akun restoran tersebut.' },
+      { status: 403 }
+    );
+  }
+
   const bundle = getScopedMerchantBundle(store, merchant);
+  const demo = getDemoMerchant(store);
+  const visibleMerchants = authenticatedMerchant
+    ? [demo, authenticatedMerchant]
+    : [demo];
 
   return NextResponse.json({
-    merchant: bundle.merchant,
+    authenticated: Boolean(authenticatedMerchant),
+    authenticatedMerchant: authenticatedMerchant ? sanitizeMerchant(authenticatedMerchant) : null,
+    merchant: sanitizeMerchant(bundle.merchant),
     branch: bundle.branch,
     categories: bundle.categories,
     menuItems: bundle.menuItems,
     tableSessions: bundle.tables,
-    merchants: store.merchants.map((m) => ({
+    merchants: visibleMerchants.map((m) => ({
       id: m.id,
       name: m.name,
       slug: m.slug,
@@ -69,6 +101,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const parsed = OnboardSchema.safeParse({
       ...body,
+      email: body.email ? String(body.email).trim().toLowerCase() : undefined,
+      password: body.password ? String(body.password) : undefined,
       maxDeliveryRadiusKm: Number(body.maxDeliveryRadiusKm || 0),
       deliveryFeeIdr: Number(body.deliveryFeeIdr || 0),
     });
@@ -90,22 +124,26 @@ export async function POST(req: NextRequest) {
     }
 
     const store = getStore();
-    const origin = getOriginFromHeaders(req.headers);
+    const origin = normalizeBaseOrigin(getOriginFromHeaders(req.headers));
     const now = new Date().toISOString();
-    const cookieSlug = req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
+    const authedMerchant = getAuthenticatedMerchant(
+      store,
+      req.cookies.get(SESSION_COOKIE)?.value
+    );
+    const activeCookieSlug = req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
 
     const existingBySlug = getMerchantBySlug(store, cleanSlug);
     const targetById = data.merchantId
       ? store.merchants.find((m) => m.id === data.merchantId)
       : undefined;
 
-    // Create brand-new merchant when explicitly requested OR when slug doesn't belong to demo warungmakan in new flow
     const shouldCreate =
       data.mode === 'create' ||
       (!targetById && !existingBySlug && cleanSlug !== 'warungmakan' && data.mode !== 'update');
 
     let merchant = targetById || existingBySlug;
     let branch;
+    let newlyCreated = false;
 
     if (shouldCreate) {
       if (existingBySlug) {
@@ -115,6 +153,31 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      if (!data.email) {
+        return NextResponse.json(
+          { error: 'Alamat email wajib diisi untuk membuat akun pemilik restoran.' },
+          { status: 400 }
+        );
+      }
+
+      if (!data.password || data.password.length < 8) {
+        return NextResponse.json(
+          { error: 'Kata sandi minimal 8 karakter wajib diisi untuk melindungi akun Anda.' },
+          { status: 400 }
+        );
+      }
+
+      const emailTaken = store.merchants.some(
+        (m) => !isDemoMerchant(m) && m.email?.toLowerCase() === data.email?.toLowerCase()
+      );
+      if (emailTaken) {
+        return NextResponse.json(
+          { error: 'Email sudah terdaftar pada akun restoran lain. Silakan masuk lewat halaman Login.' },
+          { status: 409 }
+        );
+      }
+
+      const { salt, hash } = hashPassword(data.password);
       const newMerchantId = createUuid();
       const newBranchId = createUuid();
 
@@ -122,6 +185,9 @@ export async function POST(req: NextRequest) {
         id: newMerchantId,
         name: data.businessName,
         slug: cleanSlug,
+        email: data.email,
+        passwordSalt: salt,
+        passwordHash: hash,
         ownerName: data.ownerName,
         ownerWhatsapp: normalizeWhatsapp(data.ownerWhatsapp),
         isStoreOpen: true,
@@ -130,6 +196,7 @@ export async function POST(req: NextRequest) {
         updatedAt: now,
       };
       store.merchants.push(merchant);
+      newlyCreated = true;
 
       branch = {
         id: newBranchId,
@@ -150,7 +217,6 @@ export async function POST(req: NextRequest) {
       };
       store.branches.push(branch);
 
-      // Provision starter editable menu categories/dishes & 4 starter table QR sessions
       const starter = createStarterCatalogForBranch(newBranchId, data.businessName);
       store.categories.push(...starter.categories);
       store.menuItems.push(...starter.menuItems);
@@ -172,10 +238,21 @@ export async function POST(req: NextRequest) {
       store.tableSessions.push(...starterTables);
     } else {
       if (!merchant) {
-        merchant = resolveWorkspaceMerchant(store, cookieSlug);
+        const authResolution = resolveAuthorizedWorkspaceMerchant(store, {
+          sessionCookie: req.cookies.get(SESSION_COOKIE)?.value,
+          activeSlugCookie: activeCookieSlug,
+        });
+        merchant = authResolution.merchant;
       }
 
-      // Guard against overwriting demo slug into someone else's taken slug
+      // Authorization check for real merchant accounts
+      if (!isDemoMerchant(merchant) && authedMerchant?.id !== merchant.id) {
+        return NextResponse.json(
+          { error: 'Akses ditolak. Silakan masuk dengan akun pemilik restoran ini terlebih dahulu.' },
+          { status: 403 }
+        );
+      }
+
       if (existingBySlug && existingBySlug.id !== merchant.id) {
         return NextResponse.json(
           { error: `URL toko "/${cleanSlug}" sudah digunakan oleh restoran lain.` },
@@ -183,8 +260,27 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      if (data.email && !isDemoMerchant(merchant)) {
+        const emailConflict = store.merchants.some(
+          (m) => m.id !== merchant!.id && m.email?.toLowerCase() === data.email?.toLowerCase()
+        );
+        if (emailConflict) {
+          return NextResponse.json(
+            { error: 'Alamat email sudah dipakai restoran lain.' },
+            { status: 409 }
+          );
+        }
+        merchant.email = data.email;
+      }
+
+      if (data.password && data.password.length >= 8 && !isDemoMerchant(merchant)) {
+        const { salt, hash } = hashPassword(data.password);
+        merchant.passwordSalt = salt;
+        merchant.passwordHash = hash;
+      }
+
       merchant.name = data.businessName;
-      merchant.slug = cleanSlug;
+      merchant.slug = isDemoMerchant(merchant) ? merchant.slug : cleanSlug;
       merchant.ownerName = data.ownerName;
       merchant.ownerWhatsapp = normalizeWhatsapp(data.ownerWhatsapp);
       merchant.isStoreOpen = true;
@@ -224,18 +320,44 @@ export async function POST(req: NextRequest) {
 
     saveStore(store);
 
+    if (newlyCreated && merchant) {
+      await dispatchWhatsAppNotification({
+        merchantId: merchant.id,
+        recipientPhone: merchant.ownerWhatsapp,
+        recipientRole: 'MERCHANT',
+        eventType: 'NEW_ORDER_MAGIC_LINK',
+        orderNumber: 'ONBOARDING',
+        messageBody: `🎉 *Selamat Datang di Saber Culinary, ${merchant.ownerName}!*\nRestoran *${merchant.name}* sudah aktif.\n\n• URL Menu Pelanggan:\n${origin}/${merchant.slug}\n• Login Portal Pemilik:\n${origin}/login\n(Gunakan email: ${merchant.email})`,
+        magicLinkUrl: `${origin}/login`,
+      });
+    }
+
     const res = NextResponse.json({
       success: true,
-      merchant,
+      merchant: sanitizeMerchant(merchant!),
       branch,
-      miniSiteUrl: `/${merchant.slug}`,
-      subdomainUrl: buildStorefrontUrl(merchant.slug, { baseOrigin: origin }),
+      miniSiteUrl: `/${merchant!.slug}`,
+      subdomainUrl: buildStorefrontUrl(merchant!.slug, { baseOrigin: origin }),
     });
-    res.cookies.set(ACTIVE_MERCHANT_COOKIE, merchant.slug, {
-      path: '/',
+
+    const secureCookie = isHttpsRequest(req);
+    if (!isDemoMerchant(merchant)) {
+      const sessionToken = signSessionToken(merchant!.id, merchant!.slug);
+      res.cookies.set(SESSION_COOKIE, sessionToken, {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: secureCookie,
+        path: '/',
+        maxAge: 60 * 60 * 24 * 14,
+      });
+    }
+    res.cookies.set(ACTIVE_MERCHANT_COOKIE, merchant!.slug, {
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 30,
+      secure: secureCookie,
+      path: '/',
+      maxAge: 60 * 60 * 24 * 14,
     });
+
     return res;
   } catch (err) {
     return NextResponse.json(
@@ -249,11 +371,14 @@ export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
     const store = getStore();
-    const cookieSlug = req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
-    const merchant = resolveWorkspaceMerchant(store, body.slug || cookieSlug);
+    const { merchant, deniedRequestedSlug } = resolveAuthorizedWorkspaceMerchant(store, {
+      sessionCookie: req.cookies.get(SESSION_COOKIE)?.value,
+      activeSlugCookie: req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value,
+      requestedSlug: body.slug,
+    });
 
-    if (!merchant) {
-      return NextResponse.json({ error: 'Merchant tidak ditemukan' }, { status: 404 });
+    if (deniedRequestedSlug) {
+      return NextResponse.json({ error: 'Akses ditolak.' }, { status: 403 });
     }
 
     const bundle = getScopedMerchantBundle(store, merchant);
@@ -274,7 +399,7 @@ export async function PATCH(req: NextRequest) {
     const updatedBundle = getScopedMerchantBundle(store, merchant);
     return NextResponse.json({
       success: true,
-      merchant,
+      merchant: sanitizeMerchant(merchant),
       menuItems: updatedBundle.menuItems,
     });
   } catch (err) {

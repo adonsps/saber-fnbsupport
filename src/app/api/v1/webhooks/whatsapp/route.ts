@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   ACTIVE_MERCHANT_COOKIE,
+  SESSION_COOKIE,
   dispatchWhatsAppNotification,
   getScopedMerchantBundle,
   getStore,
-  resolveWorkspaceMerchant,
+  resolveAuthorizedWorkspaceMerchant,
 } from '@/lib/store';
 import { getOriginFromHeaders, normalizeBaseOrigin, normalizeWhatsapp } from '@/lib/utils';
 
@@ -12,8 +13,10 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const store = getStore();
-  const cookieSlug = req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
-  const merchant = resolveWorkspaceMerchant(store, cookieSlug);
+  const { merchant } = resolveAuthorizedWorkspaceMerchant(store, {
+    sessionCookie: req.cookies.get(SESSION_COOKIE)?.value,
+    activeSlugCookie: req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value,
+  });
   const bundle = getScopedMerchantBundle(store, merchant);
 
   return NextResponse.json({
@@ -29,8 +32,16 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const store = getStore();
-    const cookieSlug = req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
-    const merchant = resolveWorkspaceMerchant(store, body.slug || cookieSlug);
+    const { merchant, deniedRequestedSlug } = resolveAuthorizedWorkspaceMerchant(store, {
+      sessionCookie: req.cookies.get(SESSION_COOKIE)?.value,
+      activeSlugCookie: req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value,
+      requestedSlug: body.slug,
+    });
+
+    if (deniedRequestedSlug) {
+      return NextResponse.json({ error: 'Akses ditolak.' }, { status: 403 });
+    }
+
     const origin = normalizeBaseOrigin(getOriginFromHeaders(req.headers));
 
     const recipientPhone = normalizeWhatsapp(

@@ -3,4 +3,5 @@ node_modules
 .git
 .env*
 .saber-fnb-db.json
+.saber-session-secret
 

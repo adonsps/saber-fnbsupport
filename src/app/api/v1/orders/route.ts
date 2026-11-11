@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   ACTIVE_MERCHANT_COOKIE,
+  SESSION_COOKIE,
   createUuid,
   dispatchWhatsAppNotification,
+  getAuthenticatedMerchant,
   getScopedMerchantBundle,
   getStore,
-  resolveWorkspaceMerchant,
+  isDemoMerchant,
+  resolveAuthorizedWorkspaceMerchant,
+  sanitizeMerchant,
   saveStore,
 } from '@/lib/store';
 import { formatIdr, getOriginFromHeaders, normalizeBaseOrigin } from '@/lib/utils';
@@ -15,34 +19,71 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const store = getStore();
+  const sessionCookie = req.cookies.get(SESSION_COOKIE)?.value;
+  const activeSlugCookie = req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
+  const authedMerchant = getAuthenticatedMerchant(store, sessionCookie);
+
   const magicToken = req.nextUrl.searchParams.get('magicToken');
   const highlightedOrder = magicToken
     ? store.orders.find((o) => o.magicToken === magicToken)
     : undefined;
 
-  // If magicToken points to a specific branch's order, resolve directly to that merchant
-  const branchFromMagic = highlightedOrder
-    ? store.branches.find((b) => b.id === highlightedOrder.branchId)
-    : undefined;
-  const merchantFromMagic = branchFromMagic
-    ? store.merchants.find((m) => m.id === branchFromMagic.merchantId)
-    : undefined;
+  if (highlightedOrder) {
+    const branchFromMagic = store.branches.find((b) => b.id === highlightedOrder.branchId);
+    const merchantFromMagic = branchFromMagic
+      ? store.merchants.find((m) => m.id === branchFromMagic.merchantId)
+      : undefined;
+
+    if (merchantFromMagic) {
+      if (!isDemoMerchant(merchantFromMagic) && authedMerchant?.id !== merchantFromMagic.id) {
+        return NextResponse.json(
+          {
+            requiresAuth: true,
+            error: 'Silakan login sebagai pemilik restoran untuk membuka pesanan ini.',
+          },
+          { status: 401 }
+        );
+      }
+
+      const bundle = getScopedMerchantBundle(store, merchantFromMagic);
+      return NextResponse.json(
+        {
+          merchant: sanitizeMerchant(bundle.merchant),
+          branch: bundle.branch,
+          orders: bundle.orders,
+          tables: bundle.tables,
+          whatsappLogs: bundle.whatsappLogs.slice(0, 25),
+          highlightedOrderId: highlightedOrder.id,
+        },
+        { headers: { 'Cache-Control': 'no-store' } }
+      );
+    }
+  }
 
   const explicitSlug = req.nextUrl.searchParams.get('slug');
-  const cookieSlug = req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
-  const merchant =
-    merchantFromMagic || resolveWorkspaceMerchant(store, explicitSlug || cookieSlug);
+  const { merchant, deniedRequestedSlug } = resolveAuthorizedWorkspaceMerchant(store, {
+    sessionCookie,
+    activeSlugCookie,
+    requestedSlug: explicitSlug,
+  });
+
+  if (deniedRequestedSlug) {
+    return NextResponse.json(
+      { requiresAuth: true, error: 'Akses ditolak.' },
+      { status: 403 }
+    );
+  }
 
   const bundle = getScopedMerchantBundle(store, merchant);
 
   return NextResponse.json(
     {
-      merchant: bundle.merchant,
+      merchant: sanitizeMerchant(bundle.merchant),
       branch: bundle.branch,
       orders: bundle.orders,
       tables: bundle.tables,
       whatsappLogs: bundle.whatsappLogs.slice(0, 25),
-      highlightedOrderId: highlightedOrder?.id || null,
+      highlightedOrderId: null,
     },
     { headers: { 'Cache-Control': 'no-store' } }
   );
@@ -52,18 +93,38 @@ export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
     const store = getStore();
+    const authedMerchant = getAuthenticatedMerchant(
+      store,
+      req.cookies.get(SESSION_COOKIE)?.value
+    );
     const origin = normalizeBaseOrigin(getOriginFromHeaders(req.headers));
 
-    // Action 1: Merge Tables (combine items from sourceOrderId into targetOrderId)
+    const canManageBranch = (branchId: string) => {
+      const branch = store.branches.find((b) => b.id === branchId);
+      const m = branch ? store.merchants.find((mr) => mr.id === branch.merchantId) : undefined;
+      if (!m) return false;
+      return isDemoMerchant(m) || authedMerchant?.id === m.id;
+    };
+
+    // Action 1: Merge Tables (cashier operation — must belong to authorized same branch)
     if (body.action === 'merge_tables') {
       const sourceOrder = store.orders.find((o) => o.id === body.sourceOrderId);
       const targetOrder = store.orders.find((o) => o.id === body.targetOrderId);
 
-      if (!sourceOrder || !targetOrder || sourceOrder.id === targetOrder.id) {
+      if (
+        !sourceOrder ||
+        !targetOrder ||
+        sourceOrder.id === targetOrder.id ||
+        sourceOrder.branchId !== targetOrder.branchId
+      ) {
         return NextResponse.json(
-          { error: 'Pilih dua pesanan meja berbeda untuk digabung.' },
+          { error: 'Pilih dua pesanan meja berbeda dalam cabang yang sama untuk digabung.' },
           { status: 400 }
         );
+      }
+
+      if (!canManageBranch(targetOrder.branchId)) {
+        return NextResponse.json({ error: 'Akses ditolak.' }, { status: 403 });
       }
 
       sourceOrder.items.forEach((srcItem) => {
@@ -129,6 +190,47 @@ export async function PATCH(req: NextRequest) {
 
     const branch = store.branches.find((b) => b.id === order.branchId) || store.branches[0];
     const merchant = store.merchants.find((m) => m.id === branch.merchantId) || store.merchants[0];
+
+    // Action 4: Customer uploads payment receipt proof (customer action allowed via order UUID)
+    if (body.action === 'upload_receipt' && body.receiptImageUrl) {
+      const receipt = {
+        id: createUuid(),
+        orderId: order.id,
+        receiptImageUrl: String(body.receiptImageUrl),
+        uploadedAt: new Date().toISOString(),
+      };
+      order.receipts.unshift(receipt);
+      order.paymentStatus = PaymentStatus.PROOF_UPLOADED;
+      order.orderStatus = OrderStatus.PAYMENT_PENDING_APPROVAL;
+      order.updatedAt = new Date().toISOString();
+      saveStore(store);
+
+      const cashierUrl = `${origin}/cashier/orders?magicToken=${encodeURIComponent(
+        order.magicToken || ''
+      )}`;
+      await dispatchWhatsAppNotification({
+        merchantId: merchant.id,
+        recipientPhone: merchant.ownerWhatsapp,
+        recipientRole: 'MERCHANT',
+        eventType: 'RECEIPT_UPLOADED',
+        orderNumber: order.orderNumber,
+        messageBody: `🧾 *[${merchant.name}] Bukti Bayar Diunggah*\nPesanan *#${order.orderNumber}* (${order.customerName}) sebesar *${formatIdr(order.totalAmountIdr)}* menunggu verifikasi kasir:`,
+        magicLinkUrl: cashierUrl,
+      });
+
+      return NextResponse.json({
+        success: true,
+        order,
+      });
+    }
+
+    // All remaining actions are strictly Merchant / Cashier operations
+    if (!canManageBranch(order.branchId)) {
+      return NextResponse.json(
+        { error: 'Akses ditolak. Login pemilik restoran dibutuhkan.' },
+        { status: 403 }
+      );
+    }
 
     // Action 2: Move Table
     if (body.action === 'move_table' && body.newTableNumber) {
@@ -232,41 +334,6 @@ export async function PATCH(req: NextRequest) {
       });
     }
 
-    // Action 4: Customer uploads payment receipt proof
-    if (body.action === 'upload_receipt' && body.receiptImageUrl) {
-      const receipt = {
-        id: createUuid(),
-        orderId: order.id,
-        receiptImageUrl: String(body.receiptImageUrl),
-        uploadedAt: new Date().toISOString(),
-      };
-      order.receipts.unshift(receipt);
-      order.paymentStatus = PaymentStatus.PROOF_UPLOADED;
-      order.orderStatus = OrderStatus.PAYMENT_PENDING_APPROVAL;
-      order.updatedAt = new Date().toISOString();
-      saveStore(store);
-
-      const cashierUrl = `${origin}/cashier/orders?magicToken=${encodeURIComponent(
-        order.magicToken || ''
-      )}`;
-      await dispatchWhatsAppNotification({
-        merchantId: merchant.id,
-        recipientPhone: merchant.ownerWhatsapp,
-        recipientRole: 'MERCHANT',
-        eventType: 'RECEIPT_UPLOADED',
-        orderNumber: order.orderNumber,
-        messageBody: `🧾 *[${merchant.name}] Bukti Bayar Diunggah*\nPesanan *#${order.orderNumber}* (${order.customerName}) sebesar *${formatIdr(order.totalAmountIdr)}* menunggu verifikasi kasir:`,
-        magicLinkUrl: cashierUrl,
-      });
-
-      const bundle = getScopedMerchantBundle(store, merchant);
-      return NextResponse.json({
-        success: true,
-        order,
-        orders: bundle.orders,
-      });
-    }
-
     // Action 5: Cashier verifies or rejects receipt
     if (body.action === 'verify_receipt') {
       const approved = Boolean(body.approved);
@@ -347,7 +414,6 @@ export async function PATCH(req: NextRequest) {
         });
       }
 
-      // Automated Session Reset when order transitions to COMPLETED
       if (nextStatus === OrderStatus.COMPLETED && order.tableNumber) {
         const tbl = store.tableSessions.find(
           (t) =>
