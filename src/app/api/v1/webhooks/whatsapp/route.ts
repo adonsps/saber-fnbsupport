@@ -20,9 +20,9 @@ export async function GET(req: NextRequest) {
   const bundle = getScopedMerchantBundle(store, merchant);
 
   return NextResponse.json({
-    gateway: 'Saber x Fonnte Automated WhatsApp API',
+    gateway: 'Saber Centralized Automated WhatsApp Gateway',
     status: process.env.FONNTE_API_TOKEN ? 'CONNECTED' : 'TOKEN_MISSING',
-    fonnteConfigured: Boolean(process.env.FONNTE_API_TOKEN),
+    gatewayConfigured: Boolean(process.env.FONNTE_API_TOKEN),
     zeroMerchantConfig: true,
     logs: bundle.whatsappLogs,
   });
@@ -49,10 +49,10 @@ export async function POST(req: NextRequest) {
     );
     const recipientRole = body.recipientRole === 'MERCHANT' ? 'MERCHANT' : 'CUSTOMER';
     const eventType = body.eventType || 'STOCK_CONFIRMED_INVOICE';
-    const orderNumber = String(body.orderNumber || 'TEST-FONNTE');
+    const orderNumber = String(body.orderNumber || 'TEST-WA');
     const messageBody = String(
       body.messageBody ||
-        `[SABER x FONNTE] Uji koneksi WhatsApp berhasil untuk *${merchant.name}* (#${orderNumber}).`
+        `[SABER WA BOT] Uji koneksi notifikasi WhatsApp berhasil untuk *${merchant.name}* (#${orderNumber}).`
     );
     const magicLinkUrl = body.magicLinkUrl
       ? String(body.magicLinkUrl).startsWith('http')

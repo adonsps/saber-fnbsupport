@@ -219,13 +219,14 @@ dd {
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   box-shadow: 0 24px 48px -12px rgba(15, 30, 54, 0.22);
+  transform-origin: top right;
   opacity: 0;
-  translate: 0 -6px;
+  transform: scale(0.95) translateY(-6px);
 }
 
 .saber-site-menu[popover]:is(:popover-open, .\:popover-open) {
   opacity: 1;
-  translate: 0 0;
+  transform: scale(1) translateY(0);
 }
 
 .saber-site-menu[popover]::backdrop {
@@ -237,16 +238,16 @@ dd {
   .saber-site-menu[popover] {
     transition:
       opacity 180ms ease-out,
-      translate 200ms cubic-bezier(0.22, 1, 0.36, 1),
-      display 180ms,
-      overlay 180ms;
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      display 220ms,
+      overlay 220ms;
     transition-behavior: allow-discrete;
   }
 
   @starting-style {
     .saber-site-menu[popover]:is(:popover-open, .\:popover-open) {
       opacity: 0;
-      translate: 0 -8px;
+      transform: scale(0.94) translateY(-8px);
     }
   }
 }
@@ -273,6 +274,7 @@ dd {
   backdrop-filter: none;
   box-shadow: none;
   opacity: 1;
+  transform: none;
   translate: none;
 }
 

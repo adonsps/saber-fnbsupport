@@ -72,7 +72,7 @@ export default async function HomePage() {
       }
       demoMerchant={buildSummary(demoMerchant)}
       displayHost={displayHost}
-      fonnteConfigured={Boolean(process.env.FONNTE_API_TOKEN)}
+      whatsappReady={Boolean(process.env.FONNTE_API_TOKEN)}
     />
   );
 }
