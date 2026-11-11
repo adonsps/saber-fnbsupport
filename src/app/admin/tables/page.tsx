@@ -364,14 +364,14 @@ export default function AdminTablesPage() {
         <span>Total Meja: {tables.length}</span>
       </div>
 
-      {/* Active Table QR Grid */}
+      {/* Active Table QR Grid — Signature Tactile Table Passes (.saber-ticket-pass) */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {tables.map((table) => (
           <div
             key={table.id}
-            className="flex flex-col justify-between rounded-[24px] border border-black/[0.06] bg-white p-5 shadow-apple-sm transition-all hover:shadow-apple-md"
+            className="saber-ticket-pass flex flex-col justify-between rounded-[22px] p-5 transition-all hover:shadow-apple-md"
           >
-            <div className="flex items-start justify-between gap-2">
+            <div className="saber-ticket-divider flex items-start justify-between gap-2 pb-3.5">
               <div className="flex items-center gap-2.5">
                 {branch?.logoUrl ? (
                   <img
@@ -380,15 +380,15 @@ export default function AdminTablesPage() {
                     className="h-10 w-10 rounded-xl object-cover ring-1 ring-black/10"
                   />
                 ) : (
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-950 text-white">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1D1D1F] text-white">
                     <QrCode className="h-5 w-5" />
                   </div>
                 )}
                 <div>
-                  <h3 className="text-base font-bold tracking-tight text-zinc-950">
+                  <h3 className="font-mono text-base font-bold tracking-tight text-[#1D1D1F]">
                     {table.tableNumber}
                   </h3>
-                  <p className="text-[11px] text-zinc-500">{merchant?.name}</p>
+                  <p className="text-[11px] font-medium text-[#515154]">{merchant?.name}</p>
                 </div>
               </div>
 
@@ -396,22 +396,22 @@ export default function AdminTablesPage() {
                 className={cn(
                   'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold',
                   table.isOccupied
-                    ? 'bg-amber-500/15 text-amber-800'
-                    : 'bg-emerald-500/15 text-emerald-700'
+                    ? 'bg-amber-500/15 text-[#B25000]'
+                    : 'bg-emerald-500/15 text-[#1D7D32]'
                 )}
               >
                 <span
                   className={cn(
                     'h-1.5 w-1.5 rounded-full',
-                    table.isOccupied ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'
+                    table.isOccupied ? 'bg-[#B25000]' : 'bg-[#1D7D32]'
                   )}
                 />
-                {table.isOccupied ? 'Session Active' : 'Vacant'}
+                {table.isOccupied ? 'Occupied' : 'Vacant'}
               </span>
             </div>
 
             {/* QR Preview Card (mirrors A4/A5 Print Layout) */}
-            <div className="my-4 flex flex-col items-center rounded-2xl border border-black/[0.05] bg-[#F5F5F7]/70 p-4 text-center">
+            <div className="my-4 flex flex-col items-center rounded-2xl border border-black/[0.06] bg-[#F5F5F7] p-4 text-center">
               <div className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-black/5">
                 <img
                   src={table.qrPngDataUrl}
@@ -420,37 +420,37 @@ export default function AdminTablesPage() {
                 />
               </div>
               <p className="mt-3 text-xs font-bold text-apple-blue">Scan to View Menu & Order</p>
-              <p className="mt-1 truncate max-w-full font-mono text-[10px] text-zinc-500">
+              <p className="mt-1 max-w-full truncate font-mono text-[11px] text-[#515154]">
                 {table.qrCodeUrl}
               </p>
-              <div className="mt-2.5 w-full rounded-xl bg-white px-3 py-1.5 text-[10px] text-zinc-600">
-                WiFi: <strong>{table.wifiName}</strong> • Pass:{' '}
-                <strong className="font-mono">{table.wifiPassword}</strong>
+              <div className="mt-2.5 w-full rounded-xl bg-white px-3 py-1.5 text-[11px] text-[#515154]">
+                Wi-Fi: <strong className="text-[#1D1D1F]">{table.wifiName}</strong> • Pass:{' '}
+                <strong className="font-mono text-[#1D1D1F]">{table.wifiPassword}</strong>
               </div>
             </div>
 
-            <div className="no-print flex items-center justify-between gap-2 border-t border-black/[0.05] pt-3">
+            <div className="no-print flex items-center justify-between gap-2 border-t border-black/[0.06] pt-3">
               <Link
                 href={`/${merchant?.slug || 'warungmakan'}?table=${encodeURIComponent(
                   table.tableNumber
                 )}`}
-                className="inline-flex items-center gap-1.5 rounded-full bg-zinc-950 px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-apple-blue transition-colors"
+                className="apple-interactive inline-flex min-h-[40px] items-center gap-1.5 rounded-full bg-apple-blue px-4 py-1.5 text-xs font-semibold text-white hover:bg-apple-blueHover"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
-                <span>Simulasi Scan QR</span>
+                <span>Simulate QR Scan</span>
               </Link>
 
               <div className="flex items-center gap-1">
                 <button
                   type="button"
                   onClick={() => handleResetOccupancy(table)}
-                  title="Toggle status meja Vacant/Occupied"
-                  className="inline-flex items-center gap-1 rounded-full bg-[#F5F5F7] px-3 py-1.5 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-200"
+                  title="Toggle table Vacant or Occupied"
+                  className="apple-interactive inline-flex min-h-[40px] items-center gap-1 rounded-full bg-[#F5F5F7] px-3 py-1.5 text-[11px] font-semibold text-[#1D1D1F] hover:bg-zinc-200"
                 >
                   {table.isOccupied ? (
                     <>
                       <RefreshCw className="h-3 w-3" />
-                      <span>Reset Vacant</span>
+                      <span>Set Vacant</span>
                     </>
                   ) : (
                     <>
@@ -461,9 +461,9 @@ export default function AdminTablesPage() {
                 </button>
                 <button
                   type="button"
-                  aria-label={`Hapus ${table.tableNumber}`}
+                  aria-label={`Delete ${table.tableNumber}`}
                   onClick={() => handleDeleteTable(table.id)}
-                  className="rounded-full p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600"
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-[#515154] hover:bg-red-50 hover:text-[#D70015]"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>

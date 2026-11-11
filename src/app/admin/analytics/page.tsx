@@ -275,19 +275,19 @@ export default function AdminAnalyticsPage() {
           <button
             type="button"
             onClick={handleExportCsv}
-            className="inline-flex min-h-[42px] items-center gap-1.5 rounded-full border border-zinc-300 bg-white px-4 text-xs font-bold text-zinc-800 hover:bg-zinc-50"
+            className="apple-interactive inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-black/[0.12] bg-[#F5F5F7] px-4 text-xs font-bold text-[#1D1D1F] hover:bg-[#EFEFF4]"
           >
-            <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
-            <span>Export Sales Data CSV</span>
+            <FileSpreadsheet className="h-4 w-4 text-[#1D7D32]" />
+            <span>Export Sales CSV</span>
           </button>
 
           <button
             type="button"
             onClick={() => window.print()}
-            className="inline-flex min-h-[42px] items-center gap-1.5 rounded-full bg-zinc-950 px-5 text-xs font-bold text-white hover:bg-apple-blue"
+            className="apple-interactive inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-apple-blue px-5 text-xs font-bold text-white hover:bg-apple-blueHover"
           >
             <Download className="h-4 w-4" />
-            <span>Download Shift Summary PDF</span>
+            <span>Download Shift Report PDF</span>
           </button>
         </div>
       </div>

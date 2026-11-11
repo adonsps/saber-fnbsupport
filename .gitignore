@@ -22,4 +22,7 @@ yarn-error.log*
 # OS
 .DS_Store
 *.pem
+* 2.*
+* 2
+
 

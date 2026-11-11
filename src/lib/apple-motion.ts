@@ -103,3 +103,4 @@ export function triggerCausalHaptic(durationMs: number | number[] = 8): void {
     // Ignore on desktop or restricted contexts
   }
 }
+

@@ -17,7 +17,6 @@ import {
   QrCode,
   RefreshCw,
   Upload,
-  X,
   ZoomIn,
 } from 'lucide-react';
 import { Branch, Merchant, Order, OrderStatus, PaymentStatus, PaymentType } from '@/types/schema';
@@ -172,24 +171,24 @@ export default function LiveOrderTrackingPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 pt-6 sm:px-6">
-      {/* Top Status Card */}
-      <div className="rounded-[28px] border border-black/[0.06] bg-white p-6 shadow-apple-md sm:p-8">
-        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-black/[0.06] pb-5">
+      {/* Signature Tactile Order Pass (.saber-ticket-pass) */}
+      <div className="saber-ticket-pass rounded-[24px] p-6 sm:p-8">
+        <div className="saber-ticket-divider flex flex-wrap items-start justify-between gap-4 pb-5">
           <div>
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-apple-blue/10 px-3 py-1 text-[11px] font-bold text-apple-blue">
-                <span className="h-2 w-2 rounded-full bg-apple-blue animate-pulse" />
-                Live Order Tracking
+                <span className="h-2 w-2 rounded-full bg-apple-blue" />
+                Live Order Pass
               </span>
-              <span className="font-mono text-xs font-bold text-zinc-500">
+              <span className="font-mono text-xs font-bold text-[#515154]">
                 #{order.orderNumber}
               </span>
             </div>
-            <h1 className="mt-2 text-2xl font-bold tracking-tight text-zinc-950">
+            <h1 className="mt-2 font-serif text-2xl font-bold tracking-tight text-[#1D1D1F]">
               {merchant?.name}
             </h1>
-            <p className="mt-0.5 text-xs text-zinc-500">
-              Pemesan: <strong className="text-zinc-900">{order.customerName}</strong> •{' '}
+            <p className="mt-0.5 text-xs text-[#515154]">
+              Guest: <strong className="text-[#1D1D1F]">{order.customerName}</strong> •{' '}
               {order.tableNumber || order.orderType}
             </p>
           </div>
@@ -198,17 +197,17 @@ export default function LiveOrderTrackingPage() {
             <button
               type="button"
               onClick={fetchOrder}
-              className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 bg-[#F5F5F7] px-3.5 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-200"
+              className="apple-interactive inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-black/[0.1] bg-[#F5F5F7] px-4 py-2 text-xs font-semibold text-[#1D1D1F] hover:bg-[#EFEFF4]"
             >
               <RefreshCw className="h-3.5 w-3.5" />
-              <span>Sync</span>
+              <span>Sync Pass</span>
             </button>
             <Link
               href={`/order/${order.id}/receipt`}
-              className="inline-flex items-center gap-1.5 rounded-full bg-zinc-950 px-4 py-2 text-xs font-semibold text-white hover:bg-apple-blue transition-colors"
+              className="apple-interactive inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-apple-blue px-4 py-2 text-xs font-semibold text-white hover:bg-apple-blueHover"
             >
               <FileText className="h-3.5 w-3.5" />
-              <span>Digital Receipt</span>
+              <span>View Invoice</span>
             </Link>
           </div>
         </div>
@@ -307,9 +306,9 @@ export default function LiveOrderTrackingPage() {
                     alt="Static QRIS"
                     className="h-60 w-48 object-contain"
                   />
-                  <span className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-zinc-950/80 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur">
+                  <span className="liquid-glass-clear absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold text-white">
                     <ZoomIn className="h-3 w-3" />
-                    Perbesar QRIS
+                    Zoom QRIS
                   </span>
                 </button>
               )}
@@ -442,32 +441,34 @@ export default function LiveOrderTrackingPage() {
         </div>
       </section>
 
-      {/* Native <dialog> Zoom QRIS Modal */}
+      {/* Native <dialog> Zoom QRIS Modal (HIG Sheet Anatomy per sheets.md) */}
       <dialog
         ref={qrisZoomDialogRef}
         aria-labelledby="qris-zoom-title"
-        className="w-full max-w-md rounded-[28px] border border-black/10 bg-white p-5 shadow-apple-lg"
+        className="w-full max-w-md rounded-[26px] border border-black/10 bg-white p-0 shadow-apple-lg"
       >
-        <div className="flex items-center justify-between pb-3">
-          <h3 id="qris-zoom-title" className="text-sm font-bold text-zinc-950">
-            Scan QRIS — {merchant?.name}
-          </h3>
+        <div className="liquid-glass-regular flex items-center justify-between px-5 py-3">
           <button
             type="button"
-            aria-label="Tutup QRIS zoom"
             onClick={() => qrisZoomDialogRef.current?.close()}
-            className="rounded-full p-1.5 text-zinc-500 hover:bg-zinc-100"
+            className="apple-interactive inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-apple-blue hover:underline"
           >
-            <X className="h-4 w-4" />
+            Done
           </button>
+          <h3 id="qris-zoom-title" className="text-sm font-bold text-[#1D1D1F]">
+            Scan Static QRIS — {merchant?.name}
+          </h3>
+          <span className="min-w-[44px]" />
         </div>
-        {branch?.qrisImageUrl && (
-          <img
-            src={branch.qrisImageUrl}
-            alt="Zoomed Static QRIS"
-            className="mx-auto w-full rounded-2xl border border-black/5"
-          />
-        )}
+        <div className="p-5">
+          {branch?.qrisImageUrl && (
+            <img
+              src={branch.qrisImageUrl}
+              alt="Zoomed Static QRIS"
+              className="mx-auto w-full rounded-2xl border border-black/5"
+            />
+          )}
+        </div>
       </dialog>
     </div>
   );
