@@ -4,24 +4,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import {
-  ArrowRightLeft,
-  BellRing,
-  Check,
-  CheckCircle2,
-  Combine,
-  ExternalLink,
-  Eye,
-  Loader2,
-  MessageSquareText,
   Minus,
-  PackageCheck,
   Plus,
-  RefreshCw,
-  Trash2,
-  Volume2,
-  VolumeX,
-  XCircle,
-} from 'lucide-react';
+  SpeakerHigh,
+  SpeakerSlash,
+  Trash,
+  WhatsappLogo,
+} from '@phosphor-icons/react';
 import {
   Order,
   OrderItem,
@@ -45,42 +34,42 @@ const KANBAN_COLUMNS: Array<{
   id: KanbanColumnId;
   title: string;
   subtitle: string;
-  dotColor: string;
+  accentBar: string;
   statuses: OrderStatus[];
 }> = [
   {
     id: 'PENDING_STOCK',
     title: 'Pending Stock',
     subtitle: 'Verify kitchen availability',
-    dotColor: 'bg-[#B25000]',
+    accentBar: 'border-t-2 border-t-[#B25000]',
     statuses: [OrderStatus.PENDING_STOCK_CONFIRMATION],
   },
   {
     id: 'AWAITING_PAYMENT',
     title: 'Awaiting Payment',
     subtitle: 'Pending QRIS or cash audit',
-    dotColor: 'bg-apple-blue',
+    accentBar: 'border-t-2 border-t-apple-blue',
     statuses: [OrderStatus.AWAITING_PAYMENT, OrderStatus.PAYMENT_PENDING_APPROVAL],
   },
   {
     id: 'IN_KITCHEN',
     title: 'In Kitchen',
     subtitle: 'Active cooking & prep',
-    dotColor: 'bg-purple-700',
+    accentBar: 'border-t-2 border-t-purple-700',
     statuses: [OrderStatus.IN_KITCHEN],
   },
   {
     id: 'READY_DELIVERY',
     title: 'Ready for Service',
     subtitle: 'Ready for table or courier',
-    dotColor: 'bg-[#1D7D32]',
+    accentBar: 'border-t-2 border-t-[#1D7D32]',
     statuses: [OrderStatus.READY_FOR_DELIVERY],
   },
   {
     id: 'COMPLETED',
     title: 'Completed',
     subtitle: 'Settled & table session reset',
-    dotColor: 'bg-[#515154]',
+    accentBar: 'border-t-2 border-t-[#515154]',
     statuses: [OrderStatus.COMPLETED],
   },
 ];
@@ -333,7 +322,7 @@ export default function CashierKanbanPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-apple-blue" />
+        <p className="font-mono text-xs font-medium text-[#515154]">Loading kitchen board...</p>
       </div>
     );
   }
@@ -347,9 +336,8 @@ export default function CashierKanbanPage() {
       <div className="mb-6 flex flex-col justify-between gap-4 rounded-[22px] border border-black/[0.08] bg-white p-5 shadow-apple-sm sm:flex-row sm:items-center">
         <div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-apple-blue/10 px-3 py-0.5 text-[11px] font-bold text-apple-blue">
-              <span className="h-2 w-2 rounded-full bg-apple-blue" />
-              Live Kitchen Kanban & WhatsApp Bot
+            <span className="hig-caption text-[11px] font-semibold uppercase tracking-[0.06em] text-[#515154]">
+              Kitchen & Cashier Dispatch
             </span>
             {highlightedId && (
               <span className="rounded-full bg-amber-500/15 px-3 py-0.5 text-[11px] font-bold text-[#B25000]">
@@ -381,8 +369,12 @@ export default function CashierKanbanPage() {
                 : 'border-zinc-200 bg-[#F5F5F7] text-[#515154]'
             )}
           >
-            {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-            <span>{soundEnabled ? 'Audio Chime On' : 'Audio Muted'}</span>
+            {soundEnabled ? (
+              <SpeakerHigh aria-hidden="true" weight="duotone" className="h-4 w-4" />
+            ) : (
+              <SpeakerSlash aria-hidden="true" weight="duotone" className="h-4 w-4" />
+            )}
+            <span>{soundEnabled ? 'Chime On' : 'Muted'}</span>
           </button>
 
           <button
@@ -391,10 +383,9 @@ export default function CashierKanbanPage() {
               triggerCausalHaptic(6);
               loadBoard();
             }}
-            className="apple-interactive inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-apple-blue px-4 text-xs font-bold text-white hover:bg-apple-blueHover"
+            className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-4 text-xs font-bold text-white hover:bg-apple-blueHover"
           >
-            <RefreshCw className="h-3.5 w-3.5" />
-            <span>Refresh Board</span>
+            Refresh Board
           </button>
         </div>
       </div>
@@ -408,16 +399,16 @@ export default function CashierKanbanPage() {
             return (
               <div
                 key={col.id}
-                className="flex min-h-[520px] flex-col rounded-[22px] border border-black/[0.08] bg-[#EFEFF4]/75 p-3.5"
+                className={cn(
+                  'flex min-h-[520px] flex-col rounded-[22px] border border-black/[0.08] bg-[#EFEFF4]/75 p-3.5',
+                  col.accentBar
+                )}
               >
                 <div className="mb-3 flex items-center justify-between border-b border-black/[0.08] pb-2.5">
                   <div>
-                    <div className="flex items-center gap-2">
-                      <span className={cn('h-2.5 w-2.5 rounded-full', col.dotColor)} />
-                      <h2 className="text-xs font-bold tracking-tight text-[#1D1D1F]">
-                        {col.title}
-                      </h2>
-                    </div>
+                    <h2 className="text-xs font-bold tracking-tight text-[#1D1D1F]">
+                      {col.title}
+                    </h2>
                     <p className="hig-caption mt-0.5 text-[11px] text-[#515154]">{col.subtitle}</p>
                   </div>
                   <span className="rounded-full bg-white px-2.5 py-0.5 font-mono text-xs font-bold tabular-nums text-[#1D1D1F] shadow-sm">
@@ -511,10 +502,9 @@ export default function CashierKanbanPage() {
                                 <button
                                   type="button"
                                   onClick={() => openStockAuditModal(order)}
-                                  className="apple-interactive flex min-h-[42px] w-full items-center justify-center gap-1.5 rounded-xl bg-[#B25000] px-3 text-xs font-bold text-white hover:brightness-110"
+                                  className="apple-interactive flex min-h-[42px] w-full items-center justify-center rounded-xl bg-[#B25000] px-3 text-xs font-bold text-white hover:brightness-110"
                                 >
-                                  <CheckCircle2 className="h-3.5 w-3.5" />
-                                  <span>Verify Stock & Send Bill</span>
+                                  Verify Stock & Send Bill
                                 </button>
                               )}
 
@@ -524,10 +514,9 @@ export default function CashierKanbanPage() {
                                     <button
                                       type="button"
                                       onClick={() => openReceiptModal(order)}
-                                      className="apple-interactive flex min-h-[42px] w-full items-center justify-center gap-1.5 rounded-xl bg-apple-blue px-3 text-xs font-bold text-white hover:bg-apple-blueHover"
+                                      className="apple-interactive flex min-h-[42px] w-full items-center justify-center rounded-xl bg-apple-blue px-3 text-xs font-bold text-white hover:bg-apple-blueHover"
                                     >
-                                      <Eye className="h-3.5 w-3.5" />
-                                      <span>Inspect Payment Proof</span>
+                                      Inspect Payment Proof
                                     </button>
                                   ) : order.paymentType === PaymentType.CASH ? (
                                     <button
@@ -536,10 +525,9 @@ export default function CashierKanbanPage() {
                                       onClick={() =>
                                         handleAdvanceStatus(order.id, OrderStatus.IN_KITCHEN)
                                       }
-                                      className="apple-interactive flex min-h-[42px] w-full items-center justify-center gap-1.5 rounded-xl bg-[#1D7D32] px-3 text-xs font-bold text-white hover:brightness-110"
+                                      className="apple-interactive flex min-h-[42px] w-full items-center justify-center rounded-xl bg-[#1D7D32] px-3 text-xs font-bold text-white hover:brightness-110"
                                     >
-                                      <Check className="h-3.5 w-3.5" />
-                                      <span>Accept Cash → Kitchen</span>
+                                      Accept Cash → Kitchen
                                     </button>
                                   ) : (
                                     <div className="rounded-xl bg-blue-50 px-3 py-2 text-center text-[11px] font-semibold text-apple-blue">
@@ -556,10 +544,9 @@ export default function CashierKanbanPage() {
                                   onClick={() =>
                                     handleAdvanceStatus(order.id, OrderStatus.READY_FOR_DELIVERY)
                                   }
-                                  className="apple-interactive flex min-h-[42px] w-full items-center justify-center gap-1.5 rounded-xl bg-purple-700 px-3 text-xs font-bold text-white hover:bg-purple-800"
+                                  className="apple-interactive flex min-h-[42px] w-full items-center justify-center rounded-xl bg-purple-700 px-3 text-xs font-bold text-white hover:bg-purple-800"
                                 >
-                                  <BellRing className="h-3.5 w-3.5" />
-                                  <span>Mark Ready for Service</span>
+                                  Mark Ready for Service
                                 </button>
                               )}
 
@@ -570,10 +557,9 @@ export default function CashierKanbanPage() {
                                   onClick={() =>
                                     handleAdvanceStatus(order.id, OrderStatus.COMPLETED)
                                   }
-                                  className="apple-interactive flex min-h-[42px] w-full items-center justify-center gap-1.5 rounded-xl bg-[#1D7D32] px-3 text-xs font-bold text-white hover:brightness-110"
+                                  className="apple-interactive flex min-h-[42px] w-full items-center justify-center rounded-xl bg-[#1D7D32] px-3 text-xs font-bold text-white hover:brightness-110"
                                 >
-                                  <PackageCheck className="h-3.5 w-3.5" />
-                                  <span>Complete & Reset Table</span>
+                                  Complete & Reset Table
                                 </button>
                               )}
 
@@ -582,18 +568,16 @@ export default function CashierKanbanPage() {
                                   <button
                                     type="button"
                                     onClick={() => openTableControlsModal(order)}
-                                    className="inline-flex min-h-[36px] items-center gap-1 rounded-lg bg-[#F5F5F7] px-2.5 py-1 text-[11px] font-semibold text-[#1D1D1F] hover:bg-zinc-200"
+                                    className="apple-interactive inline-flex min-h-[36px] items-center rounded-lg bg-[#F5F5F7] px-2.5 py-1 text-[11px] font-semibold text-[#1D1D1F] hover:bg-zinc-200"
                                   >
-                                    <ArrowRightLeft className="h-3 w-3" />
-                                    <span>Move / Merge</span>
+                                    Move / Merge
                                   </button>
                                 )}
                                 <Link
                                   href={`/order/${order.id}`}
-                                  className="inline-flex min-h-[36px] items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-apple-blue hover:bg-apple-blue/10"
+                                  className="inline-flex min-h-[36px] items-center rounded-lg px-2 py-1 text-[11px] font-semibold text-apple-blue hover:bg-apple-blue/10"
                                 >
-                                  <span>Order Pass</span>
-                                  <ExternalLink className="h-3 w-3" />
+                                  Order Pass →
                                 </Link>
                               </div>
                             </div>
@@ -613,8 +597,8 @@ export default function CashierKanbanPage() {
       <section className="mt-8 rounded-[26px] border border-black/[0.06] bg-white p-6 shadow-apple-sm">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-700">
-              <MessageSquareText className="h-5 w-5" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/12 text-[#1D7D32]">
+              <WhatsappLogo aria-hidden="true" weight="duotone" className="h-5 w-5" />
             </div>
             <div>
               <h2 className="text-sm font-bold text-zinc-950">
@@ -626,8 +610,7 @@ export default function CashierKanbanPage() {
               </p>
             </div>
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-[11px] font-bold text-emerald-700">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+          <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-3 py-1 text-[11px] font-bold text-[#1D7D32]">
             Gateway Connected
           </span>
         </div>
@@ -722,7 +705,7 @@ export default function CashierKanbanPage() {
                     onClick={() => updateEditableItemQty(idx, -1)}
                     className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#1D1D1F] shadow-sm"
                   >
-                    <Minus className="h-3.5 w-3.5" />
+                    <Minus aria-hidden="true" weight="bold" className="h-3.5 w-3.5" />
                   </button>
                   <span className="w-7 text-center font-mono text-xs font-bold tabular-nums text-[#1D1D1F]">
                     {item.quantity}
@@ -733,7 +716,7 @@ export default function CashierKanbanPage() {
                     onClick={() => updateEditableItemQty(idx, 1)}
                     className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#1D1D1F] shadow-sm"
                   >
-                    <Plus className="h-3.5 w-3.5" />
+                    <Plus aria-hidden="true" weight="bold" className="h-3.5 w-3.5" />
                   </button>
                   <button
                     type="button"
@@ -741,7 +724,7 @@ export default function CashierKanbanPage() {
                     onClick={() => updateEditableItemQty(idx, -item.quantity)}
                     className="ml-1 flex h-9 w-9 items-center justify-center rounded-full text-[#D70015] hover:bg-red-50"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash aria-hidden="true" weight="regular" className="h-4 w-4" />
                   </button>
                 </div>
               </div>
@@ -759,10 +742,9 @@ export default function CashierKanbanPage() {
             type="button"
             disabled={editableItems.length === 0 || busyId === activeOrder?.id}
             onClick={handleConfirmStockAudit}
-            className="apple-interactive flex min-h-[46px] w-full items-center justify-center gap-2 rounded-full bg-apple-blue px-5 py-2.5 text-xs font-bold text-white hover:bg-apple-blueHover disabled:opacity-50"
+            className="apple-interactive flex min-h-[46px] w-full items-center justify-center rounded-full bg-apple-blue px-5 py-2.5 text-xs font-bold text-white hover:bg-apple-blueHover disabled:opacity-50"
           >
-            <CheckCircle2 className="h-4 w-4" />
-            <span>Confirm Stock & Send WhatsApp Invoice</span>
+            Confirm Stock & Send WhatsApp Invoice
           </button>
         </div>
       </dialog>
@@ -830,18 +812,16 @@ export default function CashierKanbanPage() {
             <button
               type="button"
               onClick={() => handleVerifyReceipt(false)}
-              className="apple-interactive inline-flex min-h-[46px] items-center justify-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-4 text-xs font-bold text-[#D70015] hover:bg-red-100"
+              className="apple-interactive inline-flex min-h-[46px] items-center justify-center rounded-full border border-red-200 bg-red-50 px-4 text-xs font-bold text-[#D70015] hover:bg-red-100"
             >
-              <XCircle className="h-4 w-4" />
-              <span>Reject Receipt</span>
+              Reject Receipt
             </button>
             <button
               type="button"
               onClick={() => handleVerifyReceipt(true)}
-              className="apple-interactive inline-flex min-h-[46px] items-center justify-center gap-1.5 rounded-full bg-[#1D7D32] px-4 text-xs font-bold text-white hover:brightness-110"
+              className="apple-interactive inline-flex min-h-[46px] items-center justify-center rounded-full bg-[#1D7D32] px-4 text-xs font-bold text-white hover:brightness-110"
             >
-              <CheckCircle2 className="h-4 w-4" />
-              <span>Approve → Kitchen</span>
+              Approve → Kitchen
             </button>
           </div>
         </div>
@@ -870,10 +850,7 @@ export default function CashierKanbanPage() {
         <div className="space-y-5 p-6">
           {/* Move Table */}
           <div className="space-y-2.5 rounded-2xl border border-black/[0.06] bg-[#F5F5F7]/70 p-4">
-            <p className="flex items-center gap-1.5 text-xs font-bold text-zinc-950">
-              <ArrowRightLeft className="h-3.5 w-3.5 text-apple-blue" />
-              <span>Move Table (Pindah ke Meja Kosong)</span>
-            </p>
+            <p className="text-xs font-bold text-zinc-950">Move Table (Pindah ke Meja Kosong)</p>
             <select
               value={moveTargetTable}
               onChange={(e) => setMoveTargetTable(e.target.value)}
@@ -901,10 +878,7 @@ export default function CashierKanbanPage() {
 
           {/* Merge Tables */}
           <div className="space-y-2.5 rounded-2xl border border-black/[0.06] bg-[#F5F5F7]/70 p-4">
-            <p className="flex items-center gap-1.5 text-xs font-bold text-zinc-950">
-              <Combine className="h-3.5 w-3.5 text-purple-600" />
-              <span>Merge Tables (Gabung Tagihan)</span>
-            </p>
+            <p className="text-xs font-bold text-zinc-950">Merge Tables (Gabung Tagihan)</p>
             <select
               value={mergeTargetOrderId}
               onChange={(e) => setMergeTargetOrderId(e.target.value)}

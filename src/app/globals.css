@@ -293,17 +293,9 @@ select:user-invalid {
   border-color: var(--signal-red);
 }
 
-/* Tablist underline & horizontal scroller affordances */
+/* Tablist layout & horizontal scroller affordances */
 [role="tab"] {
   position: relative;
-}
-
-[role="tab"][aria-selected="true"]::after {
-  content: "";
-  position: absolute;
-  inset: auto 12px 0 12px;
-  border-block-end: 2.5px solid var(--accent);
-  border-radius: 999px;
 }
 
 .no-scrollbar::-webkit-scrollbar {

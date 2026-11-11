@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, CheckCircle2, Loader2, Printer } from 'lucide-react';
 import { Branch, Merchant, Order } from '@/types/schema';
 import { formatIdr } from '@/lib/utils';
 
@@ -30,7 +29,7 @@ export default function DigitalWebReceiptPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-apple-blue" />
+        <p className="font-mono text-xs font-medium text-[#515154]">Loading receipt...</p>
       </div>
     );
   }
@@ -44,28 +43,27 @@ export default function DigitalWebReceiptPage() {
       <div className="no-print mb-4 flex items-center justify-between">
         <Link
           href={`/order/${order.id}`}
-          className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-semibold text-zinc-800 shadow-apple-sm"
+          className="apple-interactive inline-flex min-h-[40px] items-center rounded-full bg-white px-4 py-2 text-xs font-semibold text-zinc-800 shadow-apple-sm"
         >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          <span>Kembali ke Status</span>
+          ← Kembali ke Status
         </Link>
         <button
           type="button"
           onClick={() => window.print()}
-          className="inline-flex items-center gap-1.5 rounded-full bg-zinc-950 px-5 py-2 text-xs font-bold text-white shadow-apple-sm"
+          className="apple-interactive inline-flex min-h-[40px] items-center rounded-full bg-zinc-950 px-5 py-2 text-xs font-bold text-white shadow-apple-sm"
         >
-          <Printer className="h-3.5 w-3.5" />
-          <span>Cetak / Simpan PDF</span>
+          Cetak / Simpan PDF
         </button>
       </div>
 
       <div className="rounded-[26px] border border-black/[0.08] bg-white p-7 shadow-apple-md">
         <div className="border-b border-dashed border-zinc-300 pb-5 text-center">
-          <p className="text-lg font-bold tracking-tight text-zinc-950">{merchant?.name}</p>
+          <p className="font-serif text-lg font-bold tracking-tight text-zinc-950">
+            {merchant?.name}
+          </p>
           <p className="mt-1 text-[11px] text-zinc-500">{branch?.address}</p>
-          <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-[11px] font-bold text-emerald-700">
-            <CheckCircle2 className="h-3.5 w-3.5" />
-            <span>DIGITAL WEB RECEIPT • #{order.orderNumber}</span>
+          <div className="mt-3 inline-flex items-center rounded-full bg-emerald-500/10 px-3 py-1 font-mono text-[11px] font-bold text-[#1D7D32]">
+            DIGITAL WEB RECEIPT • #{order.orderNumber}
           </div>
         </div>
 

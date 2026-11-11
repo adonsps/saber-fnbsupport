@@ -4,23 +4,11 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  AlertCircle,
-  Banknote,
-  CalendarClock,
-  CheckCircle2,
-  CreditCard,
-  Loader2,
-  Lock,
+  MagnifyingGlass,
   MapPin,
   Minus,
-  Phone,
   Plus,
-  Search,
-  ShoppingBag,
-  Truck,
-  User,
-  Utensils,
-} from 'lucide-react';
+} from '@phosphor-icons/react';
 import {
   Branch,
   Category,
@@ -352,7 +340,7 @@ export function CustomerStorefrontClient({
   if (loading) {
     return (
       <div className="flex min-h-[70vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-apple-blue" />
+        <p className="font-mono text-xs font-medium text-[#515154]">Loading menu...</p>
       </div>
     );
   }
@@ -415,13 +403,12 @@ export function CustomerStorefrontClient({
               <div className="flex flex-wrap items-center gap-2">
                 <span
                   className={cn(
-                    'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold',
+                    'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold',
                     merchant?.isStoreOpen
                       ? 'bg-[#1D7D32] text-white'
                       : 'bg-[#D70015] text-white'
                   )}
                 >
-                  <span className="h-1.5 w-1.5 rounded-full bg-white" />
                   {merchant?.isStoreOpen
                     ? lang === 'ID'
                       ? 'Buka • Terima Pesanan'
@@ -431,8 +418,7 @@ export function CustomerStorefrontClient({
                     : 'Paused — Orders Closed'}
                 </span>
                 {isTableLocked && tableNumber && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-apple-blue px-2.5 py-0.5 text-[11px] font-bold text-white">
-                    <Lock className="h-3 w-3" />
+                  <span className="inline-flex items-center rounded-full bg-apple-blue px-2.5 py-0.5 font-mono text-[11px] font-bold text-white">
                     {tableNumber}
                   </span>
                 )}
@@ -442,7 +428,7 @@ export function CustomerStorefrontClient({
                 {merchant?.name}
               </h1>
               <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-zinc-200">
-                <MapPin className="h-3.5 w-3.5 shrink-0" />
+                <MapPin aria-hidden="true" weight="fill" className="h-3.5 w-3.5 shrink-0" />
                 <span className="truncate">{branch?.address}</span>
               </p>
             </div>
@@ -452,20 +438,20 @@ export function CustomerStorefrontClient({
 
       {/* Store Paused Alert Banner */}
       {!merchant?.isStoreOpen && (
-        <div className="mx-4 mt-4 flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-800 sm:mx-0">
-          <AlertCircle className="h-5 w-5 shrink-0 text-red-600" />
-          <div className="text-xs">
-            <p className="font-bold">
-              {lang === 'ID'
-                ? 'Toko Sedang Menjeda Pesanan Masuk'
-                : 'Store Temporarily Paused'}
-            </p>
-            <p className="mt-0.5">
-              {lang === 'ID'
-                ? 'Dapur sedang penuh atau toko tutup sementara. Anda tetap dapat melihat menu.'
-                : 'Kitchen is currently paused. You can browse the menu and check back shortly.'}
-            </p>
-          </div>
+        <div
+          role="status"
+          className="mx-4 mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-xs text-[#D70015] sm:mx-0"
+        >
+          <p className="font-bold">
+            {lang === 'ID'
+              ? 'Toko Sedang Menjeda Pesanan Masuk'
+              : 'Store Temporarily Paused'}
+          </p>
+          <p className="mt-0.5">
+            {lang === 'ID'
+              ? 'Dapur sedang penuh atau toko tutup sementara. Anda tetap dapat melihat menu.'
+              : 'Kitchen is currently paused. You can browse the menu and check back shortly.'}
+          </p>
         </div>
       )}
 
@@ -481,22 +467,18 @@ export function CustomerStorefrontClient({
               type: OrderType.WALK_IN_TABLE,
               labelId: 'Dine-In Meja',
               labelEn: 'Walk-In Table',
-              icon: Utensils,
             },
             {
               type: OrderType.PRE_ORDER_PICKUP,
               labelId: 'Pre-Order Ambil',
               labelEn: 'Pre-Order Pick Up',
-              icon: CalendarClock,
             },
             {
               type: OrderType.SELF_DELIVERY,
               labelId: 'Antar Kurir Toko',
               labelEn: 'Self-Delivery',
-              icon: Truck,
             },
           ].map((tab) => {
-            const Icon = tab.icon;
             const active = orderType === tab.type;
             return (
               <button
@@ -509,7 +491,7 @@ export function CustomerStorefrontClient({
                   setOrderType(tab.type);
                 }}
                 className={cn(
-                  'relative z-10 flex min-h-[44px] flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-[11px] font-bold transition-colors sm:flex-row sm:text-xs',
+                  'relative z-10 flex min-h-[44px] items-center justify-center rounded-xl px-2 py-2 text-[11px] font-bold transition-colors sm:text-xs',
                   active ? 'text-zinc-950' : 'text-zinc-500 hover:text-zinc-900'
                 )}
               >
@@ -520,7 +502,6 @@ export function CustomerStorefrontClient({
                     className="absolute inset-0 -z-10 rounded-xl bg-white shadow-sm"
                   />
                 )}
-                <Icon className="h-3.5 w-3.5" />
                 <span>{lang === 'ID' ? tab.labelId : tab.labelEn}</span>
               </button>
             );
@@ -535,8 +516,7 @@ export function CustomerStorefrontClient({
                 {lang === 'ID' ? 'Nomor Meja Anda' : 'Table Number'}
               </span>
               {isTableLocked ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-apple-blue/10 px-3 py-1 font-bold text-apple-blue">
-                  <Lock className="h-3 w-3" />
+                <span className="inline-flex items-center rounded-full bg-apple-blue/10 px-3 py-1 font-mono font-bold text-apple-blue">
                   {tableNumber}
                 </span>
               ) : (
@@ -596,7 +576,11 @@ export function CustomerStorefrontClient({
       {/* Sticky Category Navigation & Search Bar (Regular Liquid Glass Functional Layer per liquid-glass.md + Snap Scroller) */}
       <div className="liquid-glass-regular sticky top-[60px] z-30 mt-4 px-4 py-3 sm:rounded-2xl sm:border sm:border-black/[0.08]">
         <search className="relative mb-2.5 block">
-          <Search className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-[#515154]" />
+          <MagnifyingGlass
+            aria-hidden="true"
+            weight="regular"
+            className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-[#515154]"
+          />
           <input
             type="search"
             value={searchQuery}
@@ -728,10 +712,9 @@ export function CustomerStorefrontClient({
                           <button
                             type="button"
                             onClick={() => updateCartQty(item.id, 1)}
-                            className="apple-interactive inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-apple-blue px-4 py-2 text-xs font-bold text-white hover:bg-apple-blueHover"
+                            className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-4 py-2 text-xs font-bold text-white hover:bg-apple-blueHover"
                           >
-                            <Plus className="h-3.5 w-3.5" />
-                            <span>{lang === 'ID' ? 'Tambah' : 'Add'}</span>
+                            {lang === 'ID' ? '+ Tambah' : '+ Add'}
                           </button>
                         ) : (
                           <div className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-apple-blue/10 px-1.5 py-1 ring-1 ring-apple-blue/30">
@@ -741,7 +724,7 @@ export function CustomerStorefrontClient({
                               onClick={() => updateCartQty(item.id, -1)}
                               className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#1D1D1F] shadow-sm"
                             >
-                              <Minus className="h-3.5 w-3.5" />
+                              <Minus aria-hidden="true" weight="bold" className="h-3.5 w-3.5" />
                             </button>
                             <span className="min-w-[22px] text-center font-mono text-xs font-bold tabular-nums text-apple-blue">
                               {qty}
@@ -752,7 +735,7 @@ export function CustomerStorefrontClient({
                               onClick={() => updateCartQty(item.id, 1)}
                               className="flex h-9 w-9 items-center justify-center rounded-full bg-apple-blue text-white shadow-sm"
                             >
-                              <Plus className="h-3.5 w-3.5" />
+                              <Plus aria-hidden="true" weight="bold" className="h-3.5 w-3.5" />
                             </button>
                           </div>
                         )}
@@ -799,11 +782,13 @@ export function CustomerStorefrontClient({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <span className="font-mono text-sm font-bold tabular-nums">
                   {formatIdr(cartSummary.totalAmountIdr)}
                 </span>
-                <ShoppingBag className="h-4 w-4 text-apple-green" />
+                <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-bold text-white">
+                  {lang === 'ID' ? 'Checkout →' : 'Checkout →'}
+                </span>
               </div>
             </button>
           </motion.div>
@@ -858,10 +843,9 @@ export function CustomerStorefrontClient({
           {checkoutError && (
             <div
               role="alert"
-              className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-medium text-red-700"
+              className="rounded-2xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-medium text-[#D70015]"
             >
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              <span>{checkoutError}</span>
+              {checkoutError}
             </div>
           )}
 
@@ -871,20 +855,17 @@ export function CustomerStorefrontClient({
               <label htmlFor="custName" className="block text-xs font-semibold text-zinc-800">
                 {lang === 'ID' ? 'Nama Anda' : 'Customer Name'} <span className="text-red-500">*</span>
               </label>
-              <div className="relative mt-1">
-                <User className="pointer-events-none absolute left-3.5 top-3.5 h-4 w-4 text-zinc-400" />
-                <input
-                  id="custName"
-                  type="text"
-                  required
-                  autoFocus
-                  autoComplete="name"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="Contoh: Budi Santoso"
-                  className="min-h-[46px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/60 pl-10 pr-4 text-sm outline-none focus:border-apple-blue focus:bg-white"
-                />
-              </div>
+              <input
+                id="custName"
+                type="text"
+                required
+                autoFocus
+                autoComplete="name"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="Contoh: Budi Santoso"
+                className="mt-1 min-h-[46px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/60 px-4 text-sm outline-none focus:border-apple-blue focus:bg-white"
+              />
             </div>
 
             <div>
@@ -892,20 +873,17 @@ export function CustomerStorefrontClient({
                 {lang === 'ID' ? 'Nomor WhatsApp Aktif' : 'WhatsApp Number'}{' '}
                 <span className="text-red-500">*</span>
               </label>
-              <div className="relative mt-1">
-                <Phone className="pointer-events-none absolute left-3.5 top-3.5 h-4 w-4 text-zinc-400" />
-                <input
-                  id="custWa"
-                  type="tel"
-                  inputMode="tel"
-                  required
-                  autoComplete="tel"
-                  value={customerWhatsapp}
-                  onChange={(e) => setCustomerWhatsapp(e.target.value)}
-                  placeholder="0812xxxxxxxx"
-                  className="min-h-[46px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/60 pl-10 pr-4 font-mono text-sm outline-none focus:border-apple-blue focus:bg-white"
-                />
-              </div>
+              <input
+                id="custWa"
+                type="tel"
+                inputMode="tel"
+                required
+                autoComplete="tel"
+                value={customerWhatsapp}
+                onChange={(e) => setCustomerWhatsapp(e.target.value)}
+                placeholder="0812xxxxxxxx"
+                className="mt-1 min-h-[46px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/60 px-4 font-mono text-sm outline-none focus:border-apple-blue focus:bg-white"
+              />
               <p className="mt-1 text-[11px] text-zinc-500">
                 {lang === 'ID'
                   ? 'Nota, status konfirmasi stok, & notifikasi makanan siap dikirim via WhatsApp.'
@@ -976,10 +954,7 @@ export function CustomerStorefrontClient({
                   className="accent-apple-blue"
                 />
                 <div>
-                  <p className="flex items-center gap-1.5 text-xs font-bold text-zinc-950">
-                    <CreditCard className="h-3.5 w-3.5 text-apple-blue" />
-                    Bank Transfer / QRIS
-                  </p>
+                  <p className="text-xs font-bold text-zinc-950">Bank Transfer / QRIS</p>
                   <p className="text-[10px] text-zinc-500">Upload bukti setelah stok ok</p>
                 </div>
               </label>
@@ -1000,10 +975,7 @@ export function CustomerStorefrontClient({
                   className="accent-apple-blue"
                 />
                 <div>
-                  <p className="flex items-center gap-1.5 text-xs font-bold text-zinc-950">
-                    <Banknote className="h-3.5 w-3.5 text-emerald-600" />
-                    Bayar di Kasir (Cash)
-                  </p>
+                  <p className="text-xs font-bold text-zinc-950">Bayar di Kasir (Cash)</p>
                   <p className="text-[10px] text-zinc-500">Bayar tunai langsung di kasir</p>
                 </div>
               </label>
@@ -1051,14 +1023,9 @@ export function CustomerStorefrontClient({
           <button
             type="submit"
             disabled={submitting}
-            className="apple-interactive flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full bg-apple-blue px-6 py-3 text-sm font-bold text-white shadow-apple-sm hover:bg-apple-blueHover disabled:opacity-60"
+            className="apple-interactive flex min-h-[48px] w-full items-center justify-center rounded-full bg-apple-blue px-6 py-3 text-sm font-bold text-white shadow-apple-sm hover:bg-apple-blueHover disabled:opacity-60"
           >
-            {submitting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <CheckCircle2 className="h-4 w-4" />
-            )}
-            <span>Place Order & Request Confirmation</span>
+            {submitting ? 'Mengirim Pesanan...' : 'Place Order & Request Confirmation'}
           </button>
         </form>
       </dialog>

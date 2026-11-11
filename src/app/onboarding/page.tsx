@@ -4,26 +4,13 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  AlertCircle,
-  ArrowLeft,
-  ArrowRight,
-  Building2,
   Check,
-  CheckCircle2,
   Clock,
   CreditCard,
-  Globe,
-  Loader2,
-  MapPin,
-  Phone,
   QrCode,
-  Rocket,
-  Sparkles,
-  Store,
+  Storefront,
   Truck,
-  Upload,
-  User,
-} from 'lucide-react';
+} from '@phosphor-icons/react';
 import { DEFAULT_HOURS, DEFAULT_QRIS_SVG } from '@/lib/defaults';
 import { DaySchedule } from '@/types/schema';
 import { cn, formatIdr, slugify } from '@/lib/utils';
@@ -274,7 +261,7 @@ export default function OnboardingPage() {
   };
 
   const stepsMeta = [
-    { num: 1, title: 'Merchant Profile', subtitle: 'Identity & Subdomain', icon: Store },
+    { num: 1, title: 'Merchant Profile', subtitle: 'Identity & Subdomain', icon: Storefront },
     { num: 2, title: 'Branch & Delivery', subtitle: 'Hours & Courier Radius', icon: Clock },
     { num: 3, title: 'QRIS & Settlement', subtitle: 'Static QRIS & Bank', icon: CreditCard },
   ];
@@ -282,11 +269,10 @@ export default function OnboardingPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 pt-8 sm:px-6">
       <div className="mb-8 text-center">
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-black/[0.08] bg-white px-3.5 py-1 text-xs font-semibold text-apple-blue shadow-apple-sm">
-          <Sparkles className="h-3.5 w-3.5" />
-          <span>Merchant Self-Onboarding • Zero-Commission Setup</span>
-        </div>
-        <h1 className="hig-culinary-serif mt-3 text-3xl text-[#1D1D1F] sm:text-4xl">
+        <p className="hig-caption text-xs font-semibold uppercase tracking-[0.06em] text-[#515154]">
+          Merchant Self-Onboarding
+        </p>
+        <h1 className="hig-culinary-serif mt-2 text-3xl text-[#1D1D1F] sm:text-4xl">
           Launch Your Direct Commerce Storefront
         </h1>
         <p className="mx-auto mt-2 max-w-xl text-sm text-[#515154]">
@@ -326,7 +312,11 @@ export default function OnboardingPage() {
                       : 'bg-zinc-200 text-zinc-600'
                   )}
                 >
-                  {isDone ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
+                  {isDone ? (
+                    <Check aria-hidden="true" weight="bold" className="h-4 w-4" />
+                  ) : (
+                    <Icon aria-hidden="true" weight="duotone" className="h-4 w-4" />
+                  )}
                 </div>
                 <div className="min-w-0">
                   <p className="truncate text-xs font-bold text-zinc-950 sm:text-sm">{s.title}</p>
@@ -341,10 +331,9 @@ export default function OnboardingPage() {
       {errorMsg && (
         <div
           role="alert"
-          className="mb-6 flex items-center gap-2.5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+          className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-[#D70015]"
         >
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          <span>{errorMsg}</span>
+          {errorMsg}
         </div>
       )}
 
@@ -354,8 +343,8 @@ export default function OnboardingPage() {
           animate={{ opacity: 1, scale: 1 }}
           className="rounded-[28px] border border-emerald-500/30 bg-white p-8 text-center shadow-apple-lg sm:p-12"
         >
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600">
-            <Rocket className="h-8 w-8" />
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/12 text-[#1D7D32]">
+            <Storefront aria-hidden="true" weight="duotone" className="h-8 w-8" />
           </div>
           <h2 className="mt-5 text-2xl font-bold tracking-tight text-zinc-950">
             Toko Anda Siap Menerima Pesanan!
@@ -378,17 +367,16 @@ export default function OnboardingPage() {
             <button
               type="button"
               onClick={() => router.push('/admin/menu')}
-              className="inline-flex items-center gap-2 rounded-full bg-zinc-950 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-zinc-800 active:scale-[0.98]"
+              className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-zinc-950 px-6 py-3 text-sm font-semibold text-white hover:bg-zinc-800"
             >
-              <span>Kelola Menu Bilingual</span>
-              <ArrowRight className="h-4 w-4" />
+              Kelola Menu Bilingual
             </button>
             <button
               type="button"
               onClick={() => router.push(`/${launchSuccess.slug}`)}
-              className="inline-flex items-center gap-2 rounded-full bg-apple-blue px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-apple-blueHover active:scale-[0.98]"
+              className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-6 py-3 text-sm font-semibold text-white hover:bg-apple-blueHover"
             >
-              <span>Lihat Mini-Site Pelanggan</span>
+              Lihat Mini-Site Pelanggan
             </button>
           </div>
         </motion.div>
@@ -423,19 +411,16 @@ export default function OnboardingPage() {
                     >
                       Nama Bisnis / Warung / Kafe <span className="text-red-500">*</span>
                     </label>
-                    <div className="relative mt-1.5">
-                      <Building2 className="pointer-events-none absolute left-3.5 top-3.5 h-4 w-4 text-zinc-400" />
-                      <input
-                        id="businessName"
-                        name="businessName"
-                        type="text"
-                        required
-                        value={businessName}
-                        onChange={(e) => handleBusinessNameChange(e.target.value)}
-                        placeholder="Contoh: Warung Kopi Nusantara"
-                        className="min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 pl-10 pr-4 text-sm text-zinc-950 outline-none transition-all focus:border-apple-blue focus:bg-white focus:ring-4 focus:ring-apple-blue/10"
-                      />
-                    </div>
+                    <input
+                      id="businessName"
+                      name="businessName"
+                      type="text"
+                      required
+                      value={businessName}
+                      onChange={(e) => handleBusinessNameChange(e.target.value)}
+                      placeholder="Contoh: Warung Kopi Nusantara"
+                      className="mt-1.5 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 px-4 text-sm text-zinc-950 outline-none transition-all focus:border-apple-blue focus:bg-white focus:ring-4 focus:ring-apple-blue/10"
+                    />
                   </div>
 
                   <div className="sm:col-span-2">
@@ -444,9 +429,9 @@ export default function OnboardingPage() {
                       <span className="text-red-500">*</span>
                     </label>
                     <div className="mt-1.5 flex overflow-hidden rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 focus-within:border-apple-blue focus-within:bg-white focus-within:ring-4 focus-within:ring-apple-blue/10">
-                      <div className="flex items-center pl-3.5 text-zinc-400">
-                        <Globe className="h-4 w-4" />
-                      </div>
+                      <span className="flex items-center pl-4 font-mono text-xs font-semibold text-[#515154]">
+                        https://
+                      </span>
                       <input
                         id="slug"
                         name="slug"
@@ -457,7 +442,7 @@ export default function OnboardingPage() {
                         spellCheck={false}
                         value={slug}
                         onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                        className="min-h-[48px] w-full bg-transparent px-3 font-mono text-sm font-semibold text-zinc-950 outline-none"
+                        className="min-h-[48px] w-full bg-transparent px-1.5 font-mono text-sm font-semibold text-zinc-950 outline-none"
                       />
                       <span className="flex shrink-0 items-center border-l border-zinc-200 bg-zinc-100/80 px-3.5 font-mono text-xs font-medium text-zinc-600">
                         .saberconsulting.id
@@ -468,24 +453,15 @@ export default function OnboardingPage() {
                     <div
                       aria-live="polite"
                       className={cn(
-                        'mt-2 flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium',
+                        'mt-2 rounded-xl px-3.5 py-2 text-xs font-medium',
                         slugStatus.checking
                           ? 'bg-zinc-100 text-zinc-600'
                           : slugStatus.valid && slugStatus.available
-                          ? 'bg-emerald-50 text-emerald-700'
-                          : 'bg-red-50 text-red-700'
+                          ? 'bg-emerald-50 text-[#1D7D32]'
+                          : 'bg-red-50 text-[#D70015]'
                       )}
                     >
-                      {slugStatus.checking ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : slugStatus.valid && slugStatus.available ? (
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                      ) : (
-                        <AlertCircle className="h-3.5 w-3.5" />
-                      )}
-                      <span>
-                        {slugStatus.checking ? 'Memeriksa ketersediaan subdomain...' : slugStatus.message}
-                      </span>
+                      {slugStatus.checking ? 'Memeriksa ketersediaan subdomain...' : slugStatus.message}
                     </div>
                   </div>
 
@@ -493,19 +469,16 @@ export default function OnboardingPage() {
                     <label htmlFor="ownerName" className="block text-xs font-semibold text-zinc-800">
                       Nama Lengkap Pemilik <span className="text-red-500">*</span>
                     </label>
-                    <div className="relative mt-1.5">
-                      <User className="pointer-events-none absolute left-3.5 top-3.5 h-4 w-4 text-zinc-400" />
-                      <input
-                        id="ownerName"
-                        name="ownerName"
-                        type="text"
-                        autoComplete="name"
-                        required
-                        value={ownerName}
-                        onChange={(e) => setOwnerName(e.target.value)}
-                        className="min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 pl-10 pr-4 text-sm text-zinc-950 outline-none transition-all focus:border-apple-blue focus:bg-white focus:ring-4 focus:ring-apple-blue/10"
-                      />
-                    </div>
+                    <input
+                      id="ownerName"
+                      name="ownerName"
+                      type="text"
+                      autoComplete="name"
+                      required
+                      value={ownerName}
+                      onChange={(e) => setOwnerName(e.target.value)}
+                      className="mt-1.5 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 px-4 text-sm text-zinc-950 outline-none transition-all focus:border-apple-blue focus:bg-white focus:ring-4 focus:ring-apple-blue/10"
+                    />
                   </div>
 
                   <div>
@@ -515,21 +488,18 @@ export default function OnboardingPage() {
                     >
                       Nomor WhatsApp Pemilik/Kasir (+62) <span className="text-red-500">*</span>
                     </label>
-                    <div className="relative mt-1.5">
-                      <Phone className="pointer-events-none absolute left-3.5 top-3.5 h-4 w-4 text-zinc-400" />
-                      <input
-                        id="ownerWhatsapp"
-                        name="ownerWhatsapp"
-                        type="tel"
-                        inputMode="tel"
-                        autoComplete="tel"
-                        required
-                        value={ownerWhatsapp}
-                        onChange={(e) => setOwnerWhatsapp(e.target.value)}
-                        placeholder="+62812..."
-                        className="min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 pl-10 pr-4 font-mono text-sm text-zinc-950 outline-none transition-all focus:border-apple-blue focus:bg-white focus:ring-4 focus:ring-apple-blue/10"
-                      />
-                    </div>
+                    <input
+                      id="ownerWhatsapp"
+                      name="ownerWhatsapp"
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      required
+                      value={ownerWhatsapp}
+                      onChange={(e) => setOwnerWhatsapp(e.target.value)}
+                      placeholder="+62812..."
+                      className="mt-1.5 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 px-4 font-mono text-sm text-zinc-950 outline-none transition-all focus:border-apple-blue focus:bg-white focus:ring-4 focus:ring-apple-blue/10"
+                    />
                     <p className="mt-1 text-[11px] text-zinc-500">
                       Saber Central WA Bot akan mengirim Magic Link pesanan baru ke nomor ini.
                     </p>
@@ -572,8 +542,7 @@ export default function OnboardingPage() {
                     <p className="text-[11px] text-zinc-500">
                       Ditampilkan pada header mini-site pelanggan dan di tengah lembaran PDF Table QR.
                     </p>
-                    <label className="inline-flex min-h-[40px] cursor-pointer items-center gap-2 rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold text-zinc-800 shadow-sm transition-all hover:bg-zinc-50 active:scale-[0.98]">
-                      <Upload className="h-3.5 w-3.5 text-apple-blue" />
+                    <label className="apple-interactive inline-flex min-h-[40px] cursor-pointer items-center rounded-full border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold text-zinc-800 shadow-sm hover:bg-zinc-50">
                       <span>Pilih Gambar Logo</span>
                       <input
                         type="file"
@@ -597,19 +566,16 @@ export default function OnboardingPage() {
                   <label htmlFor="address" className="block text-xs font-semibold text-zinc-800">
                     Alamat Lengkap Cabang <span className="text-red-500">*</span>
                   </label>
-                  <div className="relative mt-1.5">
-                    <MapPin className="pointer-events-none absolute left-3.5 top-3.5 h-4 w-4 text-zinc-400" />
-                    <textarea
-                      id="address"
-                      name="address"
-                      rows={2}
-                      required
-                      autoComplete="street-address"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      className="w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 py-3 pl-10 pr-4 text-sm text-zinc-950 outline-none transition-all focus:border-apple-blue focus:bg-white focus:ring-4 focus:ring-apple-blue/10"
-                    />
-                  </div>
+                  <textarea
+                    id="address"
+                    name="address"
+                    rows={2}
+                    required
+                    autoComplete="street-address"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 px-4 py-3 text-sm text-zinc-950 outline-none transition-all focus:border-apple-blue focus:bg-white focus:ring-4 focus:ring-apple-blue/10"
+                  />
                 </div>
 
                 {/* Operational Hours Array */}
@@ -672,8 +638,8 @@ export default function OnboardingPage() {
                 <div className="rounded-2xl border border-black/[0.06] bg-[#F5F5F7]/60 p-4 space-y-4">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 text-amber-700">
-                        <Truck className="h-5 w-5" />
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 text-[#B25000]">
+                        <Truck aria-hidden="true" weight="duotone" className="h-5 w-5" />
                       </div>
                       <div>
                         <p className="text-sm font-bold text-zinc-950">
@@ -777,8 +743,8 @@ export default function OnboardingPage() {
                         className="h-full w-full object-contain"
                       />
                     </div>
-                    <label className="inline-flex min-h-[42px] cursor-pointer items-center gap-2 rounded-full bg-zinc-950 px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-zinc-800 active:scale-[0.98]">
-                      <QrCode className="h-3.5 w-3.5" />
+                    <label className="apple-interactive inline-flex min-h-[42px] cursor-pointer items-center gap-2 rounded-full bg-zinc-950 px-4 py-2 text-xs font-semibold text-white hover:bg-zinc-800">
+                      <QrCode aria-hidden="true" weight="duotone" className="h-3.5 w-3.5" />
                       <span>Upload Gambar QRIS Statis</span>
                       <input
                         type="file"
@@ -866,10 +832,9 @@ export default function OnboardingPage() {
               <button
                 type="button"
                 onClick={() => setStep((step - 1) as 1 | 2)}
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-zinc-300 bg-white px-5 py-2.5 text-sm font-semibold text-zinc-800 transition-all hover:bg-zinc-50 active:scale-[0.98]"
+                className="apple-interactive inline-flex min-h-[44px] items-center rounded-full border border-zinc-300 bg-white px-5 py-2.5 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
               >
-                <ArrowLeft className="h-4 w-4" />
-                <span>Previous Step</span>
+                Previous Step
               </button>
             ) : (
               <div />
@@ -879,23 +844,17 @@ export default function OnboardingPage() {
               <button
                 type="button"
                 onClick={handleNextStep}
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-zinc-950 px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-zinc-800 active:scale-[0.98]"
+                className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-zinc-950 px-6 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800"
               >
-                <span>Next Step</span>
-                <ArrowRight className="h-4 w-4" />
+                Next Step
               </button>
             ) : (
               <button
                 type="submit"
                 disabled={submitting}
-                className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-apple-blue px-7 py-2.5 text-sm font-semibold text-white shadow-apple-sm transition-all hover:bg-apple-blueHover active:scale-[0.98] disabled:opacity-60"
+                className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-7 py-2.5 text-sm font-semibold text-white shadow-apple-sm hover:bg-apple-blueHover disabled:opacity-60"
               >
-                {submitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Rocket className="h-4 w-4" />
-                )}
-                <span>Complete Setup & Launch</span>
+                {submitting ? 'Menyimpan...' : 'Complete Setup & Launch'}
               </button>
             )}
           </div>
