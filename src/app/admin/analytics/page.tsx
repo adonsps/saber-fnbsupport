@@ -2,20 +2,15 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  AlertTriangle,
-  Award,
-  BarChart3,
-  CheckCircle2,
+  ArrowCounterClockwise,
+  ChartBar,
   CreditCard,
-  Download,
-  FileSpreadsheet,
-  Loader2,
   Power,
-  RotateCcw,
-  ShoppingBag,
-  TrendingUp,
-  Users,
-} from 'lucide-react';
+  Receipt,
+  TrendUp,
+  Trophy,
+  UsersThree,
+} from '@phosphor-icons/react';
 import {
   Category,
   MenuItem,
@@ -205,7 +200,7 @@ export default function AdminAnalyticsPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-apple-blue" />
+        <p className="font-mono text-xs font-medium text-[#515154]">Loading shift summary...</p>
       </div>
     );
   }
@@ -226,7 +221,7 @@ export default function AdminAnalyticsPage() {
       <div className="mb-6 flex flex-col justify-between gap-4 rounded-[26px] border border-black/[0.06] bg-white p-6 shadow-apple-sm sm:flex-row sm:items-center">
         <div>
           <span className="text-[11px] font-bold uppercase tracking-wider text-apple-blue">
-            Sprint 4 • Operational Telemetry & Shift Summary
+            Operational Telemetry & Shift Summary
           </span>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-950">
             Ringkasan Shift Harian — {merchant?.name}
@@ -275,19 +270,17 @@ export default function AdminAnalyticsPage() {
           <button
             type="button"
             onClick={handleExportCsv}
-            className="apple-interactive inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-black/[0.12] bg-[#F5F5F7] px-4 text-xs font-bold text-[#1D1D1F] hover:bg-[#EFEFF4]"
+            className="apple-interactive inline-flex min-h-[44px] items-center rounded-full border border-black/[0.12] bg-[#F5F5F7] px-4 text-xs font-bold text-[#1D1D1F] hover:bg-[#EFEFF4]"
           >
-            <FileSpreadsheet className="h-4 w-4 text-[#1D7D32]" />
-            <span>Export Sales CSV</span>
+            Export Sales CSV
           </button>
 
           <button
             type="button"
             onClick={() => window.print()}
-            className="apple-interactive inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-apple-blue px-5 text-xs font-bold text-white hover:bg-apple-blueHover"
+            className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-5 text-xs font-bold text-white hover:bg-apple-blueHover"
           >
-            <Download className="h-4 w-4" />
-            <span>Download Shift Report PDF</span>
+            Download Shift Report PDF
           </button>
         </div>
       </div>
@@ -308,15 +301,11 @@ export default function AdminAnalyticsPage() {
               className={cn(
                 'flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl',
                 merchant?.isStoreOpen
-                  ? 'bg-emerald-500/15 text-emerald-700'
-                  : 'bg-red-500/15 text-red-600'
+                  ? 'bg-emerald-500/12 text-[#1D7D32]'
+                  : 'bg-red-500/15 text-[#D70015]'
               )}
             >
-              {merchant?.isStoreOpen ? (
-                <CheckCircle2 className="h-5 w-5" />
-              ) : (
-                <AlertTriangle className="h-5 w-5" />
-              )}
+              <Power aria-hidden="true" weight="bold" className="h-5 w-5" />
             </div>
             <div>
               <h2 className="text-sm font-bold text-zinc-950">
@@ -333,22 +322,21 @@ export default function AdminAnalyticsPage() {
             type="button"
             onClick={handleToggleStorePause}
             className={cn(
-              'inline-flex min-h-[42px] shrink-0 items-center gap-1.5 rounded-full px-4 text-xs font-bold text-white transition-colors',
+              'apple-interactive inline-flex min-h-[42px] shrink-0 items-center rounded-full px-4 text-xs font-bold text-white',
               merchant?.isStoreOpen
-                ? 'bg-red-600 hover:bg-red-700'
-                : 'bg-apple-green hover:bg-emerald-600'
+                ? 'bg-[#D70015] hover:brightness-110'
+                : 'bg-[#1D7D32] hover:brightness-110'
             )}
           >
-            <Power className="h-3.5 w-3.5" />
-            <span>{merchant?.isStoreOpen ? 'Pause Incoming Orders' : 'Re-Open Store'}</span>
+            {merchant?.isStoreOpen ? 'Pause Incoming Orders' : 'Re-Open Store'}
           </button>
         </div>
 
         {/* Sold-Out Reset Engine */}
         <div className="flex items-center justify-between gap-4 rounded-[22px] border border-black/[0.06] bg-white p-5 shadow-apple-sm">
           <div className="flex items-center gap-3.5">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-700">
-              <RotateCcw className="h-5 w-5" />
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-[#B25000]">
+              <ArrowCounterClockwise aria-hidden="true" weight="bold" className="h-5 w-5" />
             </div>
             <div>
               <h2 className="text-sm font-bold text-zinc-950">
@@ -364,18 +352,19 @@ export default function AdminAnalyticsPage() {
           <button
             type="button"
             onClick={handleSoldOutResetEngine}
-            className="inline-flex min-h-[42px] shrink-0 items-center gap-1.5 rounded-full bg-zinc-950 px-4 text-xs font-bold text-white hover:bg-apple-blue"
+            className="apple-interactive inline-flex min-h-[42px] shrink-0 items-center rounded-full bg-zinc-950 px-4 text-xs font-bold text-white hover:bg-apple-blue"
           >
-            <RotateCcw className="h-3.5 w-3.5" />
-            <span>Reset Semua Stok</span>
+            Reset Semua Stok
           </button>
         </div>
       </section>
 
       {resetMessage && (
-        <div className="mb-6 flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-emerald-800">
-          <CheckCircle2 className="h-4 w-4" />
-          <span>{resetMessage}</span>
+        <div
+          role="status"
+          className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-[#1D7D32]"
+        >
+          {resetMessage}
         </div>
       )}
 
@@ -384,12 +373,12 @@ export default function AdminAnalyticsPage() {
         <div className="rounded-[24px] border border-black/[0.06] bg-white p-5 shadow-apple-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-zinc-500">Gross Sales Today</span>
-            <TrendingUp className="h-4 w-4 text-emerald-600" />
+            <TrendUp aria-hidden="true" weight="duotone" className="h-4 w-4 text-[#1D7D32]" />
           </div>
           <p className="mt-2 font-mono text-2xl font-bold tabular-nums text-zinc-950">
             {formatIdr(metrics.grossSales)}
           </p>
-          <p className="mt-1 text-[11px] font-medium text-emerald-700">
+          <p className="mt-1 text-[11px] font-medium text-[#1D7D32]">
             100% Net Kept (Rp 0 Komisi Marketplace)
           </p>
         </div>
@@ -397,7 +386,7 @@ export default function AdminAnalyticsPage() {
         <div className="rounded-[24px] border border-black/[0.06] bg-white p-5 shadow-apple-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-zinc-500">Total Orders</span>
-            <ShoppingBag className="h-4 w-4 text-apple-blue" />
+            <Receipt aria-hidden="true" weight="duotone" className="h-4 w-4 text-apple-blue" />
           </div>
           <p className="mt-2 font-mono text-2xl font-bold tabular-nums text-zinc-950">
             {metrics.totalOrders}
@@ -410,7 +399,7 @@ export default function AdminAnalyticsPage() {
         <div className="rounded-[24px] border border-black/[0.06] bg-white p-5 shadow-apple-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-zinc-500">Average Order Value (AOV)</span>
-            <BarChart3 className="h-4 w-4 text-purple-600" />
+            <ChartBar aria-hidden="true" weight="duotone" className="h-4 w-4 text-purple-600" />
           </div>
           <p className="mt-2 font-mono text-2xl font-bold tabular-nums text-zinc-950">
             {formatIdr(metrics.aov)}
@@ -421,7 +410,7 @@ export default function AdminAnalyticsPage() {
         <div className="rounded-[24px] border border-black/[0.06] bg-white p-5 shadow-apple-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-zinc-500">Active Occupied Tables</span>
-            <Users className="h-4 w-4 text-amber-600" />
+            <UsersThree aria-hidden="true" weight="duotone" className="h-4 w-4 text-[#B25000]" />
           </div>
           <p className="mt-2 font-mono text-2xl font-bold tabular-nums text-zinc-950">
             {metrics.occupiedTables}{' '}
@@ -485,7 +474,7 @@ export default function AdminAnalyticsPage() {
                 Perbandingan settlement tunai (Cash) vs Bank Transfer / QRIS Statis
               </p>
             </div>
-            <CreditCard className="h-5 w-5 text-apple-blue" />
+            <CreditCard aria-hidden="true" weight="duotone" className="h-5 w-5 text-apple-blue" />
           </div>
 
           <div className="mt-6">
@@ -504,9 +493,8 @@ export default function AdminAnalyticsPage() {
 
             <div className="mt-6 grid grid-cols-2 gap-4">
               <div className="rounded-2xl border border-apple-blue/20 bg-apple-blue/5 p-4">
-                <div className="flex items-center gap-2 text-xs font-bold text-apple-blue">
-                  <span className="h-2.5 w-2.5 rounded-full bg-apple-blue" />
-                  <span>QRIS / Bank Transfer ({qrisSharePct}%)</span>
+                <div className="text-xs font-bold text-apple-blue">
+                  QRIS / Bank Transfer ({qrisSharePct}%)
                 </div>
                 <p className="mt-2 font-mono text-lg font-bold tabular-nums text-zinc-950">
                   {formatIdr(metrics.qrisTotal)}
@@ -517,9 +505,8 @@ export default function AdminAnalyticsPage() {
               </div>
 
               <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-                <div className="flex items-center gap-2 text-xs font-bold text-emerald-700">
-                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                  <span>Pay at Cashier / Cash ({cashSharePct}%)</span>
+                <div className="text-xs font-bold text-[#1D7D32]">
+                  Pay at Cashier / Cash ({cashSharePct}%)
                 </div>
                 <p className="mt-2 font-mono text-lg font-bold tabular-nums text-zinc-950">
                   {formatIdr(metrics.cashTotal)}
@@ -536,7 +523,7 @@ export default function AdminAnalyticsPage() {
       {/* Top 5 Best-Selling Dishes Table (Responsive Table Pattern) */}
       <section className="mt-6 rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-sm">
         <div className="mb-4 flex items-center gap-2">
-          <Award className="h-5 w-5 text-amber-500" />
+          <Trophy aria-hidden="true" weight="duotone" className="h-5 w-5 text-[#B25000]" />
           <h2 className="text-base font-bold text-zinc-950">Top 5 Best-Selling Dishes</h2>
         </div>
 

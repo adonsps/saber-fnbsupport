@@ -4,21 +4,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
-  AlertCircle,
-  BellRing,
+  BellRinging,
   Check,
-  CheckCircle2,
-  ChefHat,
   Clock,
-  Copy,
-  FileText,
-  Loader2,
-  PackageCheck,
+  CookingPot,
+  Package,
   QrCode,
-  RefreshCw,
-  Upload,
-  ZoomIn,
-} from 'lucide-react';
+  Receipt,
+} from '@phosphor-icons/react';
 import { Branch, Merchant, Order, OrderStatus, PaymentStatus, PaymentType } from '@/types/schema';
 import { cn, formatIdr } from '@/lib/utils';
 
@@ -39,25 +32,25 @@ const PROGRESS_STEPS = [
     key: OrderStatus.PAYMENT_PENDING_APPROVAL,
     label: 'Payment Proof Audit',
     sub: 'Kasir sedang memeriksa bukti transfer',
-    icon: CheckCircle2,
+    icon: Receipt,
   },
   {
     key: OrderStatus.IN_KITCHEN,
     label: 'Payment Approved & In Kitchen',
     sub: 'Pesanan sedang dimasak & disiapkan',
-    icon: ChefHat,
+    icon: CookingPot,
   },
   {
     key: OrderStatus.READY_FOR_DELIVERY,
     label: 'Ready / Out for Delivery',
     sub: 'Siap disajikan ke meja / diantar kurir',
-    icon: BellRing,
+    icon: BellRinging,
   },
   {
     key: OrderStatus.COMPLETED,
     label: 'Completed',
     sub: 'Pesanan selesai & lunas',
-    icon: PackageCheck,
+    icon: Package,
   },
 ];
 
@@ -143,7 +136,7 @@ export default function LiveOrderTrackingPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-apple-blue" />
+        <p className="font-mono text-xs font-medium text-[#515154]">Loading order pass...</p>
       </div>
     );
   }
@@ -151,8 +144,7 @@ export default function LiveOrderTrackingPage() {
   if (!order) {
     return (
       <div className="mx-auto max-w-xl px-4 pt-12 text-center">
-        <AlertCircle className="mx-auto h-10 w-10 text-red-500" />
-        <h1 className="mt-3 text-xl font-bold text-zinc-950">Pesanan Tidak Ditemukan</h1>
+        <h1 className="text-xl font-bold text-zinc-950">Pesanan Tidak Ditemukan</h1>
         <Link
           href="/warungmakan"
           className="mt-4 inline-block rounded-full bg-apple-blue px-6 py-2.5 text-xs font-bold text-white"
@@ -176,8 +168,7 @@ export default function LiveOrderTrackingPage() {
         <div className="saber-ticket-divider flex flex-wrap items-start justify-between gap-4 pb-5">
           <div>
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-apple-blue/10 px-3 py-1 text-[11px] font-bold text-apple-blue">
-                <span className="h-2 w-2 rounded-full bg-apple-blue" />
+              <span className="inline-flex items-center rounded-full bg-apple-blue/10 px-3 py-1 text-[11px] font-bold text-apple-blue">
                 Live Order Pass
               </span>
               <span className="font-mono text-xs font-bold text-[#515154]">
@@ -197,17 +188,15 @@ export default function LiveOrderTrackingPage() {
             <button
               type="button"
               onClick={fetchOrder}
-              className="apple-interactive inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-black/[0.1] bg-[#F5F5F7] px-4 py-2 text-xs font-semibold text-[#1D1D1F] hover:bg-[#EFEFF4]"
+              className="apple-interactive inline-flex min-h-[44px] items-center rounded-full border border-black/[0.1] bg-[#F5F5F7] px-4 py-2 text-xs font-semibold text-[#1D1D1F] hover:bg-[#EFEFF4]"
             >
-              <RefreshCw className="h-3.5 w-3.5" />
-              <span>Sync Pass</span>
+              Sync Pass
             </button>
             <Link
               href={`/order/${order.id}/receipt`}
-              className="apple-interactive inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-apple-blue px-4 py-2 text-xs font-semibold text-white hover:bg-apple-blueHover"
+              className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-4 py-2 text-xs font-semibold text-white hover:bg-apple-blueHover"
             >
-              <FileText className="h-3.5 w-3.5" />
-              <span>View Invoice</span>
+              View Invoice
             </Link>
           </div>
         </div>
@@ -216,16 +205,13 @@ export default function LiveOrderTrackingPage() {
         {order.paymentStatus === PaymentStatus.REJECTED && (
           <div
             role="alert"
-            className="mt-5 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-xs text-red-800"
+            className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-xs text-[#D70015]"
           >
-            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
-            <div>
-              <p className="font-bold">Bukti Pembayaran Perlu Diunggah Ulang</p>
-              <p className="mt-0.5">
-                {order.receipts[0]?.rejectionReason ||
-                  'Kasir meminta unggah ulang foto bukti transfer yang lebih jelas.'}
-              </p>
-            </div>
+            <p className="font-bold">Bukti Pembayaran Perlu Diunggah Ulang</p>
+            <p className="mt-0.5">
+              {order.receipts[0]?.rejectionReason ||
+                'Kasir meminta unggah ulang foto bukti transfer yang lebih jelas.'}
+            </p>
           </div>
         )}
 
@@ -258,7 +244,11 @@ export default function LiveOrderTrackingPage() {
                       : 'bg-zinc-200 text-zinc-500'
                   )}
                 >
-                  {isCompleted ? <Check className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
+                  {isCompleted ? (
+                    <Check aria-hidden="true" weight="bold" className="h-5 w-5" />
+                  ) : (
+                    <Icon aria-hidden="true" weight="duotone" className="h-5 w-5" />
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-bold text-zinc-950">{st.label}</p>
@@ -299,15 +289,14 @@ export default function LiveOrderTrackingPage() {
                 <button
                   type="button"
                   onClick={() => qrisZoomDialogRef.current?.showModal()}
-                  className="group relative overflow-hidden rounded-2xl border border-black/10 bg-white p-2 shadow-sm"
+                  className="apple-interactive group relative overflow-hidden rounded-2xl border border-black/10 bg-white p-2 shadow-sm"
                 >
                   <img
                     src={branch.qrisImageUrl}
                     alt="Static QRIS"
                     className="h-60 w-48 object-contain"
                   />
-                  <span className="liquid-glass-clear absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-bold text-white">
-                    <ZoomIn className="h-3 w-3" />
+                  <span className="liquid-glass-clear absolute bottom-3 right-3 inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold text-white">
                     Zoom QRIS
                   </span>
                 </button>
@@ -327,14 +316,12 @@ export default function LiveOrderTrackingPage() {
                   <button
                     type="button"
                     onClick={() => handleCopy('rek', branch?.bankAccountNumber)}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1 font-mono font-bold text-apple-blue shadow-sm"
+                    className="apple-interactive inline-flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1 font-mono font-bold text-apple-blue shadow-sm"
                   >
                     <span>{branch?.bankAccountNumber}</span>
-                    {copiedField === 'rek' ? (
-                      <Check className="h-3 w-3 text-emerald-600" />
-                    ) : (
-                      <Copy className="h-3 w-3" />
-                    )}
+                    <span className="text-[10px] font-semibold uppercase text-[#515154]">
+                      {copiedField === 'rek' ? 'Copied' : 'Copy'}
+                    </span>
                   </button>
                 </div>
                 <div className="flex items-center justify-between">
@@ -346,14 +333,12 @@ export default function LiveOrderTrackingPage() {
                   <button
                     type="button"
                     onClick={() => handleCopy('amt', String(order.totalAmountIdr))}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1 font-mono font-bold text-zinc-950 shadow-sm"
+                    className="apple-interactive inline-flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1 font-mono font-bold text-zinc-950 shadow-sm"
                   >
                     <span>{formatIdr(order.totalAmountIdr)}</span>
-                    {copiedField === 'amt' ? (
-                      <Check className="h-3 w-3 text-emerald-600" />
-                    ) : (
-                      <Copy className="h-3 w-3" />
-                    )}
+                    <span className="text-[10px] font-semibold uppercase text-[#515154]">
+                      {copiedField === 'amt' ? 'Copied' : 'Copy'}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -371,8 +356,7 @@ export default function LiveOrderTrackingPage() {
                 ) : null}
 
                 <div className="flex flex-wrap gap-2">
-                  <label className="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-full border border-zinc-300 bg-white px-4 text-xs font-bold text-zinc-800 hover:bg-zinc-50">
-                    <Upload className="h-4 w-4 text-apple-blue" />
+                  <label className="apple-interactive inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center rounded-full border border-zinc-300 bg-white px-4 text-xs font-bold text-zinc-800 hover:bg-zinc-50">
                     <span>{receiptPreview ? 'Ganti Gambar' : 'Pilih Foto Bukti Bayar'}</span>
                     <input
                       type="file"
@@ -385,14 +369,9 @@ export default function LiveOrderTrackingPage() {
                   <button
                     type="submit"
                     disabled={!receiptPreview || uploading}
-                    className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-full bg-apple-blue px-5 text-xs font-bold text-white shadow-apple-sm hover:bg-apple-blueHover disabled:opacity-50"
+                    className="apple-interactive inline-flex min-h-[44px] flex-1 items-center justify-center rounded-full bg-apple-blue px-5 text-xs font-bold text-white shadow-apple-sm hover:bg-apple-blueHover disabled:opacity-50"
                   >
-                    {uploading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="h-4 w-4" />
-                    )}
-                    <span>Kirim Bukti Pembayaran</span>
+                    {uploading ? 'Mengunggah...' : 'Kirim Bukti Pembayaran'}
                   </button>
                 </div>
               </form>

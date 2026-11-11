@@ -2,20 +2,13 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  AlertTriangle,
-  ArrowDown,
-  ArrowUp,
-  CheckCircle2,
-  Edit3,
-  GripVertical,
-  ImagePlus,
-  Languages,
-  Loader2,
-  Plus,
+  BowlFood,
+  CaretDown,
+  CaretUp,
+  Image as ImageIcon,
   Power,
-  Trash2,
-  UtensilsCrossed,
-} from 'lucide-react';
+  Trash,
+} from '@phosphor-icons/react';
 import { Category, MenuItem, Merchant } from '@/types/schema';
 import { cn, formatIdr } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -237,7 +230,7 @@ export default function AdminMenuPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-apple-blue" />
+        <p className="font-mono text-xs font-medium text-[#515154]">Loading menu engine...</p>
       </div>
     );
   }
@@ -252,7 +245,7 @@ export default function AdminMenuPage() {
         className={cn(
           'mb-6 flex flex-col justify-between gap-4 rounded-[24px] border p-5 shadow-apple-sm transition-colors sm:flex-row sm:items-center',
           merchant?.isStoreOpen
-            ? 'border-emerald-500/25 bg-white'
+            ? 'border-black/[0.08] bg-white'
             : 'border-red-300 bg-red-50/90'
         )}
       >
@@ -261,25 +254,21 @@ export default function AdminMenuPage() {
             className={cn(
               'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl',
               merchant?.isStoreOpen
-                ? 'bg-emerald-500/15 text-emerald-700'
-                : 'bg-red-500/15 text-red-600'
+                ? 'bg-emerald-500/12 text-[#1D7D32]'
+                : 'bg-red-500/15 text-[#D70015]'
             )}
           >
-            {merchant?.isStoreOpen ? (
-              <CheckCircle2 className="h-6 w-6" />
-            ) : (
-              <AlertTriangle className="h-6 w-6" />
-            )}
+            <Power aria-hidden="true" weight="bold" className="h-5 w-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-bold tracking-tight text-zinc-950">
                 Store Status:{' '}
-                <span className={merchant?.isStoreOpen ? 'text-emerald-700' : 'text-red-600'}>
+                <span className={merchant?.isStoreOpen ? 'text-[#1D7D32]' : 'text-[#D70015]'}>
                   {merchant?.isStoreOpen ? 'OPEN' : 'PAUSED'}
                 </span>
               </h1>
-              <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-[11px] font-semibold text-zinc-600">
+              <span className="rounded-full bg-[#F5F5F7] px-2.5 py-0.5 text-[11px] font-semibold text-[#515154]">
                 {merchant?.name}
               </span>
             </div>
@@ -297,25 +286,21 @@ export default function AdminMenuPage() {
             type="button"
             onClick={handleToggleStoreOpen}
             className={cn(
-              'apple-interactive inline-flex min-h-[44px] items-center gap-2 rounded-full border px-5 py-2.5 text-xs font-bold transition-all',
+              'apple-interactive inline-flex min-h-[44px] items-center rounded-full border px-5 py-2.5 text-xs font-bold transition-all',
               merchant?.isStoreOpen
                 ? 'border-[#D70015]/30 bg-red-50 text-[#D70015] hover:bg-red-100'
                 : 'border-[#1D7D32]/30 bg-emerald-50 text-[#1D7D32] hover:bg-emerald-100'
             )}
           >
-            <Power className="h-4 w-4" />
-            <span>
-              {merchant?.isStoreOpen ? 'Pause Store Orders' : 'Resume Store Orders'}
-            </span>
+            {merchant?.isStoreOpen ? 'Pause Store Orders' : 'Resume Store Orders'}
           </button>
 
           <button
             type="button"
             onClick={openNewItemModal}
-            className="apple-interactive inline-flex min-h-[44px] items-center gap-2 rounded-full bg-apple-blue px-5 py-2.5 text-xs font-bold text-white shadow-apple-sm hover:bg-apple-blueHover"
+            className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-5 py-2.5 text-xs font-bold text-white shadow-apple-sm hover:bg-apple-blueHover"
           >
-            <Plus className="h-4 w-4" />
-            <span>Add Menu Item</span>
+            Add Menu Item
           </button>
         </div>
       </div>
@@ -336,10 +321,9 @@ export default function AdminMenuPage() {
                   setCatDisplayOrder(categories.length + 1);
                   catDialogRef.current?.showModal();
                 }}
-                className="inline-flex items-center gap-1 rounded-full bg-[#F5F5F7] px-3 py-1.5 text-xs font-semibold text-apple-blue transition-colors hover:bg-apple-blue hover:text-white"
+                className="apple-interactive inline-flex items-center rounded-full bg-[#F5F5F7] px-3 py-1.5 text-xs font-semibold text-apple-blue hover:bg-apple-blue hover:text-white"
               >
-                <Plus className="h-3.5 w-3.5" />
-                <span>Add Category</span>
+                Add Category
               </button>
             </div>
 
@@ -375,9 +359,11 @@ export default function AdminMenuPage() {
                     <button
                       type="button"
                       onClick={() => setActiveCatId(cat.id)}
-                      className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                      className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
                     >
-                      <GripVertical className="h-4 w-4 shrink-0 text-zinc-400" />
+                      <span className="font-mono text-[11px] font-semibold tabular-nums text-[#515154]">
+                        {String(idx + 1).padStart(2, '0')}
+                      </span>
                       <div className="min-w-0">
                         <p className="truncate text-xs font-semibold text-zinc-950">{cat.nameId}</p>
                         {cat.nameEn && (
@@ -397,7 +383,7 @@ export default function AdminMenuPage() {
                         onClick={() => handleMoveCategory(idx, -1)}
                         className="rounded-lg p-1 text-zinc-400 hover:bg-white hover:text-zinc-900 disabled:opacity-30"
                       >
-                        <ArrowUp className="h-3.5 w-3.5" />
+                        <CaretUp aria-hidden="true" weight="bold" className="h-3.5 w-3.5" />
                       </button>
                       <button
                         type="button"
@@ -406,7 +392,7 @@ export default function AdminMenuPage() {
                         onClick={() => handleMoveCategory(idx, 1)}
                         className="rounded-lg p-1 text-zinc-400 hover:bg-white hover:text-zinc-900 disabled:opacity-30"
                       >
-                        <ArrowDown className="h-3.5 w-3.5" />
+                        <CaretDown aria-hidden="true" weight="bold" className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   </div>
@@ -425,8 +411,7 @@ export default function AdminMenuPage() {
               <div key={category.id} className="space-y-4">
                 <div className="flex items-center justify-between border-b border-black/[0.06] pb-2.5">
                   <div className="flex items-center gap-2.5">
-                    <UtensilsCrossed className="h-4 w-4 text-apple-blue" />
-                    <h3 className="text-base font-bold tracking-tight text-zinc-950">
+                    <h3 className="font-serif text-lg font-bold tracking-tight text-zinc-950">
                       {category.nameId}
                     </h3>
                     {category.nameEn && (
@@ -451,10 +436,9 @@ export default function AdminMenuPage() {
                         setActiveCatId(category.id);
                         openNewItemModal();
                       }}
-                      className="apple-interactive mt-3 inline-flex min-h-[40px] items-center gap-1.5 rounded-full bg-apple-blue/10 px-4 py-2 text-xs font-bold text-apple-blue hover:bg-apple-blue hover:text-white"
+                      className="apple-interactive mt-3 inline-flex min-h-[40px] items-center rounded-full bg-apple-blue/10 px-4 py-2 text-xs font-bold text-apple-blue hover:bg-apple-blue hover:text-white"
                     >
-                      <Plus className="h-3.5 w-3.5" />
-                      <span>Add Dish to {category.nameId}</span>
+                      Add Dish to {category.nameId}
                     </button>
                   </div>
                 ) : (
@@ -482,7 +466,7 @@ export default function AdminMenuPage() {
                               />
                             ) : (
                               <div className="flex h-full items-center justify-center text-zinc-400">
-                                <UtensilsCrossed className="h-6 w-6" />
+                                <BowlFood aria-hidden="true" weight="duotone" className="h-6 w-6" />
                               </div>
                             )}
                             {item.isSoldOut && (
@@ -499,9 +483,8 @@ export default function AdminMenuPage() {
                                   {item.titleId}
                                 </h4>
                                 {item.titleEn && (
-                                  <p className="mt-0.5 flex items-center gap-1 text-[11px] font-medium text-apple-blue">
-                                    <Languages className="h-3 w-3" />
-                                    {item.titleEn}
+                                  <p className="mt-0.5 text-[11px] font-medium text-apple-blue">
+                                    EN · {item.titleEn}
                                   </p>
                                 )}
                               </div>
@@ -553,10 +536,9 @@ export default function AdminMenuPage() {
                             <button
                               type="button"
                               onClick={() => openEditItemModal(item)}
-                              className="inline-flex items-center gap-1 rounded-full bg-[#F5F5F7] px-3 py-1.5 text-xs font-semibold text-zinc-800 hover:bg-zinc-200"
+                              className="apple-interactive inline-flex items-center rounded-full bg-[#F5F5F7] px-3.5 py-1.5 text-xs font-semibold text-zinc-800 hover:bg-zinc-200"
                             >
-                              <Edit3 className="h-3.5 w-3.5" />
-                              <span>Edit</span>
+                              Edit
                             </button>
                             <button
                               type="button"
@@ -564,7 +546,7 @@ export default function AdminMenuPage() {
                               onClick={() => handleDeleteMenuItem(item.id)}
                               className="rounded-full p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash aria-hidden="true" weight="regular" className="h-4 w-4" />
                             </button>
                           </div>
                         </div>
@@ -774,13 +756,12 @@ export default function AdminMenuPage() {
               />
             ) : (
               <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white text-zinc-400">
-                <ImagePlus className="h-5 w-5" />
+                <ImageIcon aria-hidden="true" weight="duotone" className="h-5 w-5" />
               </div>
             )}
             <div className="flex-1">
               <p className="text-xs font-bold text-zinc-900">Foto Produk (Optimized WebP, max 2MB)</p>
-              <label className="mt-1.5 inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold text-apple-blue shadow-sm hover:bg-zinc-50">
-                <ImagePlus className="h-3.5 w-3.5" />
+              <label className="apple-interactive mt-1.5 inline-flex cursor-pointer items-center rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold text-apple-blue shadow-sm hover:bg-zinc-50">
                 <span>Pilih & Kompres Otomatis ke WebP</span>
                 <input
                   type="file"
