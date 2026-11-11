@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { motion } from 'framer-motion';
 import {
   BarChart3,
   ChefHat,
@@ -14,6 +15,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { APPLE_SPRINGS, triggerCausalHaptic } from '@/lib/apple-motion';
 
 const NAV_ITEMS = [
   {
@@ -64,13 +66,14 @@ export function SaberWorkspaceBar() {
   const pathname = usePathname();
 
   return (
-    <header className="no-print sticky top-0 z-50 border-b border-black/[0.06] bg-white/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/75">
+    <header className="no-print apple-material-toolbar sticky top-0 z-50">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
         <Link
           href="/"
-          className="group flex items-center gap-2.5 rounded-full pr-2 transition-transform active:scale-[0.98]"
+          onPointerDown={() => triggerCausalHaptic(6)}
+          className="apple-interactive group flex items-center gap-2.5 rounded-full pr-2"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-zinc-950 text-white shadow-sm group-hover:bg-apple-blue transition-colors">
+          <div className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-zinc-950 text-white shadow-sm transition-colors group-hover:bg-apple-blue">
             <QrCode className="h-4 w-4" />
           </div>
           <div className="flex flex-col">
@@ -78,11 +81,11 @@ export function SaberWorkspaceBar() {
               <span className="text-sm font-semibold tracking-tight text-zinc-950">
                 Saber F&B Direct
               </span>
-              <span className="hidden rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 sm:inline-flex items-center gap-1">
+              <span className="hidden items-center gap-1 rounded-full bg-emerald-500/12 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 sm:inline-flex">
                 <CheckCircle2 className="h-2.5 w-2.5" /> 0% Commission
               </span>
             </div>
-            <span className="text-[10px] font-medium text-zinc-500">
+            <span className="apple-caption text-[10px] font-medium text-zinc-500">
               UMKM Direct Commerce & Table QR Platform
             </span>
           </div>
@@ -90,7 +93,7 @@ export function SaberWorkspaceBar() {
 
         <nav
           aria-label="Platform Screens Navigation"
-          className="no-scrollbar flex items-center gap-1 overflow-x-auto py-0.5"
+          className="no-scrollbar apple-snap-scroller items-center gap-1 py-0.5"
         >
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
@@ -103,13 +106,21 @@ export function SaberWorkspaceBar() {
               <Link
                 key={item.href}
                 href={item.href}
+                onPointerDown={() => triggerCausalHaptic(6)}
                 className={cn(
-                  'flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-150 active:scale-[0.97]',
+                  'apple-interactive relative flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold',
                   isActive
-                    ? 'bg-zinc-950 text-white shadow-sm'
-                    : 'text-zinc-600 hover:bg-zinc-200/60 hover:text-zinc-950'
+                    ? 'text-white'
+                    : 'text-zinc-600 hover:bg-black/[0.04] hover:text-zinc-950'
                 )}
               >
+                {isActive && (
+                  <motion.span
+                    layoutId="saber-workspace-active-pill"
+                    transition={APPLE_SPRINGS.default}
+                    className="absolute inset-0 -z-10 rounded-full bg-zinc-950 shadow-sm"
+                  />
+                )}
                 <Icon className="h-3.5 w-3.5" />
                 <span>{item.label}</span>
               </Link>
@@ -120,4 +131,3 @@ export function SaberWorkspaceBar() {
     </header>
   );
 }
-

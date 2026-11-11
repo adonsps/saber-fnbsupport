@@ -2,7 +2,6 @@ import Link from 'next/link';
 import {
   ArrowUpRight,
   BarChart3,
-  CheckCircle2,
   ChefHat,
   Compass,
   Layers,
@@ -24,7 +23,9 @@ export default function HomePage() {
   const store = getStore();
   const merchant = store.merchants[0];
   const branch = store.branches[0];
-  const activeOrders = store.orders.filter((o) => o.orderStatus !== 'COMPLETED' && o.orderStatus !== 'CANCELLED');
+  const activeOrders = store.orders.filter(
+    (o) => o.orderStatus !== 'COMPLETED' && o.orderStatus !== 'CANCELLED'
+  );
   const settledOrders = store.orders.filter((o) => o.orderStatus === 'COMPLETED');
   const totalRevenue = settledOrders.reduce((acc, o) => acc + Number(o.totalAmountIdr), 0);
 
@@ -64,7 +65,7 @@ export default function HomePage() {
       title: 'Customer Subdomain Mini-Site & Checkout',
       route: `/${merchant.slug}?table=TABLE%2004`,
       description:
-        'Zero-registration mobile PWA storefront with ID | EN pill switch, Walk-In QR / Pre-Order / Self-Delivery tabs, localStorage cart, and frictionless guest checkout modal.',
+        'Zero-registration mobile PWA storefront with ID | EN spring pill switch, Walk-In QR / Pre-Order / Self-Delivery tabs, localStorage cart, and rubber-banded sheet checkout.',
       icon: Store,
       badge: `${merchant.slug}.saberconsulting.id`,
       color: 'bg-amber-500/10 text-amber-700',
@@ -103,35 +104,35 @@ export default function HomePage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
-      {/* Apple HIG Hero Section */}
-      <section className="relative overflow-hidden rounded-[28px] border border-black/[0.06] bg-white p-8 shadow-apple-md sm:p-12">
+      {/* Apple Fluid Interface Hero Section (§12 Materials & §15 Typography) */}
+      <section className="apple-hero-surface relative overflow-hidden rounded-[28px] border border-black/[0.06] p-8 sm:p-12">
         <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-gradient-to-br from-apple-blue/15 via-emerald-400/10 to-transparent blur-3xl" />
 
         <div className="relative z-10 flex flex-col justify-between gap-8 lg:flex-row lg:items-center">
           <div className="max-w-3xl space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-black/[0.08] bg-[#F5F5F7] px-3.5 py-1.5 text-xs font-semibold text-zinc-800">
+            <div className="inline-flex flex-wrap items-center gap-2 rounded-full border border-black/[0.08] bg-white/85 px-3.5 py-1.5 text-xs font-semibold text-zinc-800 shadow-sm backdrop-blur-md">
               <span className="h-2 w-2 rounded-full bg-apple-green animate-pulse" />
-              <span>Saber Technology Studio • UMKM F&B Direct Commerce Platform</span>
+              <span>Saber Technology Studio • Apple Fluid Interface Architecture</span>
             </div>
 
-            <h1 className="text-3xl font-bold tracking-tight text-zinc-950 sm:text-5xl sm:leading-[1.08]">
+            <h1 className="apple-display font-bold text-zinc-950">
               Zero-Commission Direct Ordering & Table QR Engine.
             </h1>
 
-            <p className="text-base leading-relaxed text-zinc-600 sm:text-lg">
+            <p className="max-w-[62ch] text-base leading-relaxed text-zinc-600 sm:text-lg">
               Dirancang khusus untuk warung, kafe, restoran dine-in, dan cloud kitchen di Indonesia.
               100% pendapatan milik merchant tanpa potongan komisi aplikasi, tanpa perlu perangkat
               POS khusus, dan terintegrasi langsung dengan{' '}
-              <span className="font-semibold text-zinc-900">
+              <strong className="font-semibold text-zinc-900">
                 Saber Central Automated WhatsApp Gateway Bot
-              </span>
+              </strong>
               .
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <Link
                 href={`/${merchant.slug}?table=TABLE%2004`}
-                className="inline-flex items-center gap-2 rounded-full bg-apple-blue px-6 py-3 text-sm font-semibold text-white shadow-apple-sm transition-all hover:bg-apple-blueHover active:scale-[0.98]"
+                className="apple-interactive inline-flex min-h-[46px] items-center gap-2 rounded-full bg-apple-blue px-6 py-3 text-sm font-semibold text-white shadow-apple-sm hover:bg-apple-blueHover"
               >
                 <Smartphone className="h-4 w-4" />
                 <span>Buka Mini-Site Pelanggan (Meja 04)</span>
@@ -140,7 +141,7 @@ export default function HomePage() {
 
               <Link
                 href="/cashier/orders"
-                className="inline-flex items-center gap-2 rounded-full bg-zinc-950 px-6 py-3 text-sm font-semibold text-white shadow-apple-sm transition-all hover:bg-zinc-800 active:scale-[0.98]"
+                className="apple-interactive inline-flex min-h-[46px] items-center gap-2 rounded-full bg-zinc-950 px-6 py-3 text-sm font-semibold text-white shadow-apple-sm hover:bg-zinc-800"
               >
                 <ChefHat className="h-4 w-4" />
                 <span>Buka Kanban Kasir & Dapur</span>
@@ -148,7 +149,7 @@ export default function HomePage() {
 
               <Link
                 href="/onboarding"
-                className="inline-flex items-center gap-2 rounded-full border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-800 transition-all hover:bg-zinc-50 active:scale-[0.98]"
+                className="apple-interactive inline-flex min-h-[46px] items-center gap-2 rounded-full border border-zinc-300/90 bg-white/90 px-5 py-3 text-sm font-semibold text-zinc-800 shadow-sm hover:bg-white"
               >
                 <Sparkles className="h-4 w-4 text-apple-blue" />
                 <span>Merchant Onboarding Wizard</span>
@@ -157,10 +158,10 @@ export default function HomePage() {
           </div>
 
           {/* Active Store Status Snapshot Card */}
-          <div className="w-full shrink-0 rounded-[22px] border border-black/[0.06] bg-[#F5F5F7]/90 p-6 lg:w-80">
+          <div className="w-full shrink-0 rounded-[22px] border border-black/[0.06] bg-white/85 p-6 shadow-apple-sm backdrop-blur-xl lg:w-80">
             <div className="flex items-center justify-between border-b border-black/[0.06] pb-4">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                <p className="apple-caption text-[11px] font-semibold uppercase text-zinc-500">
                   Active Tenant Store
                 </p>
                 <h2 className="mt-0.5 text-base font-bold text-zinc-950">{merchant.name}</h2>
@@ -208,7 +209,7 @@ export default function HomePage() {
 
         {/* Non-Negotiable Architecture Pillars */}
         <div className="mt-8 grid grid-cols-1 gap-3 border-t border-black/[0.06] pt-6 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="flex items-start gap-3 rounded-2xl bg-[#F5F5F7]/70 p-3.5">
+          <div className="flex items-start gap-3 rounded-2xl border border-black/[0.04] bg-white/75 p-3.5 shadow-sm backdrop-blur-sm">
             <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-apple-blue" />
             <div>
               <p className="text-xs font-semibold text-zinc-950">0% Komisi & Zero Hardware</p>
@@ -217,7 +218,7 @@ export default function HomePage() {
               </p>
             </div>
           </div>
-          <div className="flex items-start gap-3 rounded-2xl bg-[#F5F5F7]/70 p-3.5">
+          <div className="flex items-start gap-3 rounded-2xl border border-black/[0.04] bg-white/75 p-3.5 shadow-sm backdrop-blur-sm">
             <Zap className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
             <div>
               <p className="text-xs font-semibold text-zinc-950">100% Tanpa Login Tamu</p>
@@ -226,7 +227,7 @@ export default function HomePage() {
               </p>
             </div>
           </div>
-          <div className="flex items-start gap-3 rounded-2xl bg-[#F5F5F7]/70 p-3.5">
+          <div className="flex items-start gap-3 rounded-2xl border border-black/[0.04] bg-white/75 p-3.5 shadow-sm backdrop-blur-sm">
             <MessageSquareText className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
             <div>
               <p className="text-xs font-semibold text-zinc-950">2-Step Stock & Payment Loop</p>
@@ -235,7 +236,7 @@ export default function HomePage() {
               </p>
             </div>
           </div>
-          <div className="flex items-start gap-3 rounded-2xl bg-[#F5F5F7]/70 p-3.5">
+          <div className="flex items-start gap-3 rounded-2xl border border-black/[0.04] bg-white/75 p-3.5 shadow-sm backdrop-blur-sm">
             <Layers className="mt-0.5 h-5 w-5 shrink-0 text-purple-600" />
             <div>
               <p className="text-xs font-semibold text-zinc-950">Auto Table Session Reset</p>
@@ -251,10 +252,10 @@ export default function HomePage() {
       <section className="mt-10">
         <div className="mb-5 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-apple-blue">
+            <p className="apple-caption text-xs font-semibold uppercase text-apple-blue">
               Full-Stack Sprint 1 – Sprint 4 Architecture
             </p>
-            <h2 className="text-2xl font-bold tracking-tight text-zinc-950">
+            <h2 className="apple-headline font-bold text-zinc-950">
               Eksplorasi Seluruh Modul Platform
             </h2>
           </div>
@@ -270,11 +271,11 @@ export default function HomePage() {
               <Link
                 key={mod.title}
                 href={mod.route}
-                className="group flex flex-col justify-between rounded-[22px] border border-black/[0.06] bg-white p-6 shadow-apple-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-apple-blue/30 hover:shadow-apple-md active:scale-[0.99]"
+                className="apple-interactive group flex flex-col justify-between rounded-[22px] border border-black/[0.06] bg-white p-6 shadow-apple-sm hover:-translate-y-0.5 hover:border-apple-blue/30 hover:shadow-apple-md"
               >
                 <div>
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+                    <span className="apple-caption text-[11px] font-semibold uppercase text-zinc-400">
                       {mod.sprint}
                     </span>
                     <span
@@ -288,7 +289,7 @@ export default function HomePage() {
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#F5F5F7] text-zinc-900 transition-colors group-hover:bg-apple-blue group-hover:text-white">
                       <Icon className="h-5 w-5" />
                     </div>
-                    <h3 className="text-base font-bold tracking-tight text-zinc-950 group-hover:text-apple-blue transition-colors">
+                    <h3 className="text-base font-bold tracking-tight text-zinc-950 transition-colors group-hover:text-apple-blue">
                       {mod.title}
                     </h3>
                   </div>
@@ -298,7 +299,7 @@ export default function HomePage() {
 
                 <div className="mt-5 flex items-center justify-between border-t border-black/[0.05] pt-3.5 text-xs font-semibold text-apple-blue">
                   <span>Buka Modul Layar</span>
-                  <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                 </div>
               </Link>
             );
@@ -308,4 +309,3 @@ export default function HomePage() {
     </div>
   );
 }
-

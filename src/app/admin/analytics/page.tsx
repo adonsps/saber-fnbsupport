@@ -27,6 +27,8 @@ import {
   TableSession,
 } from '@/types/schema';
 import { cn, formatIdr } from '@/lib/utils';
+import { motion } from 'framer-motion';
+import { APPLE_SPRINGS, triggerCausalHaptic } from '@/lib/apple-motion';
 
 export default function AdminAnalyticsPage() {
   const [merchant, setMerchant] = useState<Merchant | null>(null);
@@ -237,28 +239,37 @@ export default function AdminAnalyticsPage() {
 
         <div className="no-print flex flex-wrap items-center gap-2.5">
           <div className="inline-flex rounded-full border border-zinc-200 bg-[#F5F5F7] p-1">
-            <button
-              type="button"
-              onClick={() => setFilterScope('ALL')}
-              className={cn(
-                'rounded-full px-3 py-1 text-xs font-bold transition-all',
-                filterScope === 'ALL' ? 'bg-white text-zinc-950 shadow-sm' : 'text-zinc-500'
-              )}
-            >
-              Semua Shift Aktif
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterScope('SETTLED_ONLY')}
-              className={cn(
-                'rounded-full px-3 py-1 text-xs font-bold transition-all',
-                filterScope === 'SETTLED_ONLY'
-                  ? 'bg-white text-zinc-950 shadow-sm'
-                  : 'text-zinc-500'
-              )}
-            >
-              Completed Only
-            </button>
+            {(
+              [
+                { id: 'ALL', label: 'Semua Shift Aktif' },
+                { id: 'SETTLED_ONLY', label: 'Completed Only' },
+              ] as const
+            ).map((scope) => {
+              const active = filterScope === scope.id;
+              return (
+                <button
+                  key={scope.id}
+                  type="button"
+                  onClick={() => {
+                    triggerCausalHaptic(6);
+                    setFilterScope(scope.id);
+                  }}
+                  className={cn(
+                    'relative z-10 rounded-full px-3 py-1 text-xs font-bold transition-colors',
+                    active ? 'text-zinc-950' : 'text-zinc-500 hover:text-zinc-900'
+                  )}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="analytics-scope-pill"
+                      transition={APPLE_SPRINGS.default}
+                      className="absolute inset-0 -z-10 rounded-full bg-white shadow-sm"
+                    />
+                  )}
+                  {scope.label}
+                </button>
+              );
+            })}
           </div>
 
           <button

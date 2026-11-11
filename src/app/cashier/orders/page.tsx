@@ -2,13 +2,12 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import {
   ArrowRightLeft,
   BellRing,
   Check,
   CheckCircle2,
-  ChefHat,
-  Clock,
   Combine,
   ExternalLink,
   Eye,
@@ -34,6 +33,7 @@ import {
   WhatsAppWebhookLog,
 } from '@/types/schema';
 import { cn, formatIdr } from '@/lib/utils';
+import { APPLE_SPRINGS, triggerCausalHaptic } from '@/lib/apple-motion';
 
 type KanbanColumnId =
   | 'PENDING_STOCK'
@@ -108,11 +108,14 @@ export default function CashierKanbanPage() {
   const [moveTargetTable, setMoveTargetTable] = useState('');
   const [mergeTargetOrderId, setMergeTargetOrderId] = useState('');
 
-  // Subtle Apple-like Web Audio API Chime
+  // Apple Design §13 Multimodal Feedback: Web Audio API Chime + Haptic Harmony on the same frame
   const playChime = () => {
+    triggerCausalHaptic([10, 30, 12]);
     if (!soundEnabled || typeof window === 'undefined') return;
     try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       const ctx = new AudioCtx();
       const now = ctx.currentTime;
       [880, 1174.66].forEach((freq, idx) => {
@@ -169,18 +172,21 @@ export default function CashierKanbanPage() {
   }, []);
 
   const openStockAuditModal = (order: Order) => {
+    triggerCausalHaptic(8);
     setActiveOrder(order);
     setEditableItems(order.items.map((item) => ({ ...item })));
     stockDialogRef.current?.showModal();
   };
 
   const openReceiptModal = (order: Order) => {
+    triggerCausalHaptic(8);
     setActiveOrder(order);
     setRejectionReason('');
     receiptDialogRef.current?.showModal();
   };
 
   const openTableControlsModal = (order: Order) => {
+    triggerCausalHaptic(8);
     setActiveOrder(order);
     const vacant = tables.find((t) => !t.isOccupied);
     setMoveTargetTable(vacant?.tableNumber || '');
@@ -195,6 +201,7 @@ export default function CashierKanbanPage() {
   };
 
   const updateEditableItemQty = (idx: number, delta: number) => {
+    triggerCausalHaptic(6);
     setEditableItems((prev) =>
       prev
         .map((item, i) => {
@@ -212,6 +219,7 @@ export default function CashierKanbanPage() {
 
   const handleConfirmStockAudit = async () => {
     if (!activeOrder || editableItems.length === 0) return;
+    triggerCausalHaptic(10);
     setBusyId(activeOrder.id);
     try {
       const res = await fetch('/api/v1/orders', {
@@ -234,6 +242,7 @@ export default function CashierKanbanPage() {
 
   const handleVerifyReceipt = async (approved: boolean) => {
     if (!activeOrder) return;
+    triggerCausalHaptic(10);
     setBusyId(activeOrder.id);
     try {
       const res = await fetch('/api/v1/orders', {
@@ -256,6 +265,7 @@ export default function CashierKanbanPage() {
   };
 
   const handleAdvanceStatus = async (orderId: string, nextStatus: OrderStatus) => {
+    triggerCausalHaptic(10);
     setBusyId(orderId);
     try {
       const res = await fetch('/api/v1/orders', {
@@ -277,6 +287,7 @@ export default function CashierKanbanPage() {
 
   const handleMoveTable = async () => {
     if (!activeOrder || !moveTargetTable) return;
+    triggerCausalHaptic(10);
     setBusyId(activeOrder.id);
     try {
       const res = await fetch('/api/v1/orders', {
@@ -299,6 +310,7 @@ export default function CashierKanbanPage() {
 
   const handleMergeTables = async () => {
     if (!activeOrder || !mergeTargetOrderId) return;
+    triggerCausalHaptic(10);
     setBusyId(activeOrder.id);
     try {
       const res = await fetch('/api/v1/orders', {
@@ -346,7 +358,7 @@ export default function CashierKanbanPage() {
               </span>
             )}
           </div>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-950">
+          <h1 className="apple-headline mt-1 font-bold text-zinc-950">
             Dashboard Antrean Kasir & Dapur
           </h1>
           <p className="text-xs text-zinc-500">
@@ -364,7 +376,7 @@ export default function CashierKanbanPage() {
               if (next) playChime();
             }}
             className={cn(
-              'inline-flex min-h-[42px] items-center gap-2 rounded-full border px-4 text-xs font-bold transition-all',
+              'apple-interactive inline-flex min-h-[42px] items-center gap-2 rounded-full border px-4 text-xs font-bold',
               soundEnabled
                 ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
                 : 'border-zinc-200 bg-zinc-100 text-zinc-500'
@@ -376,8 +388,11 @@ export default function CashierKanbanPage() {
 
           <button
             type="button"
-            onClick={loadBoard}
-            className="inline-flex min-h-[42px] items-center gap-1.5 rounded-full bg-zinc-950 px-4 text-xs font-bold text-white hover:bg-apple-blue"
+            onClick={() => {
+              triggerCausalHaptic(6);
+              loadBoard();
+            }}
+            className="apple-interactive inline-flex min-h-[42px] items-center gap-1.5 rounded-full bg-zinc-950 px-4 text-xs font-bold text-white hover:bg-apple-blue"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             <span>Refresh Board</span>
@@ -385,188 +400,215 @@ export default function CashierKanbanPage() {
         </div>
       </div>
 
-      {/* 5-Column Kanban Board */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-        {KANBAN_COLUMNS.map((col) => {
-          const colOrders = orders.filter((o) => col.statuses.includes(o.orderStatus));
+      {/* 5-Column Kanban Board with Interruptible Reposition Springs (§3, §4) */}
+      <LayoutGroup>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+          {KANBAN_COLUMNS.map((col) => {
+            const colOrders = orders.filter((o) => col.statuses.includes(o.orderStatus));
 
-          return (
-            <div
-              key={col.id}
-              className="flex min-h-[520px] flex-col rounded-[24px] border border-black/[0.06] bg-white/75 p-3.5 shadow-apple-sm"
-            >
-              <div className="mb-3 flex items-center justify-between border-b border-black/[0.05] pb-2.5">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className={cn('h-2.5 w-2.5 rounded-full', col.dotColor)} />
-                    <h2 className="text-xs font-bold tracking-tight text-zinc-950">{col.title}</h2>
+            return (
+              <div
+                key={col.id}
+                className="flex min-h-[520px] flex-col rounded-[24px] border border-black/[0.06] bg-white/80 p-3.5 shadow-apple-sm backdrop-blur-md"
+              >
+                <div className="mb-3 flex items-center justify-between border-b border-black/[0.05] pb-2.5">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className={cn('h-2.5 w-2.5 rounded-full', col.dotColor)} />
+                      <h2 className="text-xs font-bold tracking-tight text-zinc-950">
+                        {col.title}
+                      </h2>
+                    </div>
+                    <p className="apple-caption mt-0.5 text-[10px] text-zinc-500">{col.subtitle}</p>
                   </div>
-                  <p className="mt-0.5 text-[10px] text-zinc-500">{col.subtitle}</p>
+                  <span className="rounded-full bg-[#F5F5F7] px-2.5 py-0.5 font-mono text-xs font-bold tabular-nums text-zinc-800">
+                    {colOrders.length}
+                  </span>
                 </div>
-                <span className="rounded-full bg-[#F5F5F7] px-2.5 py-0.5 font-mono text-xs font-bold tabular-nums text-zinc-800">
-                  {colOrders.length}
-                </span>
-              </div>
 
-              <div className="flex-1 space-y-3">
-                {colOrders.length === 0 ? (
-                  <div className="flex h-32 items-center justify-center rounded-2xl border border-dashed border-zinc-200 text-[11px] text-zinc-400">
-                    Tidak ada antrean
-                  </div>
-                ) : (
-                  colOrders.map((order) => {
-                    const isHighlighted = highlightedId === order.id;
-                    const hasProof =
-                      order.paymentStatus === PaymentStatus.PROOF_UPLOADED ||
-                      order.receipts.length > 0;
-
-                    return (
-                      <article
-                        key={order.id}
-                        className={cn(
-                          'rounded-[20px] border bg-white p-3.5 shadow-apple-sm transition-all',
-                          isHighlighted
-                            ? 'border-apple-blue ring-2 ring-apple-blue/25'
-                            : 'border-black/[0.07]'
-                        )}
+                <div className="flex-1 space-y-3">
+                  <AnimatePresence mode="popLayout">
+                    {colOrders.length === 0 ? (
+                      <motion.div
+                        key="empty"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={APPLE_SPRINGS.default}
+                        className="flex h-32 items-center justify-center rounded-2xl border border-dashed border-zinc-200 text-[11px] text-zinc-400"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <span className="font-mono text-xs font-bold text-zinc-950">
-                              #{order.orderNumber}
-                            </span>
-                            <p className="text-xs font-bold text-zinc-900">{order.customerName}</p>
-                          </div>
-                          <span className="rounded-full bg-zinc-100 px-2 py-0.5 font-mono text-[10px] font-bold text-zinc-700">
-                            {order.tableNumber || order.orderType.replace('_PICKUP', '')}
-                          </span>
-                        </div>
+                        Tidak ada antrean
+                      </motion.div>
+                    ) : (
+                      colOrders.map((order) => {
+                        const isHighlighted = highlightedId === order.id;
+                        const hasProof =
+                          order.paymentStatus === PaymentStatus.PROOF_UPLOADED ||
+                          order.receipts.length > 0;
 
-                        <div className="mt-2 space-y-1 border-y border-black/[0.05] py-2 text-[11px] text-zinc-700">
-                          {order.items.map((item) => (
-                            <div key={item.id} className="flex justify-between gap-2">
-                              <span className="truncate">
-                                <strong className="font-mono text-apple-blue">
-                                  {item.quantity}×
-                                </strong>{' '}
-                                {item.itemTitleSnapshot}
+                        return (
+                          <motion.article
+                            layout
+                            layoutId={order.id}
+                            key={order.id}
+                            initial={{ opacity: 0, scale: 0.96 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.96 }}
+                            transition={APPLE_SPRINGS.reposition}
+                            className={cn(
+                              'rounded-[20px] border bg-white p-3.5 shadow-apple-sm',
+                              isHighlighted
+                                ? 'border-apple-blue ring-2 ring-apple-blue/25'
+                                : 'border-black/[0.07]'
+                            )}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <span className="font-mono text-xs font-bold text-zinc-950">
+                                  #{order.orderNumber}
+                                </span>
+                                <p className="text-xs font-bold text-zinc-900">
+                                  {order.customerName}
+                                </p>
+                              </div>
+                              <span className="rounded-full bg-zinc-100 px-2 py-0.5 font-mono text-[10px] font-bold text-zinc-700">
+                                {order.tableNumber || order.orderType.replace('_PICKUP', '')}
                               </span>
                             </div>
-                          ))}
-                        </div>
 
-                        {order.specialNotes && (
-                          <p className="mt-2 rounded-xl bg-amber-50 px-2.5 py-1.5 text-[10px] font-medium text-amber-800">
-                            Catatan: {order.specialNotes}
-                          </p>
-                        )}
+                            <div className="mt-2 space-y-1 border-y border-black/[0.05] py-2 text-[11px] text-zinc-700">
+                              {order.items.map((item) => (
+                                <div key={item.id} className="flex justify-between gap-2">
+                                  <span className="truncate">
+                                    <strong className="font-mono text-apple-blue">
+                                      {item.quantity}×
+                                    </strong>{' '}
+                                    {item.itemTitleSnapshot}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
 
-                        <div className="mt-2.5 flex items-center justify-between text-xs">
-                          <span className="text-[10px] font-semibold text-zinc-500">
-                            {order.paymentType === PaymentType.CASH ? 'Cash' : 'QRIS / Transfer'}
-                          </span>
-                          <span className="font-mono font-bold tabular-nums text-zinc-950">
-                            {formatIdr(order.totalAmountIdr)}
-                          </span>
-                        </div>
+                            {order.specialNotes && (
+                              <p className="mt-2 rounded-xl bg-amber-50 px-2.5 py-1.5 text-[10px] font-medium text-amber-800">
+                                Catatan: {order.specialNotes}
+                              </p>
+                            )}
 
-                        {/* Column-Specific Action Triggers */}
-                        <div className="mt-3 space-y-1.5">
-                          {col.id === 'PENDING_STOCK' && (
-                            <button
-                              type="button"
-                              onClick={() => openStockAuditModal(order)}
-                              className="flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-xl bg-amber-500 px-3 text-xs font-bold text-white hover:bg-amber-600"
-                            >
-                              <CheckCircle2 className="h-3.5 w-3.5" />
-                              <span>Audit Stok & Tagih</span>
-                            </button>
-                          )}
+                            <div className="mt-2.5 flex items-center justify-between text-xs">
+                              <span className="text-[10px] font-semibold text-zinc-500">
+                                {order.paymentType === PaymentType.CASH
+                                  ? 'Cash'
+                                  : 'QRIS / Transfer'}
+                              </span>
+                              <span className="font-mono font-bold tabular-nums text-zinc-950">
+                                {formatIdr(order.totalAmountIdr)}
+                              </span>
+                            </div>
 
-                          {col.id === 'AWAITING_PAYMENT' && (
-                            <>
-                              {hasProof ? (
+                            {/* Column-Specific Action Triggers */}
+                            <div className="mt-3 space-y-1.5">
+                              {col.id === 'PENDING_STOCK' && (
                                 <button
                                   type="button"
-                                  onClick={() => openReceiptModal(order)}
-                                  className="flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-xl bg-apple-blue px-3 text-xs font-bold text-white hover:bg-apple-blueHover"
+                                  onClick={() => openStockAuditModal(order)}
+                                  className="apple-interactive flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-xl bg-amber-500 px-3 text-xs font-bold text-white hover:bg-amber-600"
                                 >
-                                  <Eye className="h-3.5 w-3.5" />
-                                  <span>Inspeksi Bukti Bayar</span>
+                                  <CheckCircle2 className="h-3.5 w-3.5" />
+                                  <span>Audit Stok & Tagih</span>
                                 </button>
-                              ) : order.paymentType === PaymentType.CASH ? (
+                              )}
+
+                              {col.id === 'AWAITING_PAYMENT' && (
+                                <>
+                                  {hasProof ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => openReceiptModal(order)}
+                                      className="apple-interactive flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-xl bg-apple-blue px-3 text-xs font-bold text-white hover:bg-apple-blueHover"
+                                    >
+                                      <Eye className="h-3.5 w-3.5" />
+                                      <span>Inspeksi Bukti Bayar</span>
+                                    </button>
+                                  ) : order.paymentType === PaymentType.CASH ? (
+                                    <button
+                                      type="button"
+                                      disabled={busyId === order.id}
+                                      onClick={() =>
+                                        handleAdvanceStatus(order.id, OrderStatus.IN_KITCHEN)
+                                      }
+                                      className="apple-interactive flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 text-xs font-bold text-white hover:bg-emerald-700"
+                                    >
+                                      <Check className="h-3.5 w-3.5" />
+                                      <span>Terima Tunai → Dapur</span>
+                                    </button>
+                                  ) : (
+                                    <div className="rounded-xl bg-blue-50 px-3 py-2 text-center text-[10px] font-semibold text-apple-blue">
+                                      Menunggu tamu upload bukti QRIS...
+                                    </div>
+                                  )}
+                                </>
+                              )}
+
+                              {col.id === 'IN_KITCHEN' && (
                                 <button
                                   type="button"
                                   disabled={busyId === order.id}
-                                  onClick={() => handleAdvanceStatus(order.id, OrderStatus.IN_KITCHEN)}
-                                  className="flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 text-xs font-bold text-white hover:bg-emerald-700"
+                                  onClick={() =>
+                                    handleAdvanceStatus(order.id, OrderStatus.READY_FOR_DELIVERY)
+                                  }
+                                  className="apple-interactive flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-xl bg-purple-600 px-3 text-xs font-bold text-white hover:bg-purple-700"
                                 >
-                                  <Check className="h-3.5 w-3.5" />
-                                  <span>Terima Tunai → Dapur</span>
+                                  <BellRing className="h-3.5 w-3.5" />
+                                  <span>Siap Saji / Kirim</span>
                                 </button>
-                              ) : (
-                                <div className="rounded-xl bg-blue-50 px-3 py-2 text-center text-[10px] font-semibold text-apple-blue">
-                                  Menunggu tamu upload bukti QRIS...
-                                </div>
                               )}
-                            </>
-                          )}
 
-                          {col.id === 'IN_KITCHEN' && (
-                            <button
-                              type="button"
-                              disabled={busyId === order.id}
-                              onClick={() =>
-                                handleAdvanceStatus(order.id, OrderStatus.READY_FOR_DELIVERY)
-                              }
-                              className="flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-xl bg-purple-600 px-3 text-xs font-bold text-white hover:bg-purple-700"
-                            >
-                              <BellRing className="h-3.5 w-3.5" />
-                              <span>Siap Saji / Kirim</span>
-                            </button>
-                          )}
+                              {col.id === 'READY_DELIVERY' && (
+                                <button
+                                  type="button"
+                                  disabled={busyId === order.id}
+                                  onClick={() =>
+                                    handleAdvanceStatus(order.id, OrderStatus.COMPLETED)
+                                  }
+                                  className="apple-interactive flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 text-xs font-bold text-white hover:bg-emerald-700"
+                                >
+                                  <PackageCheck className="h-3.5 w-3.5" />
+                                  <span>Complete & Reset Meja</span>
+                                </button>
+                              )}
 
-                          {col.id === 'READY_DELIVERY' && (
-                            <button
-                              type="button"
-                              disabled={busyId === order.id}
-                              onClick={() => handleAdvanceStatus(order.id, OrderStatus.COMPLETED)}
-                              className="flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 text-xs font-bold text-white hover:bg-emerald-700"
-                            >
-                              <PackageCheck className="h-3.5 w-3.5" />
-                              <span>Complete & Reset Meja</span>
-                            </button>
-                          )}
-
-                          <div className="flex items-center justify-between gap-1 pt-1">
-                            {col.id !== 'COMPLETED' && (
-                              <button
-                                type="button"
-                                onClick={() => openTableControlsModal(order)}
-                                className="inline-flex items-center gap-1 rounded-lg bg-[#F5F5F7] px-2.5 py-1 text-[10px] font-semibold text-zinc-700 hover:bg-zinc-200"
-                              >
-                                <ArrowRightLeft className="h-3 w-3" />
-                                <span>Move / Merge</span>
-                              </button>
-                            )}
-                            <Link
-                              href={`/order/${order.id}`}
-                              className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold text-apple-blue hover:bg-apple-blue/10"
-                            >
-                              <span>Track</span>
-                              <ExternalLink className="h-3 w-3" />
-                            </Link>
-                          </div>
-                        </div>
-                      </article>
-                    );
-                  })
-                )}
+                              <div className="flex items-center justify-between gap-1 pt-1">
+                                {col.id !== 'COMPLETED' && (
+                                  <button
+                                    type="button"
+                                    onClick={() => openTableControlsModal(order)}
+                                    className="inline-flex items-center gap-1 rounded-lg bg-[#F5F5F7] px-2.5 py-1 text-[10px] font-semibold text-zinc-700 hover:bg-zinc-200"
+                                  >
+                                    <ArrowRightLeft className="h-3 w-3" />
+                                    <span>Move / Merge</span>
+                                  </button>
+                                )}
+                                <Link
+                                  href={`/order/${order.id}`}
+                                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold text-apple-blue hover:bg-apple-blue/10"
+                                >
+                                  <span>Track</span>
+                                  <ExternalLink className="h-3 w-3" />
+                                </Link>
+                              </div>
+                            </div>
+                          </motion.article>
+                        );
+                      })
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      </LayoutGroup>
 
       {/* Saber Central Automated WhatsApp Gateway Bot Outbound Telemetry Feed */}
       <section className="mt-8 rounded-[26px] border border-black/[0.06] bg-white p-6 shadow-apple-sm">
@@ -621,7 +663,7 @@ export default function CashierKanbanPage() {
               {log.magicLinkUrl && (
                 <Link
                   href={log.magicLinkUrl}
-                  className="shrink-0 rounded-full border border-zinc-200 bg-[#F5F5F7] px-3 py-1.5 text-[11px] font-bold text-apple-blue hover:bg-apple-blue hover:text-white transition-colors"
+                  className="shrink-0 rounded-full border border-zinc-200 bg-[#F5F5F7] px-3 py-1.5 text-[11px] font-bold text-apple-blue transition-colors hover:bg-apple-blue hover:text-white"
                 >
                   Open Link
                 </Link>
@@ -639,7 +681,7 @@ export default function CashierKanbanPage() {
       >
         <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600">
+            <span className="apple-caption text-[10px] font-bold uppercase text-amber-600">
               Step 2 • Partial Stock Audit
             </span>
             <h3 id="stock-modal-title" className="text-lg font-bold text-zinc-950">
@@ -724,7 +766,7 @@ export default function CashierKanbanPage() {
               type="button"
               disabled={editableItems.length === 0 || busyId === activeOrder?.id}
               onClick={handleConfirmStockAudit}
-              className="inline-flex items-center gap-1.5 rounded-full bg-apple-blue px-5 py-2 text-xs font-bold text-white hover:bg-apple-blueHover disabled:opacity-50"
+              className="apple-interactive inline-flex items-center gap-1.5 rounded-full bg-apple-blue px-5 py-2 text-xs font-bold text-white hover:bg-apple-blueHover disabled:opacity-50"
             >
               <CheckCircle2 className="h-4 w-4" />
               <span>Konfirmasi Stok & Kirim Invoice WA</span>
@@ -741,7 +783,7 @@ export default function CashierKanbanPage() {
       >
         <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-apple-blue">
+            <span className="apple-caption text-[10px] font-bold uppercase text-apple-blue">
               Step 4 • Payment Proof Audit
             </span>
             <h3 id="receipt-modal-title" className="text-lg font-bold text-zinc-950">
@@ -796,7 +838,7 @@ export default function CashierKanbanPage() {
             <button
               type="button"
               onClick={() => handleVerifyReceipt(false)}
-              className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-4 text-xs font-bold text-red-700 hover:bg-red-100"
+              className="apple-interactive inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-4 text-xs font-bold text-red-700 hover:bg-red-100"
             >
               <XCircle className="h-4 w-4" />
               <span>Reject Receipt</span>
@@ -804,7 +846,7 @@ export default function CashierKanbanPage() {
             <button
               type="button"
               onClick={() => handleVerifyReceipt(true)}
-              className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full bg-apple-green px-4 text-xs font-bold text-white hover:bg-emerald-600"
+              className="apple-interactive inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full bg-apple-green px-4 text-xs font-bold text-white hover:bg-emerald-600"
             >
               <CheckCircle2 className="h-4 w-4" />
               <span>Approve Payment → Kitchen</span>
@@ -835,7 +877,7 @@ export default function CashierKanbanPage() {
 
         <div className="mt-4 space-y-5">
           {/* Move Table */}
-          <div className="rounded-2xl border border-black/[0.06] bg-[#F5F5F7]/70 p-4 space-y-2.5">
+          <div className="space-y-2.5 rounded-2xl border border-black/[0.06] bg-[#F5F5F7]/70 p-4">
             <p className="flex items-center gap-1.5 text-xs font-bold text-zinc-950">
               <ArrowRightLeft className="h-3.5 w-3.5 text-apple-blue" />
               <span>Move Table (Pindah ke Meja Kosong)</span>
@@ -859,14 +901,14 @@ export default function CashierKanbanPage() {
               type="button"
               disabled={!moveTargetTable}
               onClick={handleMoveTable}
-              className="w-full rounded-full bg-zinc-950 py-2 text-xs font-bold text-white disabled:opacity-50"
+              className="apple-interactive w-full rounded-full bg-zinc-950 py-2 text-xs font-bold text-white disabled:opacity-50"
             >
               Pindahkan Meja
             </button>
           </div>
 
           {/* Merge Tables */}
-          <div className="rounded-2xl border border-black/[0.06] bg-[#F5F5F7]/70 p-4 space-y-2.5">
+          <div className="space-y-2.5 rounded-2xl border border-black/[0.06] bg-[#F5F5F7]/70 p-4">
             <p className="flex items-center gap-1.5 text-xs font-bold text-zinc-950">
               <Combine className="h-3.5 w-3.5 text-purple-600" />
               <span>Merge Tables (Gabung Tagihan)</span>
@@ -893,7 +935,7 @@ export default function CashierKanbanPage() {
               type="button"
               disabled={!mergeTargetOrderId}
               onClick={handleMergeTables}
-              className="w-full rounded-full bg-purple-600 py-2 text-xs font-bold text-white disabled:opacity-50"
+              className="apple-interactive w-full rounded-full bg-purple-600 py-2 text-xs font-bold text-white disabled:opacity-50"
             >
               Gabung ke Pesanan Tujuan
             </button>
@@ -903,4 +945,3 @@ export default function CashierKanbanPage() {
     </div>
   );
 }
-

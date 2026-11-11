@@ -27,6 +27,7 @@ import {
 import { DEFAULT_HOURS, DEFAULT_QRIS_SVG } from '@/lib/defaults';
 import { DaySchedule } from '@/types/schema';
 import { cn, formatIdr, slugify } from '@/lib/utils';
+import { APPLE_SPRINGS, triggerCausalHaptic } from '@/lib/apple-motion';
 
 const INDONESIAN_BANKS = [
   'BCA (Bank Central Asia)',
@@ -687,17 +688,21 @@ export default function OnboardingPage() {
                       type="button"
                       role="switch"
                       aria-checked={isSelfDeliveryEnabled}
-                      onClick={() => setIsSelfDeliveryEnabled(!isSelfDeliveryEnabled)}
+                      onClick={() => {
+                        triggerCausalHaptic(8);
+                        setIsSelfDeliveryEnabled(!isSelfDeliveryEnabled);
+                      }}
                       className={cn(
-                        'relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full transition-colors',
-                        isSelfDeliveryEnabled ? 'bg-apple-green' : 'bg-zinc-300'
+                        'relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full p-1 transition-colors',
+                        isSelfDeliveryEnabled
+                          ? 'justify-end bg-apple-green'
+                          : 'justify-start bg-zinc-300'
                       )}
                     >
-                      <span
-                        className={cn(
-                          'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
-                          isSelfDeliveryEnabled ? 'translate-x-6' : 'translate-x-1'
-                        )}
+                      <motion.span
+                        layout
+                        transition={APPLE_SPRINGS.default}
+                        className="inline-block h-5 w-5 rounded-full bg-white shadow"
                       />
                     </button>
                   </div>
