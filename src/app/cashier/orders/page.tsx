@@ -342,7 +342,7 @@ export default function CashierKanbanPage() {
     }
   };
 
-  const handleSendTestFonnte = async (e: React.FormEvent) => {
+  const handleSendTestWhatsapp = async (e: React.FormEvent) => {
     e.preventDefault();
     const target = (testWaPhone || merchant?.ownerWhatsapp || '').trim();
     if (!target) return;
@@ -355,8 +355,8 @@ export default function CashierKanbanPage() {
         body: JSON.stringify({
           recipientPhone: target,
           recipientRole: 'MERCHANT',
-          orderNumber: 'TEST-FONNTE',
-          messageBody: `🔔 *[${merchant?.name || 'Saber Culinary'}]* Uji koneksi notifikasi WhatsApp via Fonnte API berhasil! Kasir siap menerima pesanan real-time.`,
+          orderNumber: 'TEST-WA',
+          messageBody: `🔔 *[${merchant?.name || 'Saber Culinary'}]* Uji koneksi notifikasi WhatsApp berhasil! Kasir siap menerima pesanan real-time.`,
           magicLinkUrl: '/cashier/orders',
         }),
       });
@@ -666,7 +666,7 @@ export default function CashierKanbanPage() {
         </div>
       </LayoutGroup>
 
-      {/* Saber Central Automated WhatsApp Gateway Bot Outbound Telemetry Feed (Fonnte) */}
+      {/* Saber Central Automated WhatsApp Gateway Bot Outbound Telemetry Feed */}
       <section className="mt-8 rounded-[26px] border border-black/[0.06] bg-white p-6 shadow-apple-sm">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
@@ -675,22 +675,21 @@ export default function CashierKanbanPage() {
             </div>
             <div>
               <h2 className="text-sm font-bold text-zinc-950">
-                Saber x Fonnte Automated WhatsApp Bot Log
+                Log Bot WhatsApp Terpusat Saber
               </h2>
               <p className="text-[11px] text-zinc-500">
-                Real-time notification via <code className="font-mono">api.fonnte.com</code> •{' '}
-                Otomatis ke Pemilik &amp; Pelanggan
+                Notifikasi real-time otomatis ke WhatsApp Pemilik &amp; Pelanggan
               </p>
             </div>
           </div>
 
-          <form onSubmit={handleSendTestFonnte} className="flex flex-wrap items-center gap-2">
+          <form onSubmit={handleSendTestWhatsapp} className="flex flex-wrap items-center gap-2">
             <input
               type="tel"
               value={testWaPhone}
               onChange={(e) => setTestWaPhone(e.target.value)}
               placeholder={merchant?.ownerWhatsapp || '0812xxxxxxxx'}
-              aria-label="Nomor WhatsApp uji coba Fonnte"
+              aria-label="Nomor WhatsApp uji coba"
               className="min-h-[38px] w-44 rounded-full border border-zinc-200 bg-[#F5F5F7] px-3.5 font-mono text-xs outline-none focus:border-apple-blue focus:bg-white"
             />
             <button
@@ -698,7 +697,7 @@ export default function CashierKanbanPage() {
               disabled={sendingTestWa}
               className="apple-interactive inline-flex min-h-[38px] items-center rounded-full bg-[#1D7D32] px-4 text-xs font-bold text-white hover:brightness-110 disabled:opacity-60"
             >
-              {sendingTestWa ? 'Mengirim...' : 'Tes WA Fonnte'}
+              {sendingTestWa ? 'Mengirim...' : 'Tes Kirim WhatsApp'}
             </button>
           </form>
         </div>

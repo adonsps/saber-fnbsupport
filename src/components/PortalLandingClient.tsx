@@ -39,7 +39,7 @@ interface PortalLandingClientProps {
   authenticatedMerchant: PortalMerchantSummary | null;
   demoMerchant: PortalMerchantSummary;
   displayHost: string;
-  fonnteConfigured: boolean;
+  whatsappReady: boolean;
 }
 
 export function PortalLandingClient({
@@ -47,7 +47,7 @@ export function PortalLandingClient({
   authenticatedMerchant,
   demoMerchant,
   displayHost,
-  fonnteConfigured,
+  whatsappReady,
 }: PortalLandingClientProps) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -85,82 +85,97 @@ export function PortalLandingClient({
   };
 
   const modules = [
+    ...(authenticatedMerchant
+      ? [
+          {
+            domain: 'Profil Usaha',
+            title: 'Identitas Toko & Rekening QRIS',
+            route: '/onboarding?mode=edit',
+            description:
+              'Perbarui nama usaha, jam operasional, radius pengiriman mandiri, QRIS Statis, serta rekening bank tujuan transfer.',
+            icon: Storefront,
+            metric: `/${activeMerchant.slug}`,
+          },
+        ]
+      : [
+          {
+            domain: 'Pendaftaran Baru',
+            title: 'Daftarkan Restoran Anda',
+            route: '/onboarding?mode=new',
+            description:
+              'Buat akun pemilik usaha beserta tautan menu /[slug], jam buka harian, serta rekening transfer & QRIS Statis dalam tiga langkah.',
+            icon: Storefront,
+            metric: '3 Langkah Setup',
+          },
+        ]),
     {
-      domain: 'Merchant Setup',
-      title: 'Profil Toko & Rekening QRIS',
-      route: '/onboarding?mode=edit',
-      description:
-        'Atur identitas toko, jam operasional, radius pengantaran mandiri, serta kredensial QRIS Statis & rekening bank penerimaan.',
-      icon: Storefront,
-      metric: `/${activeMerchant.slug}`,
-    },
-    {
-      domain: 'Catalog & Inventory',
-      title: 'Menu Bilingual (ID | EN) & Stok',
+      domain: 'Katalog & Stok',
+      title: 'Manajemen Menu Dwi-Bahasa & Stok',
       route: '/admin/menu',
       description:
-        'Kelola daftar hidangan dwi-bahasa, urutan kategori, tombol Buka/Pause Toko utama, serta saklar Habis (Sold Out) instan.',
+        'Atur daftar hidangan Indonesia & Inggris, urutan kategori, tombol Buka/Tutup sementara, serta saklar Habis (Sold Out) instan.',
       icon: BowlFood,
-      metric: `${activeMerchant.menuCount} Dishes`,
+      metric: `${activeMerchant.menuCount} Menu`,
     },
     {
-      domain: 'Floor & Print Engine',
-      title: 'QR Meja & Cetak PDF A4/A5',
+      domain: 'Meja & Cetak QR',
+      title: 'QR Meja & Cetak Lembar PDF A4/A5',
       route: '/admin/tables',
       description:
-        'Pantau status meja Terisi vs. Kosong, buat meja secara massal, dan ekspor stiker meja QR + info Wi-Fi tamu siap cetak.',
+        'Pantau status meja Terisi atau Kosong, buat daftar meja secara massal, dan unduh stiker meja QR beserta info Wi-Fi tamu.',
       icon: QrCode,
-      metric: `${activeMerchant.tableCount} Tables`,
+      metric: `${activeMerchant.tableCount} Meja`,
     },
     {
-      domain: 'Kitchen & Cashier Ops',
-      title: 'Kasir Kanban 5-Tahap & WA Bot',
+      domain: 'Dapur & Kasir',
+      title: 'Papan Kasir Kanban 5-Tahap & WhatsApp',
       route: '/cashier/orders',
       description:
-        'Papan dapur 5 kolom dengan audit ketersediaan stok, inspeksi bukti bayar QRIS, pindah/gabung meja, serta log Fonnte WhatsApp.',
+        'Kelola antrean dapur lima tahap dengan audit stok parsial, verifikasi bukti bayar QRIS, pindah/gabung meja, serta riwayat pesan WhatsApp.',
       icon: CookingPot,
-      metric: `${activeMerchant.activeTicketCount} Active Tickets`,
+      metric: `${activeMerchant.activeTicketCount} Antrean Aktif`,
     },
     {
-      domain: 'Shift Telemetry',
-      title: 'Laporan Shift & Tutup Buku',
+      domain: 'Laporan Penjualan',
+      title: 'Laporan Shift Harian & Kontrol Toko',
       route: '/admin/analytics',
       description:
-        'Ringkasan pendapatan shift (IDR), pembagian tunai vs. QRIS, 5 hidangan terlaris, pemulihan stok 1 klik, dan ekspor CSV/PDF.',
+        'Ringkasan pendapatan kotor (IDR), rincian metode bayar Tunai vs. QRIS, 5 menu terlaris, pulihkan stok 1 klik, serta ekspor CSV/PDF.',
       icon: ChartBar,
       metric: formatIdr(activeMerchant.revenueIdr),
     },
     {
-      domain: 'Customer QR Preview',
-      title: 'Pratinjau Menu Meja Pelanggan',
+      domain: 'Tampilan Pelanggan',
+      title: 'Pratinjau Menu Scan QR Tamu',
       route: `/${activeMerchant.slug}?table=TABLE%2004`,
       description:
-        'Saat QR dipindai tamu, layar terkunci hanya menampilkan menu pemesanan & status pesanan tanpa akses ke menu admin/kasir.',
+        'Saat QR dipindai tamu, layar terkunci hanya membuka halaman menu pemesanan & status pesanan tanpa akses ke menu admin/kasir.',
       icon: ForkKnife,
-      metric: 'QR Isolated View',
+      metric: 'Khusus Pelanggan',
     },
   ];
 
   return (
     <div className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
-      {/* Main Hero Surface — Cohesive Apple HIG Grouped Card & Culinary Editorial Serif */}
+      {/* Bagian Utama Hero — Bahasa Indonesia Konsisten + Apple HIG Surface */}
       <section className="hig-grouped-card relative overflow-hidden rounded-[26px] p-7 sm:p-11">
         <div className="relative z-10 flex flex-col justify-between gap-8 lg:flex-row lg:items-center">
-          <div className="max-w-3xl space-y-4">
+          <div className={authenticatedMerchant ? 'max-w-2xl space-y-4' : 'max-w-4xl space-y-4'}>
             <p className="hig-caption text-xs font-semibold uppercase tracking-[0.06em] text-[#515154]">
-              Saber Hospitality &amp; Direct Commerce
+              Saber Platform Kuliner &amp; Pemesanan Langsung
             </p>
 
             <h1 className="hig-culinary-serif text-[#1D1D1F]">
-              Direct Table Ordering &amp; Kitchen Kanban for Indonesian Culinary Merchants.
+              Pemesanan QR Meja &amp; Kasir Dapur Langsung untuk Usaha Kuliner Indonesia.
             </h1>
 
-            <p className="hig-body max-w-[62ch] text-[#515154]">
-              Purpose-built for warungs, artisanal cafes, dine-in restaurants, and cloud kitchens.
-              Merchants retain 100% of revenue with zero marketplace commission, zero dedicated POS
-              hardware, and automated 2-step stock and QRIS verification via{' '}
+            <p className="hig-body max-w-[64ch] text-[#515154]">
+              Dirancang khusus untuk warung makan, kafe, restoran makan di tempat, hingga dapur
+              pesan antar. Seluruh pemasukan diterima utuh 0% komisi aplikasi, berjalan di browser
+              tanpa perangkat kasir tambahan, serta dilengkapi verifikasi stok &amp; bukti bayar
+              QRIS dengan notifikasi{' '}
               <strong className="font-semibold text-[#1D1D1F]">
-                Saber x Fonnte WhatsApp Gateway
+                Bot WhatsApp Terpusat Saber
               </strong>
               .
             </p>
@@ -170,39 +185,45 @@ export function PortalLandingClient({
                 <>
                   <Link
                     href="/cashier/orders"
+                    onPointerDown={() => triggerCausalHaptic(8)}
                     className="apple-interactive inline-flex min-h-[46px] items-center rounded-full bg-apple-blue px-6 py-3 text-sm font-semibold text-white shadow-apple-sm hover:bg-apple-blueHover"
                   >
                     Buka Kasir ({authenticatedMerchant.name})
                   </Link>
                   <Link
                     href={`/${authenticatedMerchant.slug}?table=TABLE%2004`}
+                    onPointerDown={() => triggerCausalHaptic(6)}
                     className="apple-interactive inline-flex min-h-[46px] items-center rounded-full border border-black/[0.12] bg-[#F5F5F7] px-6 py-3 text-sm font-semibold text-[#1D1D1F] hover:bg-[#EFEFF4]"
                   >
                     Menu Pelanggan (/{authenticatedMerchant.slug})
                   </Link>
                   <Link
                     href="/onboarding?mode=edit"
+                    onPointerDown={() => triggerCausalHaptic(6)}
                     className="apple-interactive inline-flex min-h-[44px] items-center px-3 py-2 text-sm font-semibold text-apple-blue hover:underline"
                   >
-                    Profil &amp; Rekening
+                    Pengaturan Profil
                   </Link>
                 </>
               ) : (
                 <>
                   <Link
                     href={`/${demoMerchant.slug}?table=TABLE%2004`}
+                    onPointerDown={() => triggerCausalHaptic(8)}
                     className="apple-interactive inline-flex min-h-[46px] items-center rounded-full bg-apple-blue px-6 py-3 text-sm font-semibold text-white shadow-apple-sm hover:bg-apple-blueHover"
                   >
                     Coba Simulasi Demo (Meja 04)
                   </Link>
                   <Link
                     href="/onboarding?mode=new"
+                    onPointerDown={() => triggerCausalHaptic(6)}
                     className="apple-interactive inline-flex min-h-[46px] items-center rounded-full border border-black/[0.12] bg-[#F5F5F7] px-6 py-3 text-sm font-semibold text-[#1D1D1F] hover:bg-[#EFEFF4]"
                   >
                     Daftarkan Restoran Baru
                   </Link>
                   <Link
                     href="/login"
+                    onPointerDown={() => triggerCausalHaptic(6)}
                     className="apple-interactive inline-flex min-h-[46px] items-center gap-1.5 rounded-full border border-black/[0.14] bg-white px-5 py-3 text-sm font-semibold text-[#1D1D1F] hover:bg-[#F5F5F7]"
                   >
                     <SignIn aria-hidden="true" weight="regular" className="h-4 w-4" />
@@ -213,68 +234,66 @@ export function PortalLandingClient({
             </div>
           </div>
 
-          {/* Signature Tactile Pass Card — Explicitly identifies Demo vs. Logged-In Account */}
-          <div className="saber-ticket-pass w-full shrink-0 rounded-[22px] p-6 lg:w-80">
-            <div className="saber-ticket-divider flex items-start justify-between gap-2 pb-4">
-              <div className="min-w-0">
-                <p className="hig-caption text-[11px] font-semibold uppercase text-[#515154]">
-                  {activeMerchant.isDemo
-                    ? 'Demo Sandbox Pass'
-                    : 'Authenticated Merchant Pass'}
-                </p>
-                <h2 className="mt-0.5 truncate font-serif text-lg font-bold text-[#1D1D1F]">
-                  {activeMerchant.name}
-                </h2>
-              </div>
-              <span
-                className={`shrink-0 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
-                  activeMerchant.isStoreOpen
-                    ? 'bg-emerald-500/12 text-[#1D7D32]'
-                    : 'bg-red-500/12 text-[#D70015]'
-                }`}
-              >
-                {activeMerchant.isStoreOpen ? 'Open' : 'Paused'}
-              </span>
-            </div>
-
-            <dl className="mt-4 space-y-2.5 text-xs">
-              <div className="flex items-center justify-between gap-3">
-                <dt className="font-medium text-[#515154]">Live Menu URL</dt>
-                <dd className="truncate font-mono font-semibold text-apple-blue">
-                  {displayHost}/{activeMerchant.slug}
-                </dd>
-              </div>
-              {authenticatedMerchant && !activeMerchant.isDemo && activeMerchant.email && (
-                <div className="flex items-center justify-between gap-2">
-                  <dt className="font-medium text-[#515154]">Account Login</dt>
-                  <dd className="truncate font-mono font-medium text-[#1D1D1F]">
-                    {activeMerchant.email}
-                  </dd>
+          {/* Kartu Akun hanya tampil apabila pemilik restoran sudah berhasil login */}
+          {authenticatedMerchant && (
+            <div className="saber-ticket-pass w-full shrink-0 rounded-[22px] p-6 lg:w-80">
+              <div className="saber-ticket-divider flex items-start justify-between gap-2 pb-4">
+                <div className="min-w-0">
+                  <p className="hig-caption text-[11px] font-semibold uppercase text-[#515154]">
+                    {activeMerchant.isDemo ? 'Pratinjau Mode Simulasi' : 'Akun Restoran Aktif'}
+                  </p>
+                  <h2 className="mt-0.5 truncate font-serif text-lg font-bold text-[#1D1D1F]">
+                    {activeMerchant.name}
+                  </h2>
                 </div>
-              )}
-              <div className="flex items-center justify-between gap-2">
-                <dt className="font-medium text-[#515154]">Settlement Bank</dt>
-                <dd className="truncate font-medium text-[#1D1D1F]">{activeMerchant.bankName}</dd>
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <dt className="font-medium text-[#515154]">WhatsApp Gateway</dt>
-                <dd
-                  className={`font-mono font-semibold ${
-                    fonnteConfigured ? 'text-[#1D7D32]' : 'text-[#515154]'
+                <span
+                  className={`shrink-0 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                    activeMerchant.isStoreOpen
+                      ? 'bg-emerald-500/12 text-[#1D7D32]'
+                      : 'bg-red-500/12 text-[#D70015]'
                   }`}
                 >
-                  {fonnteConfigured ? 'Fonnte Connected' : 'Local Log'}
-                </dd>
+                  {activeMerchant.isStoreOpen ? 'Buka' : 'Tutup'}
+                </span>
               </div>
-              <div className="flex items-center justify-between">
-                <dt className="font-medium text-[#515154]">Kitchen Queue</dt>
-                <dd className="tabular-nums font-mono font-bold text-[#1D1D1F]">
-                  {activeMerchant.activeTicketCount} Active Tickets
-                </dd>
-              </div>
-            </dl>
 
-            {authenticatedMerchant && (
+              <dl className="mt-4 space-y-2.5 text-xs">
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="font-medium text-[#515154]">Alamat Menu QR</dt>
+                  <dd className="truncate font-mono font-semibold text-apple-blue">
+                    {displayHost}/{activeMerchant.slug}
+                  </dd>
+                </div>
+                {!activeMerchant.isDemo && activeMerchant.email && (
+                  <div className="flex items-center justify-between gap-2">
+                    <dt className="font-medium text-[#515154]">Email Akun</dt>
+                    <dd className="truncate font-mono font-medium text-[#1D1D1F]">
+                      {activeMerchant.email}
+                    </dd>
+                  </div>
+                )}
+                <div className="flex items-center justify-between gap-2">
+                  <dt className="font-medium text-[#515154]">Bank Penerima</dt>
+                  <dd className="truncate font-medium text-[#1D1D1F]">{activeMerchant.bankName}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <dt className="font-medium text-[#515154]">Notifikasi WhatsApp</dt>
+                  <dd
+                    className={`font-mono font-semibold ${
+                      whatsappReady ? 'text-[#1D7D32]' : 'text-[#515154]'
+                    }`}
+                  >
+                    {whatsappReady ? 'Aktif' : 'Log Lokal'}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <dt className="font-medium text-[#515154]">Antrean Dapur</dt>
+                  <dd className="tabular-nums font-mono font-bold text-[#1D1D1F]">
+                    {activeMerchant.activeTicketCount} Tiket Aktif
+                  </dd>
+                </div>
+              </dl>
+
               <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-black/[0.08] pt-3.5 text-xs">
                 {activeMerchant.isDemo ? (
                   <button
@@ -292,7 +311,7 @@ export function PortalLandingClient({
                     onClick={() => handleSwitchScope(demoMerchant.slug)}
                     className="font-semibold text-[#515154] hover:text-[#1D1D1F] hover:underline disabled:opacity-50"
                   >
-                    Lihat Demo Sandbox
+                    Lihat Simulasi Demo
                   </button>
                 )}
                 <button
@@ -305,16 +324,16 @@ export function PortalLandingClient({
                   <span>Keluar</span>
                 </button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
-        {/* Three Calm Uniform Track Cards — Clear Demo vs. Onboarding vs. Account Login */}
+        {/* Tiga Pilihan Penggunaan — Tanpa angka urutan artifisial agar sesuai Craft Apple Design */}
         <div className="mt-8 grid grid-cols-1 gap-4 border-t border-black/[0.08] pt-6 md:grid-cols-3">
           <div className="flex flex-col justify-between rounded-2xl border border-black/[0.06] bg-[#F5F5F7] p-5">
             <div>
-              <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-apple-blue">
-                01 • Live Demo Sandbox
+              <p className="hig-caption text-[11px] font-semibold uppercase tracking-wider text-apple-blue">
+                Simulasi Demo
               </p>
               <h2 className="mt-1 text-sm font-bold text-[#1D1D1F]">
                 Uji Alur Pelanggan &amp; Kasir Tanpa Daftar
@@ -322,10 +341,10 @@ export function PortalLandingClient({
               <p className="mt-1.5 text-xs leading-relaxed text-[#515154]">
                 Gunakan restoran contoh{' '}
                 <strong className="text-[#1D1D1F]">{demoMerchant.name}</strong> untuk mencoba scan
-                QR meja, pesan menu, dan audit bukti bayar di Kasir Kanban.
+                QR meja, pesan menu, serta verifikasi pesanan di kasir.
               </p>
             </div>
-            <div className="mt-4 flex flex-wrap gap-3 text-xs font-semibold">
+            <div className="mt-4 flex flex-wrap gap-4 text-xs font-semibold">
               <Link
                 href={`/${demoMerchant.slug}?table=TABLE%2004`}
                 className="text-apple-blue hover:underline"
@@ -345,16 +364,16 @@ export function PortalLandingClient({
 
           <div className="flex flex-col justify-between rounded-2xl border border-black/[0.06] bg-[#F5F5F7] p-5">
             <div>
-              <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-[#1D1D1F]">
-                02 • Pendaftaran Restoran Baru
+              <p className="hig-caption text-[11px] font-semibold uppercase tracking-wider text-[#1D1D1F]">
+                Pemilik Restoran Baru
               </p>
               <h2 className="mt-1 text-sm font-bold text-[#1D1D1F]">
-                Buat Akun &amp; Halaman Menu Toko Anda
+                Daftarkan Akun &amp; Menu Usaha Anda
               </h2>
               <p className="mt-1.5 text-xs leading-relaxed text-[#515154]">
-                Daftarkan restoran dengan Email &amp; Kata Sandi pribadi, alamat menu{' '}
-                <code className="font-mono text-[#1D1D1F]">/[slug]</code>, cetak QR meja, dan
-                rekening QRIS 0% komisi.
+                Buat akun pemilik dengan email &amp; kata sandi, alamat toko{' '}
+                <code className="font-mono text-[#1D1D1F]">/[slug]</code>, QR meja siap cetak, dan
+                QRIS 0% potongan.
               </p>
             </div>
             <div className="mt-4 text-xs font-semibold">
@@ -366,13 +385,13 @@ export function PortalLandingClient({
 
           <div className="flex flex-col justify-between rounded-2xl border border-black/[0.06] bg-[#F5F5F7] p-5">
             <div>
-              <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-[#1D7D32]">
-                03 • Akun Terdaftar &amp; Terisolasi
+              <p className="hig-caption text-[11px] font-semibold uppercase tracking-wider text-[#1D7D32]">
+                Akun Terdaftar
               </p>
               <h2 className="mt-1 text-sm font-bold text-[#1D1D1F]">
                 {authenticatedMerchant
                   ? `Terhubung ke ${authenticatedMerchant.name}`
-                  : 'Masuk untuk Kelola Restoran Anda'}
+                  : 'Masuk untuk Mengelola Toko Anda'}
               </h2>
               <p className="mt-1.5 flex items-start gap-1.5 text-xs leading-relaxed text-[#515154]">
                 <LockSimple
@@ -382,16 +401,16 @@ export function PortalLandingClient({
                 />
                 <span>
                   {authenticatedMerchant
-                    ? 'Hanya pemilik terautentikasi yang dapat membuka dasbor, stok, dan kasir toko Anda.'
-                    : 'Pemilik restoran lain tidak dapat melihat atau masuk ke akun restoran Anda tanpa login email & kata sandi.'}
+                    ? 'Dasbor, stok menu, dan catatan pesanan toko Anda hanya dapat dibuka oleh pemilik akun ini.'
+                    : 'Setiap restoran dilindungi login pemilik agar pengunjung atau toko lain tidak dapat membuka data usaha Anda.'}
                 </span>
               </p>
             </div>
-            <div className="mt-4 flex flex-wrap gap-3 text-xs font-semibold">
+            <div className="mt-4 flex flex-wrap gap-4 text-xs font-semibold">
               {authenticatedMerchant ? (
                 <>
                   <Link href="/onboarding?mode=edit" className="text-apple-blue hover:underline">
-                    Konfigurasi Profil →
+                    Ubah Profil Toko →
                   </Link>
                   <button
                     type="button"
@@ -412,21 +431,21 @@ export function PortalLandingClient({
         </div>
       </section>
 
-      {/* Operational Workspaces Grid — Uniform Opaque Grouped Module Cards */}
+      {/* Kumpulan Modul Operasional */}
       <section className="mt-10">
         <div className="mb-5 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
           <div>
             <p className="hig-caption text-xs font-semibold uppercase tracking-[0.05em] text-[#515154]">
-              Operational Workspaces • {activeMerchant.isDemo ? 'Mode Demo' : activeMerchant.name}
+              Area Operasional • {authenticatedMerchant && !activeMerchant.isDemo ? activeMerchant.name : 'Mode Simulasi Demo'}
             </p>
             <h2 className="hig-title-2 mt-0.5 text-[#1D1D1F]">
-              Direct Commerce &amp; Kitchen Modules
+              Modul Pengelolaan Restoran &amp; Dapur
             </h2>
           </div>
           <p className="text-xs font-medium text-[#515154]">
             {authenticatedMerchant
-              ? `Modul di bawah mengelola toko aktif ${activeMerchant.name} (/${activeMerchant.slug})`
-              : 'Saat belum login, seluruh modul di bawah berjalan aman di Mode Demo Sandbox'}
+              ? `Seluruh modul di bawah sedang mengelola data usaha ${activeMerchant.name}`
+              : 'Sebelum masuk ke akun usaha Anda, seluruh modul berjalan aman pada restoran contoh'}
           </p>
         </div>
 
@@ -437,6 +456,7 @@ export function PortalLandingClient({
               <Link
                 key={mod.title}
                 href={mod.route}
+                onPointerDown={() => triggerCausalHaptic(6)}
                 className="apple-interactive group flex flex-col justify-between rounded-[20px] border border-black/[0.08] bg-white p-6 shadow-apple-sm hover:-translate-y-0.5 hover:border-black/20 hover:shadow-apple-md"
               >
                 <div>
@@ -462,7 +482,7 @@ export function PortalLandingClient({
                 </div>
 
                 <div className="mt-5 flex items-center justify-between border-t border-black/[0.06] pt-3.5 text-xs font-semibold text-apple-blue">
-                  <span>Open Workspace</span>
+                  <span>Buka Halaman</span>
                   <span aria-hidden="true" className="font-mono text-xs">
                     →
                   </span>

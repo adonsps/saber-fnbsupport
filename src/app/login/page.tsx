@@ -149,14 +149,14 @@ function LoginContent() {
           <SaberLogo size="lg" />
         </div>
         <p className="hig-caption text-xs font-semibold uppercase tracking-[0.06em] text-[#515154]">
-          Merchant Portal Authentication
+          Portal Pemilik Restoran
         </p>
         <h1 id="login-heading" className="hig-culinary-serif mt-1.5 text-[#1D1D1F]">
-          Sign In to Your Restaurant
+          Masuk ke Akun Restoran
         </h1>
         <p className="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-[#515154]">
-          Akses privat ke dasbor restoran Anda: Menu &amp; Stok, QR Meja, Kasir Kanban, dan Laporan
-          Shift.
+          Akses privat ke dasbor usaha Anda: Menu &amp; Stok, QR Meja, Kasir Kanban, dan Laporan
+          Penjualan.
         </p>
       </div>
 
@@ -268,7 +268,7 @@ function LoginContent() {
               disabled={submitting}
               className="apple-interactive flex min-h-[48px] w-full items-center justify-center rounded-full bg-apple-blue px-6 py-3 text-sm font-semibold text-white shadow-apple-sm hover:bg-apple-blueHover disabled:opacity-60"
             >
-              {submitting ? 'Memverifikasi Akun...' : 'Sign In'}
+              {submitting ? 'Memverifikasi Akun...' : 'Masuk ke Akun'}
             </button>
 
             <div className="flex items-center justify-center gap-1.5 pt-1 text-[11px] text-[#515154]">
@@ -337,7 +337,7 @@ function LoginContent() {
                     className="mt-1.5 min-h-[48px] w-full rounded-2xl border border-zinc-300 bg-[#F5F5F7]/60 px-4 text-sm outline-none focus:border-apple-blue focus:bg-white"
                   />
                   <p className="mt-1 text-[11px] text-[#515154]">
-                    Kode OTP 6 digit akan dikirimkan melalui Fonnte Bot ke nomor WhatsApp pemilik
+                    Kode OTP 6 digit akan dikirimkan melalui Bot WhatsApp Saber ke nomor pemilik
                     restoran Anda.
                   </p>
                 </div>
@@ -446,3 +446,4 @@ function LoginContent() {
     </div>
   );
 }
+

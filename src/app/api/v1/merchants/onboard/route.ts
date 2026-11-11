@@ -245,10 +245,17 @@ export async function POST(req: NextRequest) {
         merchant = authResolution.merchant;
       }
 
-      // Authorization check for real merchant accounts
-      if (!isDemoMerchant(merchant) && authedMerchant?.id !== merchant.id) {
+      // Updating store profile requires an authenticated merchant session
+      if (!authedMerchant) {
         return NextResponse.json(
-          { error: 'Akses ditolak. Silakan masuk dengan akun pemilik restoran ini terlebih dahulu.' },
+          { error: 'Silakan masuk ke akun restoran Anda terlebih dahulu untuk mengedit profil toko.' },
+          { status: 401 }
+        );
+      }
+
+      if (!isDemoMerchant(merchant) && authedMerchant.id !== merchant.id) {
+        return NextResponse.json(
+          { error: 'Akses ditolak. Anda hanya dapat mengedit profil restoran milik Anda sendiri.' },
           { status: 403 }
         );
       }

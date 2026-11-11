@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import { MotionProvider } from '@/components/MotionProvider';
 import { SaberWorkspaceBar } from '@/components/SaberWorkspaceBar';
 
 export const metadata: Metadata = {
-  title: 'Saber Culinary — Zero-Commission Table QR & Cashier Platform',
+  title: 'Saber Culinary — Platform Pesan Meja QR & Kasir Tanpa Komisi',
   description:
-    'Zero-commission direct ordering PWA, dynamic Table QR generator, frictionless guest checkout, and real-time Cashier Kanban with Fonnte WhatsApp automation.',
+    'Platform pemesanan langsung UMKM kuliner, generator QR meja otomatis, checkout tamu tanpa akun, serta kasir Kanban dengan notifikasi WhatsApp otomatis.',
   manifest: '/manifest.json',
   icons: {
     icon: '/icon.svg',
@@ -27,8 +28,10 @@ export default function RootLayout({
   return (
     <html lang="id">
       <body className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] antialiased selection:bg-apple-blue/15 selection:text-apple-blue">
-        <SaberWorkspaceBar />
-        <main className="pb-16">{children}</main>
+        <MotionProvider>
+          <SaberWorkspaceBar />
+          <main className="pb-16">{children}</main>
+        </MotionProvider>
       </body>
     </html>
   );

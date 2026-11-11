@@ -3,15 +3,16 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { List, SignIn, SignOut, X } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
-import { triggerCausalHaptic } from '@/lib/apple-motion';
+import { APPLE_SPRINGS, triggerCausalHaptic } from '@/lib/apple-motion';
 import { SaberLogo } from '@/components/SaberLogo';
 
 const MERCHANT_NAV_ITEMS = [
   {
     href: '/',
-    label: 'Portal Utama',
+    label: 'Beranda',
     match: (p: string) => p === '/',
   },
   {
@@ -36,7 +37,7 @@ const MERCHANT_NAV_ITEMS = [
   },
   {
     href: '/admin/analytics',
-    label: 'Laporan Shift',
+    label: 'Laporan',
     match: (p: string) => p.startsWith('/admin/analytics'),
   },
 ];
@@ -141,7 +142,7 @@ export function SaberWorkspaceBar() {
     header.classList.add('is-wide');
     menu.removeAttribute('popover');
 
-    const fitsInline = inner.scrollWidth <= inner.clientWidth && window.innerWidth >= 1024;
+    const fitsInline = inner.scrollWidth <= inner.clientWidth && window.innerWidth >= 960;
 
     if (fitsInline) {
       lastWideWidthRef.current = 0;
@@ -227,10 +228,11 @@ export function SaberWorkspaceBar() {
         ref={innerRef}
         className="saber-header-inner liquid-glass-bar mx-auto flex max-w-7xl items-center justify-between gap-3 rounded-2xl px-3.5 py-2 sm:rounded-full sm:px-4"
       >
-        {/* Official Saber Culinary Brand Lockup */}
+        {/* Brand Lockup + Instant Pointer-Down Feedback (§1) */}
         <div className="flex items-center gap-2.5">
           <Link
             href="/"
+            onPointerDown={() => triggerCausalHaptic(6)}
             onClick={closePopoverIfCollapsed}
             className="apple-interactive flex items-center gap-2.5 rounded-full pr-1"
           >
@@ -240,34 +242,36 @@ export function SaberWorkspaceBar() {
                 Saber Culinary
               </span>
               <span className="hidden text-[11px] font-medium text-[#515154] sm:block">
-                Direct Table QR &amp; Cashier Platform
+                Pesan Meja QR &amp; Kasir Langsung
               </span>
             </div>
           </Link>
 
-          {activeMerchant && (
+          {authenticatedMerchant && activeMerchant && (
             <Link
               href="/"
+              onPointerDown={() => triggerCausalHaptic(6)}
               onClick={closePopoverIfCollapsed}
-              title={`Workspace aktif: ${activeMerchant.name}`}
+              title={`Toko aktif: ${activeMerchant.name}`}
               className="hidden items-center gap-1.5 rounded-full border border-black/[0.08] bg-[#F5F5F7] px-2.5 py-1 text-[11px] font-semibold text-[#515154] lg:inline-flex"
             >
-              <span className="font-mono text-[10px] font-bold uppercase text-apple-blue">
-                {activeMerchant.isDemo ? 'Demo' : 'Resto'}
+              <span className="font-mono text-[10px] font-bold uppercase text-[#1D7D32]">
+                {activeMerchant.isDemo ? 'Demo' : 'Aktif'}
               </span>
               <span className="max-w-[120px] truncate text-[#1D1D1F]">{activeMerchant.name}</span>
             </Link>
           )}
         </div>
 
-        {/* Single Semantic Navigation Landmark */}
-        <nav aria-label="Primary Workspace Navigation" className="flex items-center gap-2">
+        {/* Single Semantic Navigation Landmark with Restored Critically-Damped Spring Pill (§4) */}
+        <nav aria-label="Navigasi Utama" className="flex items-center gap-2">
           <button
             type="button"
             popoverTarget="saber-merchant-menu"
             popoverTargetAction="toggle"
             aria-controls="saber-merchant-menu"
             aria-expanded={menuOpen}
+            onPointerDown={() => triggerCausalHaptic(6)}
             className="saber-menu-button apple-interactive inline-flex min-h-[40px] items-center gap-1.5 rounded-full border border-black/[0.12] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#1D1D1F] shadow-apple-sm"
           >
             {menuOpen ? (
@@ -279,10 +283,10 @@ export function SaberWorkspaceBar() {
           </button>
 
           <ul id="saber-merchant-menu" ref={menuRef} className="saber-site-menu">
-            {activeMerchant && (
+            {authenticatedMerchant && activeMerchant && (
               <li className="saber-mobile-context mb-2 rounded-xl border border-black/[0.06] bg-[#F5F5F7] p-3">
                 <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#515154]">
-                  {activeMerchant.isDemo ? 'Mode Simulasi Demo' : 'Akun Restoran Terautentikasi'}
+                  {activeMerchant.isDemo ? 'Mode Simulasi' : 'Restoran Terhubung'}
                 </p>
                 <p className="mt-0.5 truncate text-xs font-bold text-[#1D1D1F]">
                   {activeMerchant.name}
@@ -298,14 +302,24 @@ export function SaberWorkspaceBar() {
                   <Link
                     href={item.href}
                     aria-current={active ? 'page' : undefined}
+                    onPointerDown={() => triggerCausalHaptic(6)}
                     onClick={closePopoverIfCollapsed}
                     className={cn(
-                      'flex min-h-[42px] items-center justify-between rounded-xl px-3.5 py-2 text-xs font-semibold transition-colors lg:min-h-[38px] lg:rounded-full lg:px-3.5',
+                      'apple-interactive relative flex min-h-[42px] items-center justify-between rounded-xl px-3.5 py-2 text-xs font-semibold transition-colors lg:min-h-[38px] lg:rounded-full lg:px-3.5',
                       active
-                        ? 'border-l-4 border-apple-blue bg-[#1D1D1F] text-white shadow-apple-sm lg:border-l-0 lg:ring-2 lg:ring-apple-blue/30'
+                        ? isWide
+                          ? 'text-white'
+                          : 'border-l-4 border-apple-blue bg-[#1D1D1F] text-white shadow-apple-sm'
                         : 'text-[#515154] hover:bg-black/[0.05] hover:text-[#1D1D1F]'
                     )}
                   >
+                    {active && isWide && (
+                      <motion.span
+                        layoutId="saber-workspace-active-pill"
+                        transition={APPLE_SPRINGS.default}
+                        className="absolute inset-0 -z-10 rounded-full bg-[#1D1D1F] shadow-sm"
+                      />
+                    )}
                     <span>{item.label}</span>
                   </Link>
                 </li>
@@ -316,8 +330,9 @@ export function SaberWorkspaceBar() {
               {authenticatedMerchant ? (
                 <button
                   type="button"
+                  onPointerDown={() => triggerCausalHaptic(6)}
                   onClick={handleLogout}
-                  className="flex min-h-[42px] w-full items-center justify-center gap-1.5 rounded-xl border border-black/[0.12] bg-[#F5F5F7] px-3.5 text-xs font-semibold text-[#1D1D1F] hover:bg-[#EFEFF4] lg:min-h-[38px] lg:rounded-full"
+                  className="apple-interactive flex min-h-[42px] w-full items-center justify-center gap-1.5 rounded-xl border border-black/[0.12] bg-[#F5F5F7] px-3.5 text-xs font-semibold text-[#1D1D1F] hover:bg-[#EFEFF4] lg:min-h-[38px] lg:rounded-full"
                 >
                   <SignOut aria-hidden="true" weight="regular" className="h-3.5 w-3.5" />
                   <span>Keluar</span>
@@ -326,11 +341,12 @@ export function SaberWorkspaceBar() {
                 <Link
                   href="/login"
                   aria-current={pathname.startsWith('/login') ? 'page' : undefined}
+                  onPointerDown={() => triggerCausalHaptic(6)}
                   onClick={closePopoverIfCollapsed}
                   className={cn(
-                    'flex min-h-[42px] items-center justify-center gap-1.5 rounded-xl px-4 text-xs font-semibold transition-colors lg:min-h-[38px] lg:rounded-full',
+                    'apple-interactive relative flex min-h-[42px] items-center justify-center gap-1.5 rounded-xl px-4 text-xs font-semibold transition-colors lg:min-h-[38px] lg:rounded-full',
                     pathname.startsWith('/login')
-                      ? 'bg-apple-blue text-white'
+                      ? 'text-white bg-apple-blue'
                       : 'border border-black/[0.12] bg-white text-[#1D1D1F] hover:bg-[#F5F5F7]'
                   )}
                 >

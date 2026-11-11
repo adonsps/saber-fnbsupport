@@ -48,8 +48,12 @@ export default function OnboardingPage() {
 function OnboardingWizardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialMode = searchParams.get('mode') === 'new' ? 'new' : 'edit';
-  const [onboardingMode, setOnboardingMode] = useState<'new' | 'edit'>(initialMode);
+  const requestedMode = searchParams.get('mode');
+
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authenticatedSlug, setAuthenticatedSlug] = useState<string | null>(null);
+  const [onboardingMode, setOnboardingMode] = useState<'new' | 'edit'>('new');
   const [editingMerchantId, setEditingMerchantId] = useState<string | null>(null);
   const [editingOriginalSlug, setEditingOriginalSlug] = useState<string>('');
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -103,14 +107,38 @@ function OnboardingWizardContent() {
     process.env.NEXT_PUBLIC_APP_DOMAIN || 'fnbsupport.saberconsulting.id'
   );
 
-  // Sync mode changes or hydrate active merchant when editing
+  // Verify whether user is logged in before permitting Edit mode
   useEffect(() => {
     setAppDisplayOrigin(window.location.origin.replace(/^https?:\/\//i, ''));
+    fetch('/api/v1/auth/session', { cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((sessionData) => {
+        const authed = Boolean(sessionData?.authenticated && sessionData?.authenticatedMerchant);
+        setIsAuthenticated(authed);
+        setAuthenticatedSlug(sessionData?.authenticatedMerchant?.slug || null);
+        if (authed && requestedMode !== 'new') {
+          setOnboardingMode('edit');
+        } else {
+          setOnboardingMode('new');
+        }
+      })
+      .catch(() => {
+        setIsAuthenticated(false);
+        setOnboardingMode('new');
+      })
+      .finally(() => {
+        setAuthChecked(true);
+      });
+  }, [requestedMode]);
+
+  // Sync mode changes or hydrate ONLY the user's own authenticated restaurant
+  useEffect(() => {
+    if (!authChecked) return;
     setLaunchSuccess(null);
     setErrorMsg(null);
     setStep(1);
 
-    if (onboardingMode === 'new') {
+    if (onboardingMode === 'new' || !isAuthenticated || !authenticatedSlug) {
       setEditingMerchantId(null);
       setEditingOriginalSlug('');
       setIsEditingDemo(false);
@@ -127,9 +155,12 @@ function OnboardingWizardContent() {
       return;
     }
 
-    fetch('/api/v1/merchants/onboard', { cache: 'no-store' })
-      .then((res) => res.json())
+    fetch(`/api/v1/merchants/onboard?slug=${encodeURIComponent(authenticatedSlug)}`, {
+      cache: 'no-store',
+    })
+      .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
+        if (!data) return;
         if (data.merchant) {
           setEditingMerchantId(data.merchant.id);
           setEditingOriginalSlug(data.merchant.slug);
@@ -162,7 +193,7 @@ function OnboardingWizardContent() {
         }
       })
       .catch(() => {});
-  }, [onboardingMode]);
+  }, [authChecked, onboardingMode, isAuthenticated, authenticatedSlug]);
 
   // Live Slug Availability Check
   useEffect(() => {
@@ -337,9 +368,9 @@ function OnboardingWizardContent() {
   };
 
   const stepsMeta = [
-    { num: 1, title: 'Merchant Profile', subtitle: 'Identity & Store URL', icon: Storefront },
-    { num: 2, title: 'Branch & Delivery', subtitle: 'Hours & Courier Radius', icon: Clock },
-    { num: 3, title: 'QRIS & Settlement', subtitle: 'Static QRIS & Bank', icon: CreditCard },
+    { num: 1, title: 'Profil Usaha', subtitle: 'Akun & Alamat Menu', icon: Storefront },
+    { num: 2, title: 'Cabang & Antar', subtitle: 'Jam Buka & Kurir', icon: Clock },
+    { num: 3, title: 'QRIS & Rekening', subtitle: 'Pembayaran Langsung', icon: CreditCard },
   ];
 
   return (
@@ -351,41 +382,50 @@ function OnboardingWizardContent() {
         <h1 className="hig-culinary-serif mt-2 text-3xl text-[#1D1D1F] sm:text-4xl">
           {onboardingMode === 'new'
             ? 'Daftarkan Restoran Anda dalam 3 Langkah'
-            : 'Kelola & Perbarui Profil Restoran Anda'}
+            : 'Perbarui Profil & Rekening Restoran Anda'}
         </h1>
         <p className="mx-auto mt-2 max-w-xl text-sm text-[#515154]">
           {onboardingMode === 'new'
-            ? 'Buat URL pemesanan mandiri /[nama-resto], cetak QR meja otomatis, dan terima notifikasi WhatsApp Fonnte tanpa komisi marketplace.'
-            : 'Perbarui identitas toko, jam operasional, rekening transfer / QRIS Statis, dan nomor WhatsApp penerima order.'}
+            ? 'Buat akun pemilik beserta tautan pemesanan /[nama-resto], cetak QR meja otomatis, dan terima notifikasi WhatsApp tanpa komisi.'
+            : 'Perbarui identitas usaha, jam operasional harian, rekening bank / QRIS Statis, serta nomor WhatsApp penerima pesanan.'}
         </p>
 
-        {/* Explicit Mode Switcher: New Restaurant vs Configure Existing */}
-        <div className="mx-auto mt-5 inline-flex rounded-full border border-black/[0.08] bg-white p-1 shadow-apple-sm">
-          <button
-            type="button"
-            onClick={() => setOnboardingMode('new')}
-            className={cn(
-              'min-h-[38px] rounded-full px-4 py-1.5 text-xs font-bold transition-colors',
-              onboardingMode === 'new'
-                ? 'bg-[#0F1E36] text-white shadow-sm'
-                : 'text-[#515154] hover:text-[#1D1D1F]'
-            )}
-          >
-            + Daftar Restoran Baru
-          </button>
-          <button
-            type="button"
-            onClick={() => setOnboardingMode('edit')}
-            className={cn(
-              'min-h-[38px] rounded-full px-4 py-1.5 text-xs font-bold transition-colors',
-              onboardingMode === 'edit'
-                ? 'bg-[#0F1E36] text-white shadow-sm'
-                : 'text-[#515154] hover:text-[#1D1D1F]'
-            )}
-          >
-            Edit Restoran Aktif
-          </button>
-        </div>
+        {/* Edit mode is strictly shown ONLY when already signed in to a restaurant account */}
+        {isAuthenticated ? (
+          <div className="mx-auto mt-5 inline-flex rounded-full border border-black/[0.08] bg-white p-1 shadow-apple-sm">
+            <button
+              type="button"
+              onClick={() => setOnboardingMode('edit')}
+              className={cn(
+                'min-h-[38px] rounded-full px-4 py-1.5 text-xs font-bold transition-colors',
+                onboardingMode === 'edit'
+                  ? 'bg-[#1D1D1F] text-white shadow-sm'
+                  : 'text-[#515154] hover:text-[#1D1D1F]'
+              )}
+            >
+              Edit Profil Toko Saya
+            </button>
+            <button
+              type="button"
+              onClick={() => setOnboardingMode('new')}
+              className={cn(
+                'min-h-[38px] rounded-full px-4 py-1.5 text-xs font-bold transition-colors',
+                onboardingMode === 'new'
+                  ? 'bg-[#1D1D1F] text-white shadow-sm'
+                  : 'text-[#515154] hover:text-[#1D1D1F]'
+              )}
+            >
+              + Daftarkan Toko Baru
+            </button>
+          </div>
+        ) : (
+          <p className="mt-4 text-xs text-[#515154]">
+            Sudah pernah mendaftarkan restoran?{' '}
+            <Link href="/login" className="font-semibold text-apple-blue hover:underline">
+              Masuk untuk mengedit toko Anda →
+            </Link>
+          </p>
+        )}
       </div>
 
       {/* Apple-Grade Progress Stepper */}
@@ -1039,7 +1079,7 @@ function OnboardingWizardContent() {
                 onClick={() => setStep((step - 1) as 1 | 2)}
                 className="apple-interactive inline-flex min-h-[44px] items-center rounded-full border border-zinc-300 bg-white px-5 py-2.5 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
               >
-                Previous Step
+                Langkah Sebelumnya
               </button>
             ) : (
               <div />
@@ -1051,7 +1091,7 @@ function OnboardingWizardContent() {
                 onClick={handleNextStep}
                 className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-zinc-950 px-6 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800"
               >
-                Next Step
+                Langkah Berikutnya
               </button>
             ) : (
               <button
@@ -1059,7 +1099,7 @@ function OnboardingWizardContent() {
                 disabled={submitting}
                 className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-7 py-2.5 text-sm font-semibold text-white shadow-apple-sm hover:bg-apple-blueHover disabled:opacity-60"
               >
-                {submitting ? 'Menyimpan...' : 'Complete Setup & Launch'}
+                {submitting ? 'Menyimpan...' : 'Selesaikan & Aktifkan Toko'}
               </button>
             )}
           </div>

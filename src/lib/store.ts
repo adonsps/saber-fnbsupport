@@ -882,10 +882,10 @@ export async function dispatchWhatsAppNotification(params: {
   if (isSyntheticDemoPhone) {
     log.deliveryStatus = 'DELIVERED';
     log.providerMessage =
-      'Sandbox demo number logged locally — masukkan nomor WhatsApp aktif Anda saat checkout/onboarding untuk pengiriman Fonnte nyata.';
+      'Nomor demo tercatat di log lokal — masukkan nomor WhatsApp aktif Anda saat memesan atau mendaftar untuk pengiriman langsung.';
   } else if (!fonnteToken) {
     log.deliveryStatus = 'FAILED';
-    log.providerMessage = 'FONNTE_API_TOKEN belum dikonfigurasi pada environment server.';
+    log.providerMessage = 'Gateway WhatsApp server belum dikonfigurasi.';
   } else {
     try {
       const target = formatPhoneForFonnte(params.recipientPhone);
@@ -913,7 +913,7 @@ export async function dispatchWhatsAppNotification(params: {
 
       if (response.ok && result.status !== false) {
         log.deliveryStatus = 'DELIVERED';
-        log.providerMessage = result.detail || 'Terkirim via Fonnte WhatsApp API';
+        log.providerMessage = result.detail || 'Terkirim via Gateway WhatsApp Saber';
         log.providerId = Array.isArray(result.id)
           ? result.id[0]
           : result.id
@@ -922,12 +922,14 @@ export async function dispatchWhatsAppNotification(params: {
       } else {
         log.deliveryStatus = 'FAILED';
         log.providerMessage =
-          result.reason || result.detail || `Fonnte HTTP ${response.status}`;
+          result.reason || result.detail || `Gateway WhatsApp HTTP ${response.status}`;
       }
     } catch (err) {
       log.deliveryStatus = 'FAILED';
       log.providerMessage =
-        err instanceof Error ? `Fonnte network error: ${err.message}` : 'Fonnte dispatch error';
+        err instanceof Error
+          ? `Gangguan jaringan WhatsApp Gateway: ${err.message}`
+          : 'Gagal mengirim pesan WhatsApp';
     }
   }
 
