@@ -10,6 +10,7 @@ export function proxy(req: NextRequest) {
     url.pathname.startsWith('/_next') ||
     url.pathname.startsWith('/api') ||
     url.pathname.startsWith('/onboarding') ||
+    url.pathname.startsWith('/login') ||
     url.pathname.startsWith('/admin') ||
     url.pathname.startsWith('/cashier') ||
     url.pathname.startsWith('/checkout') ||

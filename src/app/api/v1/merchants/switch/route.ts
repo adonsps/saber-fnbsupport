@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   ACTIVE_MERCHANT_COOKIE,
+  SESSION_COOKIE,
+  getAuthenticatedMerchant,
   getMerchantBySlug,
   getStore,
+  isDemoMerchant,
+  sanitizeMerchant,
 } from '@/lib/store';
 
 export const dynamic = 'force-dynamic';
@@ -12,23 +16,36 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const slug = String(body.slug || '').trim().toLowerCase();
     const store = getStore();
-    const merchant = getMerchantBySlug(store, slug);
+    const targetMerchant = getMerchantBySlug(store, slug);
 
-    if (!merchant) {
+    if (!targetMerchant) {
       return NextResponse.json(
-        { error: `Restoran dengan slug "/${slug}" tidak ditemukan.` },
+        { error: `Restoran "/${slug}" tidak ditemukan.` },
         { status: 404 }
+      );
+    }
+
+    const authedMerchant = getAuthenticatedMerchant(
+      store,
+      req.cookies.get(SESSION_COOKIE)?.value
+    );
+
+    // Strictly allow switching only to Demo Sandbox OR the caller's own signed-in restaurant
+    if (!isDemoMerchant(targetMerchant) && authedMerchant?.id !== targetMerchant.id) {
+      return NextResponse.json(
+        { error: 'Akses ditolak. Silakan login sebagai pemilik restoran terkait.' },
+        { status: 403 }
       );
     }
 
     const res = NextResponse.json({
       success: true,
-      merchant,
+      merchant: sanitizeMerchant(targetMerchant),
     });
-    res.cookies.set(ACTIVE_MERCHANT_COOKIE, merchant.slug, {
+    res.cookies.set(ACTIVE_MERCHANT_COOKIE, targetMerchant.slug, {
       path: '/',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 30,
+      maxAge: 60 * 60 * 24 * 14,
     });
     return res;
   } catch (err) {
@@ -38,4 +55,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

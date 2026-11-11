@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   ACTIVE_MERCHANT_COOKIE,
+  SESSION_COOKIE,
   createUuid,
   getMerchantBySlug,
   getScopedMerchantBundle,
   getStore,
-  resolveWorkspaceMerchant,
+  resolveAuthorizedWorkspaceMerchant,
+  sanitizeMerchant,
   saveStore,
 } from '@/lib/store';
 
@@ -14,23 +16,38 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: NextRequest) {
   const store = getStore();
   const explicitSlug = req.nextUrl.searchParams.get('slug');
-  const cookieSlug = req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
 
-  const merchant = explicitSlug
-    ? getMerchantBySlug(store, explicitSlug)
-    : resolveWorkspaceMerchant(store, cookieSlug);
-
-  if (!merchant) {
+  // When explicitSlug is requested by Customer QR Storefront (/[slug]), load public catalog
+  if (explicitSlug) {
+    const publicMerchant = getMerchantBySlug(store, explicitSlug);
+    if (!publicMerchant) {
+      return NextResponse.json(
+        { error: `Toko dengan alamat "/${explicitSlug}" tidak ditemukan.` },
+        { status: 404, headers: { 'Cache-Control': 'no-store' } }
+      );
+    }
+    const publicBundle = getScopedMerchantBundle(store, publicMerchant);
     return NextResponse.json(
-      { error: `Toko dengan alamat "/${explicitSlug}" tidak ditemukan.` },
-      { status: 404, headers: { 'Cache-Control': 'no-store' } }
+      {
+        merchant: sanitizeMerchant(publicBundle.merchant),
+        branch: publicBundle.branch,
+        categories: publicBundle.categories,
+        menuItems: publicBundle.menuItems,
+      },
+      { headers: { 'Cache-Control': 'no-store' } }
     );
   }
+
+  // Admin Menu Manager: resolve strictly via authenticated merchant session or Demo
+  const { merchant } = resolveAuthorizedWorkspaceMerchant(store, {
+    sessionCookie: req.cookies.get(SESSION_COOKIE)?.value,
+    activeSlugCookie: req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value,
+  });
 
   const bundle = getScopedMerchantBundle(store, merchant);
   return NextResponse.json(
     {
-      merchant: bundle.merchant,
+      merchant: sanitizeMerchant(bundle.merchant),
       branch: bundle.branch,
       categories: bundle.categories,
       menuItems: bundle.menuItems,
@@ -43,10 +60,19 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const store = getStore();
-    const cookieSlug = req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
-    const merchant = resolveWorkspaceMerchant(store, body.slug || cookieSlug);
+    const { merchant, deniedRequestedSlug } = resolveAuthorizedWorkspaceMerchant(store, {
+      sessionCookie: req.cookies.get(SESSION_COOKIE)?.value,
+      activeSlugCookie: req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value,
+      requestedSlug: body.slug,
+    });
+
+    if (deniedRequestedSlug) {
+      return NextResponse.json({ error: 'Akses ditolak.' }, { status: 403 });
+    }
+
     const bundle = getScopedMerchantBundle(store, merchant);
     const branchId = bundle.branch?.id || '22222222-2222-4222-8222-222222222222';
+    const branchCategoryIds = new Set(bundle.categories.map((c) => c.id));
 
     if (body.entity === 'category') {
       const newCategory = {
@@ -76,11 +102,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, categories: updated.categories });
     }
 
-    // Create or update menu item
+    // Create or update menu item (enforce tenant isolation on categoryId & item ID)
     if (body.id) {
-      const existing = store.menuItems.find((m) => m.id === body.id);
+      const existing = store.menuItems.find(
+        (m) => m.id === body.id && branchCategoryIds.has(m.categoryId)
+      );
       if (!existing) {
         return NextResponse.json({ error: 'Item menu tidak ditemukan' }, { status: 404 });
+      }
+      if (body.categoryId && !branchCategoryIds.has(body.categoryId)) {
+        return NextResponse.json({ error: 'Kategori tidak valid.' }, { status: 403 });
       }
       existing.categoryId = body.categoryId || existing.categoryId;
       existing.titleId = body.titleId ?? existing.titleId;
@@ -101,9 +132,14 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    const targetCategoryId =
+      body.categoryId && branchCategoryIds.has(body.categoryId)
+        ? body.categoryId
+        : bundle.categories[0]?.id;
+
     const newItem = {
       id: createUuid(),
-      categoryId: body.categoryId || bundle.categories[0]?.id,
+      categoryId: targetCategoryId,
       titleId: String(body.titleId || '').trim(),
       titleEn: String(body.titleEn || body.titleId || '').trim(),
       descriptionId: String(body.descriptionId || '').trim(),
@@ -137,10 +173,16 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'ID diperlukan' }, { status: 400 });
   }
   const store = getStore();
-  const cookieSlug = req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
-  const merchant = resolveWorkspaceMerchant(store, cookieSlug);
+  const { merchant } = resolveAuthorizedWorkspaceMerchant(store, {
+    sessionCookie: req.cookies.get(SESSION_COOKIE)?.value,
+    activeSlugCookie: req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value,
+  });
 
-  store.menuItems = store.menuItems.filter((item) => item.id !== id);
+  const bundle = getScopedMerchantBundle(store, merchant);
+  const branchCategoryIds = new Set(bundle.categories.map((c) => c.id));
+  store.menuItems = store.menuItems.filter(
+    (item) => !(item.id === id && branchCategoryIds.has(item.categoryId))
+  );
   saveStore(store);
   const updated = getScopedMerchantBundle(store, merchant);
   return NextResponse.json({ success: true, menuItems: updated.menuItems });

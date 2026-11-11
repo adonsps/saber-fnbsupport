@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getStore, saveStore } from '@/lib/store';
+import {
+  ACTIVE_MERCHANT_COOKIE,
+  SESSION_COOKIE,
+  getScopedMerchantBundle,
+  getStore,
+  resolveAuthorizedWorkspaceMerchant,
+  saveStore,
+} from '@/lib/store';
 
 export async function PATCH(
   req: NextRequest,
@@ -9,8 +16,16 @@ export async function PATCH(
     const { id } = await context.params;
     const body = await req.json().catch(() => ({}));
     const store = getStore();
+    const { merchant } = resolveAuthorizedWorkspaceMerchant(store, {
+      sessionCookie: req.cookies.get(SESSION_COOKIE)?.value,
+      activeSlugCookie: req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value,
+    });
 
-    const item = store.menuItems.find((m) => m.id === id);
+    const bundle = getScopedMerchantBundle(store, merchant);
+    const branchCategoryIds = new Set(bundle.categories.map((c) => c.id));
+    const item = store.menuItems.find(
+      (m) => m.id === id && branchCategoryIds.has(m.categoryId)
+    );
     if (!item) {
       return NextResponse.json({ error: 'Menu item tidak ditemukan' }, { status: 404 });
     }

@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   ACTIVE_MERCHANT_COOKIE,
+  SESSION_COOKIE,
   createUuid,
   getScopedMerchantBundle,
   getStore,
-  resolveWorkspaceMerchant,
+  resolveAuthorizedWorkspaceMerchant,
+  sanitizeMerchant,
   saveStore,
 } from '@/lib/store';
 import { buildStorefrontUrl, getOriginFromHeaders } from '@/lib/utils';
@@ -29,15 +31,23 @@ function resolveTablesWithQrUrls(
 export async function GET(req: NextRequest) {
   const store = getStore();
   const explicitSlug = req.nextUrl.searchParams.get('slug');
-  const cookieSlug = req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
-  const merchant = resolveWorkspaceMerchant(store, explicitSlug || cookieSlug);
+  const { merchant, deniedRequestedSlug } = resolveAuthorizedWorkspaceMerchant(store, {
+    sessionCookie: req.cookies.get(SESSION_COOKIE)?.value,
+    activeSlugCookie: req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value,
+    requestedSlug: explicitSlug,
+  });
+
+  if (deniedRequestedSlug) {
+    return NextResponse.json({ error: 'Akses ditolak.' }, { status: 403 });
+  }
+
   const bundle = getScopedMerchantBundle(store, merchant);
   const origin = getOriginFromHeaders(req.headers);
-
   const resolvedTables = resolveTablesWithQrUrls(bundle.tables, merchant.slug, origin);
+
   return NextResponse.json(
     {
-      merchant: bundle.merchant,
+      merchant: sanitizeMerchant(bundle.merchant),
       branch: bundle.branch,
       tables: resolvedTables,
     },
@@ -49,8 +59,16 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const store = getStore();
-    const cookieSlug = req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
-    const merchant = resolveWorkspaceMerchant(store, body.slug || cookieSlug);
+    const { merchant, deniedRequestedSlug } = resolveAuthorizedWorkspaceMerchant(store, {
+      sessionCookie: req.cookies.get(SESSION_COOKIE)?.value,
+      activeSlugCookie: req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value,
+      requestedSlug: body.slug,
+    });
+
+    if (deniedRequestedSlug) {
+      return NextResponse.json({ error: 'Akses ditolak.' }, { status: 403 });
+    }
+
     const bundle = getScopedMerchantBundle(store, merchant);
     const origin = getOriginFromHeaders(req.headers);
     const branchId = bundle.branch?.id || '22222222-2222-4222-8222-222222222222';
@@ -134,8 +152,16 @@ export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
     const store = getStore();
-    const cookieSlug = req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
-    const merchant = resolveWorkspaceMerchant(store, body.slug || cookieSlug);
+    const { merchant, deniedRequestedSlug } = resolveAuthorizedWorkspaceMerchant(store, {
+      sessionCookie: req.cookies.get(SESSION_COOKIE)?.value,
+      activeSlugCookie: req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value,
+      requestedSlug: body.slug,
+    });
+
+    if (deniedRequestedSlug) {
+      return NextResponse.json({ error: 'Akses ditolak.' }, { status: 403 });
+    }
+
     const bundle = getScopedMerchantBundle(store, merchant);
     const origin = getOriginFromHeaders(req.headers);
 
@@ -194,10 +220,15 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'ID meja diperlukan' }, { status: 400 });
   }
   const store = getStore();
-  const cookieSlug = req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
-  const merchant = resolveWorkspaceMerchant(store, cookieSlug);
+  const { merchant } = resolveAuthorizedWorkspaceMerchant(store, {
+    sessionCookie: req.cookies.get(SESSION_COOKIE)?.value,
+    activeSlugCookie: req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value,
+  });
+  const bundle = getScopedMerchantBundle(store, merchant);
 
-  store.tableSessions = store.tableSessions.filter((t) => t.id !== id);
+  store.tableSessions = store.tableSessions.filter(
+    (t) => !(t.id === id && t.branchId === bundle.branch.id)
+  );
   saveStore(store);
   const origin = getOriginFromHeaders(req.headers);
   const updated = getScopedMerchantBundle(store, merchant);

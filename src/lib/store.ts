@@ -11,12 +11,19 @@ import {
   OrderItem,
   OrderStatus,
   OrderType,
+  PasswordResetRecord,
   PaymentReceipt,
   PaymentStatus,
   PaymentType,
   TableSession,
   WhatsAppWebhookLog,
 } from '@/types/schema';
+import {
+  ACTIVE_MERCHANT_COOKIE,
+  SESSION_COOKIE,
+  sanitizeMerchant,
+  verifySessionToken,
+} from '@/lib/auth';
 
 export interface DatabaseState {
   merchants: Merchant[];
@@ -26,6 +33,7 @@ export interface DatabaseState {
   menuItems: MenuItem[];
   orders: Order[];
   whatsappLogs: WhatsAppWebhookLog[];
+  passwordResets?: PasswordResetRecord[];
 }
 
 const DATA_DIR = fs.existsSync('/app/data') ? '/app/data' : process.cwd();
@@ -602,7 +610,7 @@ declare global {
   var __saberFnbStore: DatabaseState | undefined;
 }
 
-export const ACTIVE_MERCHANT_COOKIE = 'saber_active_merchant';
+export { ACTIVE_MERCHANT_COOKIE, SESSION_COOKIE, sanitizeMerchant };
 
 const DEMO_MERCHANT_ID = '11111111-1111-4111-8111-111111111111';
 
@@ -630,6 +638,7 @@ export function getStore(): DatabaseState {
           ...m,
           isDemo: m.isDemo ?? (m.id === DEMO_MERCHANT_ID || m.slug === 'warungmakan'),
         }));
+        parsed.passwordResets = parsed.passwordResets || [];
         global.__saberFnbStore = parsed;
         return parsed;
       }
@@ -653,7 +662,7 @@ export function saveStore(state: DatabaseState): void {
   }
 }
 
-export function isDemoMerchant(merchant?: Merchant | null): boolean {
+export function isDemoMerchant(merchant?: { isDemo?: boolean; id?: string; slug?: string } | null): boolean {
   if (!merchant) return false;
   return Boolean(merchant.isDemo || merchant.id === DEMO_MERCHANT_ID || merchant.slug === 'warungmakan');
 }
@@ -664,14 +673,79 @@ export function getMerchantBySlug(store: DatabaseState, slug?: string | null): M
   return store.merchants.find((m) => m.slug.toLowerCase() === normalized);
 }
 
+export function getDemoMerchant(store: DatabaseState): Merchant {
+  return store.merchants.find((m) => isDemoMerchant(m)) || store.merchants[0];
+}
+
+export function getAuthenticatedMerchant(
+  store: DatabaseState,
+  sessionCookieValue?: string | null
+): Merchant | undefined {
+  const payload = verifySessionToken(sessionCookieValue);
+  if (!payload) return undefined;
+  return store.merchants.find((m) => m.id === payload.merchantId);
+}
+
+/**
+ * Resolves which merchant workspace a caller is permitted to view/manage:
+ * - Demo Sandbox ('warungmakan') is always open to explore.
+ * - Registered real restaurants are strictly isolated: a caller can ONLY access
+ *   their own registered restaurant when holding a matching signed session cookie.
+ */
+export function resolveAuthorizedWorkspaceMerchant(
+  store: DatabaseState,
+  options: {
+    sessionCookie?: string | null;
+    activeSlugCookie?: string | null;
+    requestedSlug?: string | null;
+  }
+): {
+  merchant: Merchant;
+  authenticatedMerchant: Merchant | undefined;
+  deniedRequestedSlug: boolean;
+} {
+  const demoMerchant = getDemoMerchant(store);
+  const authenticatedMerchant = getAuthenticatedMerchant(store, options.sessionCookie);
+  const candidateSlug = (options.requestedSlug || options.activeSlugCookie || '').trim().toLowerCase();
+
+  if (candidateSlug) {
+    if (candidateSlug === demoMerchant.slug.toLowerCase()) {
+      return {
+        merchant: demoMerchant,
+        authenticatedMerchant,
+        deniedRequestedSlug: false,
+      };
+    }
+
+    if (authenticatedMerchant && authenticatedMerchant.slug.toLowerCase() === candidateSlug) {
+      return {
+        merchant: authenticatedMerchant,
+        authenticatedMerchant,
+        deniedRequestedSlug: false,
+      };
+    }
+
+    return {
+      merchant: authenticatedMerchant || demoMerchant,
+      authenticatedMerchant,
+      deniedRequestedSlug: Boolean(options.requestedSlug),
+    };
+  }
+
+  return {
+    merchant: authenticatedMerchant || demoMerchant,
+    authenticatedMerchant,
+    deniedRequestedSlug: false,
+  };
+}
+
 export function resolveWorkspaceMerchant(
   store: DatabaseState,
   preferredSlug?: string | null
 ): Merchant {
   return (
     getMerchantBySlug(store, preferredSlug) ||
-    store.merchants.find((m) => isDemoMerchant(m)) ||
-    store.merchants[0]
+    getDemoMerchant(store)
   );
 }
 

@@ -2,8 +2,8 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { List, X } from '@phosphor-icons/react';
+import { usePathname, useRouter } from 'next/navigation';
+import { List, SignIn, SignOut, X } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { triggerCausalHaptic } from '@/lib/apple-motion';
 import { SaberLogo } from '@/components/SaberLogo';
@@ -42,14 +42,14 @@ const MERCHANT_NAV_ITEMS = [
 ];
 
 /**
- * Only show the Workspace Header on Platform / Merchant routes (`/`, `/onboarding`, `/admin/*`, `/cashier/*`).
- * Customer Table QR storefront routes (`/[slug]`) and Customer Order Pass routes (`/order/*`, `/checkout`)
- * are strictly isolated so customers never see merchant/admin/onboarding tabs.
+ * Only render the workspace bar on Platform / Merchant routes (`/`, `/login`, `/onboarding`, `/admin/*`, `/cashier/*`).
+ * Customer QR ordering routes (`/[slug]`, `/order/*`, `/checkout`) are strictly isolated.
  */
 function isMerchantWorkspaceRoute(pathname: string): boolean {
   if (!pathname) return false;
   if (pathname === '/') return true;
   return (
+    pathname.startsWith('/login') ||
     pathname.startsWith('/onboarding') ||
     pathname.startsWith('/admin') ||
     pathname.startsWith('/cashier')
@@ -59,11 +59,13 @@ function isMerchantWorkspaceRoute(pathname: string): boolean {
 interface WorkspaceSummary {
   name: string;
   slug: string;
+  email?: string;
   isDemo: boolean;
 }
 
 export function SaberWorkspaceBar() {
   const pathname = usePathname() || '/';
+  const router = useRouter();
   const isMerchantRoute = isMerchantWorkspaceRoute(pathname);
 
   const headerRef = useRef<HTMLElement>(null);
@@ -74,27 +76,41 @@ export function SaberWorkspaceBar() {
   const [isWide, setIsWide] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeMerchant, setActiveMerchant] = useState<WorkspaceSummary | null>(null);
+  const [authenticatedMerchant, setAuthenticatedMerchant] = useState<WorkspaceSummary | null>(null);
 
-  // Sync active workspace summary badge
-  useEffect(() => {
+  const fetchSessionState = useCallback(() => {
     if (!isMerchantRoute) return;
-    fetch('/api/v1/merchants/onboard', { cache: 'no-store' })
+    fetch('/api/v1/auth/session', { cache: 'no-store' })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (data?.merchant) {
+        if (data?.activeMerchant) {
           setActiveMerchant({
-            name: data.merchant.name,
-            slug: data.merchant.slug,
-            isDemo: Boolean(data.merchant.isDemo || data.merchant.slug === 'warungmakan'),
+            name: data.activeMerchant.name,
+            slug: data.activeMerchant.slug,
+            email: data.activeMerchant.email,
+            isDemo: Boolean(
+              data.activeMerchant.isDemo || data.activeMerchant.slug === 'warungmakan'
+            ),
           });
+        }
+        if (data?.authenticatedMerchant) {
+          setAuthenticatedMerchant({
+            name: data.authenticatedMerchant.name,
+            slug: data.authenticatedMerchant.slug,
+            email: data.authenticatedMerchant.email,
+            isDemo: false,
+          });
+        } else {
+          setAuthenticatedMerchant(null);
         }
       })
       .catch(() => {});
-  }, [pathname, isMerchantRoute]);
+  }, [isMerchantRoute]);
 
-  // Modern Web Guidance (navbar guide):
-  // Measure whether the inline navigation fits inside the header row cleanly;
-  // collapse into native `popover="auto"` when narrow so mobile view stays crisp & uncluttered.
+  useEffect(() => {
+    fetchSessionState();
+  }, [pathname, fetchSessionState]);
+
   const syncNavbarLayout = useCallback(() => {
     const header = headerRef.current;
     const inner = innerRef.current;
@@ -118,15 +134,14 @@ export function SaberWorkspaceBar() {
       try {
         menu.hidePopover();
       } catch {
-        // ignore if already hidden
+        // ignore
       }
     }
 
     header.classList.add('is-wide');
     menu.removeAttribute('popover');
 
-    // Also keep viewport < 960px collapsed so mobile & tablet prioritize a spacious header
-    const fitsInline = inner.scrollWidth <= inner.clientWidth && window.innerWidth >= 960;
+    const fitsInline = inner.scrollWidth <= inner.clientWidth && window.innerWidth >= 1024;
 
     if (fitsInline) {
       lastWideWidthRef.current = 0;
@@ -188,6 +203,14 @@ export function SaberWorkspaceBar() {
     }
   };
 
+  const handleLogout = async () => {
+    closePopoverIfCollapsed();
+    await fetch('/api/v1/auth/logout', { method: 'POST' });
+    setAuthenticatedMerchant(null);
+    router.push('/login');
+    router.refresh();
+  };
+
   if (!isMerchantRoute) {
     return null;
   }
@@ -204,7 +227,7 @@ export function SaberWorkspaceBar() {
         ref={innerRef}
         className="saber-header-inner liquid-glass-bar mx-auto flex max-w-7xl items-center justify-between gap-3 rounded-2xl px-3.5 py-2 sm:rounded-full sm:px-4"
       >
-        {/* Official Saber Culinary Brand Lockup + Active Environment Indicator */}
+        {/* Official Saber Culinary Brand Lockup */}
         <div className="flex items-center gap-2.5">
           <Link
             href="/"
@@ -213,7 +236,7 @@ export function SaberWorkspaceBar() {
           >
             <SaberLogo size="sm" className="sm:h-9 sm:w-9 sm:rounded-[11px]" />
             <div className="leading-tight">
-              <span className="block text-sm font-bold tracking-tight text-[#0F1E36]">
+              <span className="block text-sm font-bold tracking-tight text-[#1D1D1F]">
                 Saber Culinary
               </span>
               <span className="hidden text-[11px] font-medium text-[#515154] sm:block">
@@ -227,30 +250,25 @@ export function SaberWorkspaceBar() {
               href="/"
               onClick={closePopoverIfCollapsed}
               title={`Workspace aktif: ${activeMerchant.name}`}
-              className={cn(
-                'hidden items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold sm:inline-flex',
-                activeMerchant.isDemo
-                  ? 'border-[#0090FF]/30 bg-[#0090FF]/10 text-[#0066CC]'
-                  : 'border-emerald-600/25 bg-emerald-50 text-[#1D7D32]'
-              )}
+              className="hidden items-center gap-1.5 rounded-full border border-black/[0.08] bg-[#F5F5F7] px-2.5 py-1 text-[11px] font-semibold text-[#515154] lg:inline-flex"
             >
-              <span>{activeMerchant.isDemo ? 'DEMO' : 'RESTO'}</span>
-              <span className="max-w-[130px] truncate font-semibold text-[#1D1D1F]">
-                {activeMerchant.name}
+              <span className="font-mono text-[10px] font-bold uppercase text-apple-blue">
+                {activeMerchant.isDemo ? 'Demo' : 'Resto'}
               </span>
+              <span className="max-w-[120px] truncate text-[#1D1D1F]">{activeMerchant.name}</span>
             </Link>
           )}
         </div>
 
         {/* Single Semantic Navigation Landmark */}
-        <nav aria-label="Primary Workspace Navigation" className="flex items-center">
+        <nav aria-label="Primary Workspace Navigation" className="flex items-center gap-2">
           <button
             type="button"
             popoverTarget="saber-merchant-menu"
             popoverTargetAction="toggle"
             aria-controls="saber-merchant-menu"
             aria-expanded={menuOpen}
-            className="saber-menu-button apple-interactive inline-flex min-h-[40px] items-center gap-1.5 rounded-full border border-[#0F1E36]/15 bg-white px-3.5 py-1.5 text-xs font-bold text-[#0F1E36] shadow-apple-sm"
+            className="saber-menu-button apple-interactive inline-flex min-h-[40px] items-center gap-1.5 rounded-full border border-black/[0.12] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#1D1D1F] shadow-apple-sm"
           >
             {menuOpen ? (
               <X aria-hidden="true" weight="bold" className="h-4 w-4" />
@@ -263,13 +281,13 @@ export function SaberWorkspaceBar() {
           <ul id="saber-merchant-menu" ref={menuRef} className="saber-site-menu">
             {activeMerchant && (
               <li className="saber-mobile-context mb-2 rounded-xl border border-black/[0.06] bg-[#F5F5F7] p-3">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[#515154]">
-                  {activeMerchant.isDemo ? 'Mode Simulasi Demo' : 'Restoran Aktif'}
+                <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#515154]">
+                  {activeMerchant.isDemo ? 'Mode Simulasi Demo' : 'Akun Restoran Terautentikasi'}
                 </p>
-                <p className="mt-0.5 truncate text-xs font-bold text-[#0F1E36]">
+                <p className="mt-0.5 truncate text-xs font-bold text-[#1D1D1F]">
                   {activeMerchant.name}
                 </p>
-                <p className="font-mono text-[11px] text-[#0066CC]">/{activeMerchant.slug}</p>
+                <p className="font-mono text-[11px] text-apple-blue">/{activeMerchant.slug}</p>
               </li>
             )}
 
@@ -284,7 +302,7 @@ export function SaberWorkspaceBar() {
                     className={cn(
                       'flex min-h-[42px] items-center justify-between rounded-xl px-3.5 py-2 text-xs font-semibold transition-colors lg:min-h-[38px] lg:rounded-full lg:px-3.5',
                       active
-                        ? 'border-l-4 border-[#0090FF] bg-[#0F1E36] text-white shadow-apple-sm lg:border-l-0 lg:ring-2 lg:ring-[#0090FF]/40'
+                        ? 'border-l-4 border-apple-blue bg-[#1D1D1F] text-white shadow-apple-sm lg:border-l-0 lg:ring-2 lg:ring-apple-blue/30'
                         : 'text-[#515154] hover:bg-black/[0.05] hover:text-[#1D1D1F]'
                     )}
                   >
@@ -293,6 +311,34 @@ export function SaberWorkspaceBar() {
                 </li>
               );
             })}
+
+            <li className="mt-2 border-t border-black/[0.06] pt-2 lg:ml-1 lg:mt-0 lg:border-l lg:border-t-0 lg:pl-2 lg:pt-0">
+              {authenticatedMerchant ? (
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="flex min-h-[42px] w-full items-center justify-center gap-1.5 rounded-xl border border-black/[0.12] bg-[#F5F5F7] px-3.5 text-xs font-semibold text-[#1D1D1F] hover:bg-[#EFEFF4] lg:min-h-[38px] lg:rounded-full"
+                >
+                  <SignOut aria-hidden="true" weight="regular" className="h-3.5 w-3.5" />
+                  <span>Keluar</span>
+                </button>
+              ) : (
+                <Link
+                  href="/login"
+                  aria-current={pathname.startsWith('/login') ? 'page' : undefined}
+                  onClick={closePopoverIfCollapsed}
+                  className={cn(
+                    'flex min-h-[42px] items-center justify-center gap-1.5 rounded-xl px-4 text-xs font-semibold transition-colors lg:min-h-[38px] lg:rounded-full',
+                    pathname.startsWith('/login')
+                      ? 'bg-apple-blue text-white'
+                      : 'border border-black/[0.12] bg-white text-[#1D1D1F] hover:bg-[#F5F5F7]'
+                  )}
+                >
+                  <SignIn aria-hidden="true" weight="regular" className="h-3.5 w-3.5" />
+                  <span>Masuk</span>
+                </Link>
+              )}
+            </li>
           </ul>
         </nav>
       </div>
