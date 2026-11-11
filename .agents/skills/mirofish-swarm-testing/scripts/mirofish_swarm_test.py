@@ -4,7 +4,7 @@ MiroFish Universal Swarm Intelligence & Multi-Agent App Tester
 Adapted from 666ghj/MiroFish (OASIS Agent Profiles + God's-Eye Variable Injection + ReACT ReportAgent).
 
 Usage:
-  python3 mirofish_swarm_test.py --url https://staging-fnbsupport.31.97.66.234.sslip.io --mode auto
+  python3 mirofish_swarm_test.py --url https://staging-fnbsupport.31.97.66.234.sslip.io --mode auto --rounds 3
 """
 
 import argparse
@@ -53,13 +53,39 @@ class AgentActionLog:
     observation: str
 
 
+ONTOLOGY_GRAPH = {
+    "entity_types": [
+        {"name": "WalkInDiner", "description": "Guest scanning a physical Table QR standee for dine-in ordering"},
+        {"name": "DeliveryCustomer", "description": "Remote customer ordering via store self-delivery within radius"},
+        {"name": "PreOrderCustomer", "description": "Customer scheduling advance pick-up and tracking live order pass"},
+        {"name": "CashierOperator", "description": "Front-of-house staff auditing stock, receipts, and table sessions"},
+        {"name": "KitchenStaff", "description": "Back-of-house prep team advancing tickets from IN_KITCHEN to READY"},
+        {"name": "StoreOwner", "description": "Merchant owner configuring onboarding, bilingual menu, and shift analytics"},
+        {"name": "WhatsAppGateway", "description": "Saber Central Automated WhatsApp Bot dispatching magic links and invoices"},
+        {"name": "AdversarialBot", "description": "Chaos & security fuzzing agent injecting God's-eye view perturbations"},
+        {"name": "Person", "description": "Fallback natural person entity"},
+        {"name": "Organization", "description": "Fallback merchant or organizational entity"},
+    ],
+    "edge_types": [
+        "SCANS_TABLE_QR",
+        "SUBMITS_GUEST_ORDER",
+        "AUDITS_PARTIAL_STOCK",
+        "UPLOADS_QRIS_RECEIPT",
+        "VERIFIES_PAYMENT_PROOF",
+        "MOVES_OR_MERGES_TABLE",
+        "RESETS_TABLE_SESSION",
+        "DISPATCHES_WA_WEBHOOK",
+        "INJECTS_GODS_EYE_CHAOS",
+    ],
+}
+
 DEFAULT_PERSONA_SWARM: List[OasisAgentProfile] = [
     OasisAgentProfile(
         user_id=101,
         user_name="rina_dinein_fast",
         name="Rina Kusuma (Hurried Dine-In Guest)",
         bio="27yo product manager grabbing lunch at Table 04 between meetings.",
-        persona="Impatient mobile user; scans Table QR, filters categories, adds items quickly, expects zero-login checkout.",
+        persona="Impatient mobile user; scans Table QR, adds dishes, submits zero-login checkout, and uploads QRIS proof.",
         mbti="ENTJ",
         profession="Product Manager",
         activity_level=0.95,
@@ -85,7 +111,7 @@ DEFAULT_PERSONA_SWARM: List[OasisAgentProfile] = [
         user_name="siti_cashier_lead",
         name="Siti Rahma (Peak-Hour Cashier & Kitchen Auditor)",
         bio="24yo head cashier managing the 5-column Kanban board during lunch rush.",
-        persona="Audits partial stock, recalculates totals, inspects QRIS transfer proofs, and completes orders to reset tables.",
+        persona="Audits partial stock, recalculates totals, inspects QRIS transfer proofs, moves tables, and completes orders to reset tables.",
         mbti="ISTJ",
         profession="Head Cashier",
         activity_level=0.90,
@@ -124,7 +150,7 @@ DEFAULT_PERSONA_SWARM: List[OasisAgentProfile] = [
         user_name="zed_chaos_fuzzer",
         name="Zed (Adversarial & Chaos Fuzzing Agent)",
         bio="Automated chaos & boundary tester probing validation gates and race conditions.",
-        persona="Submits reserved/invalid subdomain slugs, empty guest checkouts, and rapid stock toggle flips.",
+        persona="Submits reserved/invalid subdomain slugs, empty guest checkouts, WA webhook events, and God's-eye pause/stock injections.",
         mbti="ENTP",
         profession="Security & QA Researcher",
         activity_level=1.0,
@@ -227,7 +253,7 @@ def run_saber_fnb_agent_journey(
         available = [m for m in items if not m.get("isSoldOut")]
         record("BROWSE_CATALOG", "/api/v1/menu-items", "GET", st, lat, st == 200 and len(available) > 0, f"Found {len(available)} available dishes")
 
-        # 3. Submit zero-login guest checkout
+        # 3. Full 2-Step Order Lifecycle: Submit -> Partial Stock Audit -> Upload QRIS Proof -> Approve -> Complete & Auto Table Reset
         if available:
             chosen = available[0]
             st, lat, order_res = http_request(
@@ -255,6 +281,87 @@ def run_saber_fnb_agent_journey(
                 st in (200, 201) and bool(order_id),
                 f"Created order #{order_obj.get('orderNumber', 'N/A')} in state {order_obj.get('orderStatus', 'N/A')}",
             )
+
+            if order_id and round_num == 1:
+                # Cashier partial stock adjustment (2 -> 1 portion)
+                orig_items = order_obj.get("items", [])
+                if orig_items:
+                    adjusted = dict(orig_items[0])
+                    adjusted["quantity"] = 1
+                    adjusted["totalPriceIdr"] = adjusted["unitPriceIdr"] * 1
+                    st_a, lat_a, res_a = http_request(
+                        base_url,
+                        "/api/v1/orders",
+                        "PATCH",
+                        {"orderId": order_id, "action": "confirm_stock", "updatedItems": [adjusted]},
+                    )
+                    recalc_total = res_a.get("order", {}).get("totalAmountIdr") if isinstance(res_a, dict) else None
+                    record(
+                        "PARTIAL_STOCK_AUDIT_RECALC",
+                        "/api/v1/orders",
+                        "PATCH",
+                        st_a,
+                        lat_a,
+                        st_a == 200 and recalc_total == adjusted["totalPriceIdr"],
+                        f"Adjusted qty 2->1; recalculated total = IDR {recalc_total}",
+                    )
+
+                # Guest uploads QRIS payment receipt
+                st_u, lat_u, _ = http_request(
+                    base_url,
+                    "/api/v1/orders",
+                    "PATCH",
+                    {
+                        "orderId": order_id,
+                        "action": "upload_receipt",
+                        "receiptImageUrl": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+                    },
+                )
+                record(
+                    "UPLOAD_QRIS_PROOF",
+                    "/api/v1/orders",
+                    "PATCH",
+                    st_u,
+                    lat_u,
+                    st_u == 200,
+                    f"Uploaded transfer receipt for #{order_obj.get('orderNumber')} -> PAYMENT_PENDING_APPROVAL",
+                )
+
+                # Cashier approves receipt -> IN_KITCHEN -> READY_FOR_DELIVERY -> COMPLETED (auto-resets table)
+                st_v, lat_v, _ = http_request(
+                    base_url,
+                    "/api/v1/orders",
+                    "PATCH",
+                    {"orderId": order_id, "action": "verify_receipt", "approved": True},
+                )
+                record("APPROVE_QRIS_RECEIPT", "/api/v1/orders", "PATCH", st_v, lat_v, st_v == 200, "Receipt verified -> IN_KITCHEN")
+
+                st_r, lat_r, _ = http_request(
+                    base_url,
+                    "/api/v1/orders",
+                    "PATCH",
+                    {"orderId": order_id, "orderStatus": "READY_FOR_DELIVERY"},
+                )
+                record("KITCHEN_MARK_READY", "/api/v1/orders", "PATCH", st_r, lat_r, st_r == 200, "Kitchen marked ticket -> READY_FOR_DELIVERY")
+
+                st_c, lat_c, comp_res = http_request(
+                    base_url,
+                    "/api/v1/orders",
+                    "PATCH",
+                    {"orderId": order_id, "orderStatus": "COMPLETED"},
+                )
+                tables_after = comp_res.get("tables", []) if isinstance(comp_res, dict) else []
+                t4 = next((t for t in tables_after if t.get("tableNumber") == "TABLE 04"), None)
+                table_freed = bool(t4 and t4.get("isOccupied") is False)
+                record(
+                    "COMPLETE_AND_AUTO_RESET_TABLE",
+                    "/api/v1/orders",
+                    "PATCH",
+                    st_c,
+                    lat_c,
+                    st_c == 200 and table_freed,
+                    f"Order COMPLETED & TABLE 04 automatically reset to Vacant (isOccupied={t4.get('isOccupied') if t4 else 'N/A'})",
+                )
 
     elif profile.source_entity_type == "DeliveryCustomer":
         st, lat, data = http_request(base_url, "/api/v1/menu-items", "GET")
@@ -297,7 +404,7 @@ def run_saber_fnb_agent_journey(
 
         if pending:
             target = pending[0]
-            st, lat, upd = http_request(
+            st, lat, _ = http_request(
                 base_url,
                 "/api/v1/orders",
                 "PATCH",
@@ -318,9 +425,9 @@ def run_saber_fnb_agent_journey(
             )
 
     elif profile.source_entity_type == "StoreOwner":
-        for route in ("/admin/menu", "/admin/tables", "/admin/analytics"):
+        for route in ("/", "/onboarding", "/admin/menu", "/admin/tables", "/admin/analytics"):
             st, lat, _ = http_request(base_url, route, "GET")
-            record("INSPECT_ADMIN_SCREEN", route, "GET", st, lat, st == 200, f"Verified admin workspace {route}")
+            record("INSPECT_WORKSPACE_ROUTE", route, "GET", st, lat, st == 200, f"Verified workspace {route}")
 
         st, lat, tbl_data = http_request(base_url, "/api/v1/tables", "GET")
         tables = tbl_data.get("tables", []) if isinstance(tbl_data, dict) else []
@@ -351,8 +458,21 @@ def run_saber_fnb_agent_journey(
             f"Reserved slug 'admin' blocked: {slug_res}",
         )
 
-        # 2. Empty guest checkout rejection test
-        st, lat, bad_res = http_request(
+        # 2. Invalid characters slug test
+        st_i, lat_i, slug_inv = http_request(base_url, "/api/v1/validate-slug?slug=ab", "GET")
+        rejected_short = isinstance(slug_inv, dict) and slug_inv.get("valid") is False
+        record(
+            "FUZZ_SHORT_SUBDOMAIN",
+            "/api/v1/validate-slug?slug=ab",
+            "GET",
+            st_i,
+            lat_i,
+            st_i == 200 and rejected_short,
+            f"2-char slug 'ab' blocked: {slug_inv}",
+        )
+
+        # 3. Empty guest checkout rejection test
+        st, lat, _ = http_request(
             base_url,
             "/api/v1/orders/guest-checkout",
             "POST",
@@ -368,32 +488,54 @@ def run_saber_fnb_agent_journey(
             f"Empty checkout properly rejected with HTTP {st}",
         )
 
-        # 3. God's-Eye View Variable Injection: Toggle item sold-out and immediately restore
+        # 4. Outbound WhatsApp Webhook Dispatcher verification
+        st_w, lat_w, wa_res = http_request(
+            base_url,
+            "/api/v1/webhooks/whatsapp",
+            "POST",
+            {
+                "recipientPhone": "+6281288990011",
+                "recipientRole": "MERCHANT",
+                "eventType": "MIROFISH_SWARM_HEARTBEAT",
+                "orderNumber": f"MF-{round_num}",
+                "messageBody": f"[MiroFish Swarm Round {round_num}] Automated WA Gateway health check.",
+            },
+        )
+        record(
+            "VERIFY_WA_BOT_WEBHOOK",
+            "/api/v1/webhooks/whatsapp",
+            "POST",
+            st_w,
+            lat_w,
+            st_w in (200, 201),
+            f"Dispatched WA Bot webhook event MIROFISH_SWARM_HEARTBEAT ({st_w})",
+        )
+
+        # 5. God's-Eye View Variable Injection: Toggle item sold-out and immediately restore via Sold-Out Reset Engine
         st, lat, menu_data = http_request(base_url, "/api/v1/menu-items", "GET")
         items = menu_data.get("menuItems", []) if isinstance(menu_data, dict) else []
         if items:
             target_item = items[-1]
-            orig_state = bool(target_item.get("isSoldOut"))
             st1, lat1, _ = http_request(
                 base_url,
                 f"/api/v1/menu-items/{target_item['id']}/toggle-stock",
                 "PATCH",
-                {"isSoldOut": not orig_state},
+                {"isSoldOut": True},
             )
             st2, lat2, _ = http_request(
                 base_url,
-                f"/api/v1/menu-items/{target_item['id']}/toggle-stock",
+                "/api/v1/merchants/onboard",
                 "PATCH",
-                {"isSoldOut": orig_state},
+                {"resetAllSoldOut": True},
             )
             record(
-                "GODS_EYE_STOCK_INJECTION",
-                f"/api/v1/menu-items/{target_item['id']}/toggle-stock",
+                "GODS_EYE_STOCK_AND_BULK_RESET",
+                "/api/v1/merchants/onboard",
                 "PATCH",
                 st2,
                 round(lat1 + lat2, 2),
                 st1 == 200 and st2 == 200,
-                f"Injected stock-out & restored '{target_item.get('titleId')}' without state corruption",
+                f"Injected stock-out on '{target_item.get('titleId')}' & restored all items via Sold-Out Reset Engine",
             )
 
     return logs
@@ -425,7 +567,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="MiroFish Universal Swarm App Tester")
     parser.add_argument("--url", required=True, help="Target application base URL")
     parser.add_argument("--mode", default="auto", choices=["auto", "saber-fnb", "generic"])
-    parser.add_argument("--rounds", type=int, default=2, help="Number of temporal simulation rounds")
+    parser.add_argument("--rounds", type=int, default=3, help="Number of temporal simulation rounds")
     parser.add_argument("--concurrency", type=int, default=6, help="Parallel OASIS agents")
     parser.add_argument("--output-dir", default="/tmp/mirofish-swarm-report", help="Directory for actions.jsonl and report.json")
     args = parser.parse_args()
@@ -466,6 +608,7 @@ def main() -> int:
         "engine": "MiroFish Swarm Intelligence Tester (OASIS Multi-Agent)",
         "target_url": args.url,
         "detected_mode": "saber-fnb" if is_fnb else "generic",
+        "ontology": ONTOLOGY_GRAPH,
         "rounds": args.rounds,
         "agents_count": len(DEFAULT_PERSONA_SWARM),
         "total_actions": total_actions,
@@ -482,7 +625,6 @@ def main() -> int:
 
     report_path = os.path.join(args.output_dir, "report.json")
     with open(report_path, "w", encoding="utf-8") as f:
-        json.dumps(summary, indent=2)
         f.write(json.dumps(summary, indent=2, ensure_ascii=False))
 
     print(json.dumps(summary, indent=2, ensure_ascii=False))
