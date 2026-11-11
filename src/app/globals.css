@@ -170,14 +170,118 @@ dd {
 
 /* Regular Liquid Glass — Floating Navigation Bars, Sticky Toolbars & Sheet Chrome */
 .liquid-glass-regular,
+.liquid-glass-bar,
 .apple-material-toolbar {
-  background: rgba(255, 255, 255, 0.76);
+  background: rgba(255, 255, 255, 0.82);
   backdrop-filter: blur(24px) saturate(140%);
   -webkit-backdrop-filter: blur(24px) saturate(140%);
-  border-bottom: 1px solid rgba(60, 60, 67, 0.12);
+  border: 1px solid rgba(60, 60, 67, 0.12);
   box-shadow:
     inset 0 1px 0 0 rgba(255, 255, 255, 0.65),
-    0 6px 20px -8px rgba(0, 0, 0, 0.05);
+    0 6px 20px -8px rgba(0, 0, 0, 0.06);
+}
+
+/* Responsive Workspace Navbar (modern-web-guidance › navbar pattern) */
+.saber-header-inner > * {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.saber-site-header.is-measuring * {
+  transition: none !important;
+}
+
+.saber-site-header:not(.is-wide) .saber-site-menu:not([popover]) {
+  display: none;
+}
+
+.saber-menu-button {
+  anchor-name: --saber-menu-btn;
+}
+
+.saber-site-menu[popover] {
+  position: fixed;
+  inset: auto;
+  inset-block-start: 4.5rem;
+  inset-block-start: anchor(--saber-menu-btn bottom);
+  inset-inline-end: 0.75rem;
+  inline-size: min(86dvw, 22rem);
+  max-inline-size: calc(100dvw - 1.5rem);
+  block-size: fit-content;
+  max-block-size: calc(100dvh - 6rem);
+  margin: 0;
+  margin-block-start: 0.5rem;
+  overflow: auto;
+  padding: 0.75rem;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(15, 30, 54, 0.12);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: 0 24px 48px -12px rgba(15, 30, 54, 0.22);
+  opacity: 0;
+  translate: 0 -6px;
+}
+
+.saber-site-menu[popover]:is(:popover-open, .\:popover-open) {
+  opacity: 1;
+  translate: 0 0;
+}
+
+.saber-site-menu[popover]::backdrop {
+  background: rgba(15, 30, 54, 0.24);
+  backdrop-filter: blur(4px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .saber-site-menu[popover] {
+    transition:
+      opacity 180ms ease-out,
+      translate 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      display 180ms,
+      overlay 180ms;
+    transition-behavior: allow-discrete;
+  }
+
+  @starting-style {
+    .saber-site-menu[popover]:is(:popover-open, .\:popover-open) {
+      opacity: 0;
+      translate: 0 -8px;
+    }
+  }
+}
+
+.saber-site-header.is-wide .saber-menu-button {
+  display: none;
+}
+
+.saber-site-header.is-wide .saber-site-menu {
+  position: static;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  inline-size: auto;
+  max-inline-size: none;
+  block-size: auto;
+  max-block-size: none;
+  overflow: visible;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+  box-shadow: none;
+  opacity: 1;
+  translate: none;
+}
+
+.saber-site-header.is-wide .saber-site-menu::backdrop {
+  display: none;
+}
+
+.saber-site-header.is-wide .saber-mobile-context {
+  display: none;
 }
 
 /* Clear Liquid Glass — Floating Controls Over Rich Media/Hero Photography (liquid-glass.md › Which variant) */

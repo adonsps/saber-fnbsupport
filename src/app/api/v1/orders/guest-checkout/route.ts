@@ -1,12 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  ACTIVE_MERCHANT_COOKIE,
   createMagicToken,
   createUuid,
   dispatchWhatsAppNotification,
+  getMerchantBySlug,
+  getScopedMerchantBundle,
   getStore,
+  resolveWorkspaceMerchant,
   saveStore,
 } from '@/lib/store';
-import { formatIdr, normalizeWhatsapp } from '@/lib/utils';
+import {
+  formatIdr,
+  getOriginFromHeaders,
+  normalizeBaseOrigin,
+  normalizeWhatsapp,
+} from '@/lib/utils';
 import { Order, OrderStatus, OrderType, PaymentStatus, PaymentType } from '@/types/schema';
 
 export const dynamic = 'force-dynamic';
@@ -15,8 +24,22 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const store = getStore();
-    const merchant = store.merchants[0];
-    const branch = store.branches[0];
+    const cookieSlug = req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
+    const requestedSlug = body.slug ? String(body.slug).trim().toLowerCase() : undefined;
+
+    const merchant = requestedSlug
+      ? getMerchantBySlug(store, requestedSlug)
+      : resolveWorkspaceMerchant(store, cookieSlug);
+
+    if (!merchant) {
+      return NextResponse.json(
+        { error: `Restoran "/${requestedSlug}" tidak ditemukan.` },
+        { status: 404 }
+      );
+    }
+
+    const bundle = getScopedMerchantBundle(store, merchant);
+    const branch = bundle.branch;
 
     if (!merchant.isStoreOpen) {
       return NextResponse.json(
@@ -100,10 +123,10 @@ export async function POST(req: NextRequest) {
 
     store.orders.unshift(newOrder);
 
-    // Mark table occupied if walk-in table order
+    // Mark table occupied if walk-in table order in this branch
     if (orderType === OrderType.WALK_IN_TABLE && tableNumber) {
       const tbl = store.tableSessions.find(
-        (t) => t.tableNumber.toUpperCase() === tableNumber.toUpperCase()
+        (t) => t.branchId === branch.id && t.tableNumber.toUpperCase() === tableNumber.toUpperCase()
       );
       if (tbl) {
         tbl.isOccupied = true;
@@ -113,27 +136,42 @@ export async function POST(req: NextRequest) {
 
     saveStore(store);
 
-    // Step 1 of Asynchronous 2-Step Verification Loop:
-    // Fire Saber Central WA Bot alert to Merchant WA with single-use magic link
-    const magicLinkUrl = `/cashier/orders?magicToken=${encodeURIComponent(magicToken)}`;
-    dispatchWhatsAppNotification({
-      recipientPhone: merchant.ownerWhatsapp,
-      recipientRole: 'MERCHANT',
-      eventType: 'NEW_ORDER_MAGIC_LINK',
-      orderNumber,
-      messageBody: `🔔 [SABER CENTRAL BOT] Pesanan Baru #${orderNumber} (${
-        newOrder.tableNumber || newOrder.orderType
-      } - ${customerName}) sebesar ${formatIdr(
-        totalAmountIdr
-      )} menunggu Konfirmasi Stok Dapur. Klik Magic Link untuk audit stok & tagih pembayaran.`,
-      magicLinkUrl,
-    });
+    const origin = normalizeBaseOrigin(getOriginFromHeaders(req.headers));
+    const merchantMagicLink = `${origin}/cashier/orders?magicToken=${encodeURIComponent(magicToken)}`;
+    const customerTrackingUrl = `${origin}/order/${newOrder.id}`;
+    const itemsSummary = orderItems
+      .map((i: { quantity: number; itemTitleSnapshot: string }) => `• ${i.quantity}x ${i.itemTitleSnapshot}`)
+      .join('\n');
+
+    // Step 1 of Asynchronous 2-Step Verification Loop (via Fonnte WhatsApp API):
+    // 1. Send instant alert + Magic Link to Merchant Owner / Cashier WA
+    // 2. Send live order pass confirmation to Customer WA
+    await Promise.all([
+      dispatchWhatsAppNotification({
+        merchantId: merchant.id,
+        recipientPhone: merchant.ownerWhatsapp,
+        recipientRole: 'MERCHANT',
+        eventType: 'NEW_ORDER_MAGIC_LINK',
+        orderNumber,
+        messageBody: `🔔 *[${merchant.name}] Pesanan Baru #${orderNumber}*\nPelanggan: ${customerName} (${newOrder.tableNumber || newOrder.orderType})\n\n${itemsSummary}\nTotal: *${formatIdr(totalAmountIdr)}*\n\nSegera konfirmasi ketersediaan stok dapur via Magic Link di bawah ini:`,
+        magicLinkUrl: merchantMagicLink,
+      }),
+      dispatchWhatsAppNotification({
+        merchantId: merchant.id,
+        recipientPhone: customerWhatsapp,
+        recipientRole: 'CUSTOMER',
+        eventType: 'NEW_ORDER_MAGIC_LINK',
+        orderNumber,
+        messageBody: `👋 Halo *${customerName}*! Pesanan *#${orderNumber}* di *${merchant.name}* sudah kami terima (${formatIdr(totalAmountIdr)}).\n\nKasir sedang mengecek stok dapur sebentar. Pantau status & nota pembayaran Anda di tautan ini:`,
+        magicLinkUrl: customerTrackingUrl,
+      }),
+    ]);
 
     return NextResponse.json({
       success: true,
       order: newOrder,
       trackingUrl: `/order/${newOrder.id}`,
-      magicLinkUrl,
+      magicLinkUrl: `/cashier/orders?magicToken=${encodeURIComponent(magicToken)}`,
     });
   } catch (err) {
     return NextResponse.json(
@@ -142,4 +180,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

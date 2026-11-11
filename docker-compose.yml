@@ -11,7 +11,8 @@ services:
       - NODE_ENV=production
       - PORT=3040
       - DATABASE_URL=${DATABASE_URL:-postgresql://saber:saber@postgres:5432/saber_fnbsupport}
-      - NEXT_PUBLIC_APP_DOMAIN=${NEXT_PUBLIC_APP_DOMAIN:-saberconsulting.id}
+      - NEXT_PUBLIC_APP_DOMAIN=${NEXT_PUBLIC_APP_DOMAIN:-fnbsupport.saberconsulting.id}
+      - FONNTE_API_TOKEN=${FONNTE_API_TOKEN:-}
     depends_on:
       postgres:
         condition: service_healthy

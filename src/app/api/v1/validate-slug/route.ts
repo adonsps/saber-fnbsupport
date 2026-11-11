@@ -11,6 +11,8 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const slug = (req.nextUrl.searchParams.get('slug') || '').toLowerCase().trim();
+  const mode = req.nextUrl.searchParams.get('mode') || 'edit';
+  const currentSlug = (req.nextUrl.searchParams.get('currentSlug') || '').toLowerCase().trim();
   const slugRegex = /^[a-z0-9-]+$/;
   const origin = getOriginFromHeaders(req.headers);
 
@@ -41,16 +43,24 @@ export async function GET(req: NextRequest) {
   }
 
   const store = getStore();
-  const exists = store.merchants.some((m) => m.slug.toLowerCase() === slug && m.slug !== 'warungmakan');
+  const matchingMerchant = store.merchants.find((m) => m.slug.toLowerCase() === slug);
+
+  // In 'new' creation mode, warungmakan (demo) and any existing restaurant slug are reserved.
+  // In 'edit' mode, keeping the merchant's own existing slug is allowed.
+  const isConflict =
+    mode === 'new'
+      ? Boolean(matchingMerchant)
+      : Boolean(matchingMerchant && slug !== currentSlug && slug !== 'warungmakan');
 
   return NextResponse.json({
     valid: true,
-    available: !exists,
+    available: !isConflict,
     subdomain: displayUrl,
     storefrontUrl: buildStorefrontUrl(slug, { baseOrigin: origin }),
-    message: exists
-      ? `URL "${displayUrl}" sudah digunakan merchant lain.`
+    message: isConflict
+      ? matchingMerchant?.slug === 'warungmakan'
+        ? `URL "${displayUrl}" digunakan sebagai Demo Sandbox resmi. Pilih nama URL unik untuk restoran Anda.`
+        : `URL "${displayUrl}" sudah digunakan merchant lain.`
       : `Tersedia! ${displayUrl} siap digunakan tanpa perlu setting DNS.`,
   });
 }
-

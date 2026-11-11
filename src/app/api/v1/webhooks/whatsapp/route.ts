@@ -1,43 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dispatchWhatsAppNotification, getStore } from '@/lib/store';
-import { normalizeWhatsapp } from '@/lib/utils';
+import {
+  ACTIVE_MERCHANT_COOKIE,
+  dispatchWhatsAppNotification,
+  getScopedMerchantBundle,
+  getStore,
+  resolveWorkspaceMerchant,
+} from '@/lib/store';
+import { getOriginFromHeaders, normalizeBaseOrigin, normalizeWhatsapp } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const store = getStore();
+  const cookieSlug = req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
+  const merchant = resolveWorkspaceMerchant(store, cookieSlug);
+  const bundle = getScopedMerchantBundle(store, merchant);
+
   return NextResponse.json({
-    gateway: 'Saber Centralized Automated WhatsApp Gateway Bot v2.4',
-    status: 'CONNECTED',
+    gateway: 'Saber x Fonnte Automated WhatsApp API',
+    status: process.env.FONNTE_API_TOKEN ? 'CONNECTED' : 'TOKEN_MISSING',
+    fonnteConfigured: Boolean(process.env.FONNTE_API_TOKEN),
     zeroMerchantConfig: true,
-    logs: store.whatsappLogs,
+    logs: bundle.whatsappLogs,
   });
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const recipientPhone = normalizeWhatsapp(String(body.recipientPhone || '+6281288990011'));
+    const store = getStore();
+    const cookieSlug = req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
+    const merchant = resolveWorkspaceMerchant(store, body.slug || cookieSlug);
+    const origin = normalizeBaseOrigin(getOriginFromHeaders(req.headers));
+
+    const recipientPhone = normalizeWhatsapp(
+      String(body.recipientPhone || merchant.ownerWhatsapp || '+6281288990011')
+    );
     const recipientRole = body.recipientRole === 'MERCHANT' ? 'MERCHANT' : 'CUSTOMER';
     const eventType = body.eventType || 'STOCK_CONFIRMED_INVOICE';
-    const orderNumber = String(body.orderNumber || 'ORD-1024');
+    const orderNumber = String(body.orderNumber || 'TEST-FONNTE');
     const messageBody = String(
       body.messageBody ||
-        `[SABER CENTRAL WA BOT] Update status untuk pesanan #${orderNumber}.`
+        `[SABER x FONNTE] Uji koneksi WhatsApp berhasil untuk *${merchant.name}* (#${orderNumber}).`
     );
-    const magicLinkUrl = body.magicLinkUrl ? String(body.magicLinkUrl) : undefined;
+    const magicLinkUrl = body.magicLinkUrl
+      ? String(body.magicLinkUrl).startsWith('http')
+        ? String(body.magicLinkUrl)
+        : `${origin}${String(body.magicLinkUrl)}`
+      : undefined;
 
-    const dispatched = dispatchWhatsAppNotification({
+    const dispatched = await dispatchWhatsAppNotification({
+      merchantId: merchant.id,
       recipientPhone,
       recipientRole,
       eventType,
       orderNumber,
       messageBody,
       magicLinkUrl,
+      forceRealSend: true,
     });
 
     return NextResponse.json({
-      success: true,
+      success: dispatched.deliveryStatus !== 'FAILED',
       dispatched,
     });
   } catch (err) {
@@ -47,4 +71,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

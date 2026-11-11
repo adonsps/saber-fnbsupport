@@ -1,17 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createUuid, getStore, saveStore } from '@/lib/store';
+import {
+  ACTIVE_MERCHANT_COOKIE,
+  createUuid,
+  getMerchantBySlug,
+  getScopedMerchantBundle,
+  getStore,
+  resolveWorkspaceMerchant,
+  saveStore,
+} from '@/lib/store';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const store = getStore();
-  const sortedCategories = [...store.categories].sort((a, b) => a.displayOrder - b.displayOrder);
+  const explicitSlug = req.nextUrl.searchParams.get('slug');
+  const cookieSlug = req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
+
+  const merchant = explicitSlug
+    ? getMerchantBySlug(store, explicitSlug)
+    : resolveWorkspaceMerchant(store, cookieSlug);
+
+  if (!merchant) {
+    return NextResponse.json(
+      { error: `Toko dengan alamat "/${explicitSlug}" tidak ditemukan.` },
+      { status: 404, headers: { 'Cache-Control': 'no-store' } }
+    );
+  }
+
+  const bundle = getScopedMerchantBundle(store, merchant);
   return NextResponse.json(
     {
-      merchant: store.merchants[0],
-      branch: store.branches[0],
-      categories: sortedCategories,
-      menuItems: store.menuItems,
+      merchant: bundle.merchant,
+      branch: bundle.branch,
+      categories: bundle.categories,
+      menuItems: bundle.menuItems,
     },
     { headers: { 'Cache-Control': 'no-store' } }
   );
@@ -21,7 +43,10 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const store = getStore();
-    const branchId = store.branches[0]?.id || '22222222-2222-4222-8222-222222222222';
+    const cookieSlug = req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
+    const merchant = resolveWorkspaceMerchant(store, body.slug || cookieSlug);
+    const bundle = getScopedMerchantBundle(store, merchant);
+    const branchId = bundle.branch?.id || '22222222-2222-4222-8222-222222222222';
 
     if (body.entity === 'category') {
       const newCategory = {
@@ -29,20 +54,26 @@ export async function POST(req: NextRequest) {
         branchId,
         nameId: String(body.nameId || '').trim(),
         nameEn: String(body.nameEn || body.nameId || '').trim(),
-        displayOrder: Number(body.displayOrder || store.categories.length + 1),
+        displayOrder: Number(body.displayOrder || bundle.categories.length + 1),
       };
       store.categories.push(newCategory);
       saveStore(store);
-      return NextResponse.json({ success: true, category: newCategory, categories: store.categories });
+      const updated = getScopedMerchantBundle(store, merchant);
+      return NextResponse.json({
+        success: true,
+        category: newCategory,
+        categories: updated.categories,
+      });
     }
 
     if (body.entity === 'reorder_categories' && Array.isArray(body.categoryIds)) {
       body.categoryIds.forEach((id: string, idx: number) => {
-        const cat = store.categories.find((c) => c.id === id);
+        const cat = store.categories.find((c) => c.id === id && c.branchId === branchId);
         if (cat) cat.displayOrder = idx + 1;
       });
       saveStore(store);
-      return NextResponse.json({ success: true, categories: store.categories });
+      const updated = getScopedMerchantBundle(store, merchant);
+      return NextResponse.json({ success: true, categories: updated.categories });
     }
 
     // Create or update menu item
@@ -62,12 +93,17 @@ export async function POST(req: NextRequest) {
         existing.isSoldOut = body.isSoldOut;
       }
       saveStore(store);
-      return NextResponse.json({ success: true, menuItem: existing, menuItems: store.menuItems });
+      const updated = getScopedMerchantBundle(store, merchant);
+      return NextResponse.json({
+        success: true,
+        menuItem: existing,
+        menuItems: updated.menuItems,
+      });
     }
 
     const newItem = {
       id: createUuid(),
-      categoryId: body.categoryId || store.categories[0]?.id,
+      categoryId: body.categoryId || bundle.categories[0]?.id,
       titleId: String(body.titleId || '').trim(),
       titleEn: String(body.titleEn || body.titleId || '').trim(),
       descriptionId: String(body.descriptionId || '').trim(),
@@ -81,7 +117,12 @@ export async function POST(req: NextRequest) {
 
     store.menuItems.push(newItem);
     saveStore(store);
-    return NextResponse.json({ success: true, menuItem: newItem, menuItems: store.menuItems });
+    const updated = getScopedMerchantBundle(store, merchant);
+    return NextResponse.json({
+      success: true,
+      menuItem: newItem,
+      menuItems: updated.menuItems,
+    });
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Gagal menyimpan menu' },
@@ -96,8 +137,11 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'ID diperlukan' }, { status: 400 });
   }
   const store = getStore();
+  const cookieSlug = req.cookies.get(ACTIVE_MERCHANT_COOKIE)?.value;
+  const merchant = resolveWorkspaceMerchant(store, cookieSlug);
+
   store.menuItems = store.menuItems.filter((item) => item.id !== id);
   saveStore(store);
-  return NextResponse.json({ success: true, menuItems: store.menuItems });
+  const updated = getScopedMerchantBundle(store, merchant);
+  return NextResponse.json({ success: true, menuItems: updated.menuItems });
 }
-

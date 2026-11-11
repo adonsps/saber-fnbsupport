@@ -40,6 +40,7 @@ export interface Merchant {
   ownerName: string;
   ownerWhatsapp: string;
   isStoreOpen: boolean;
+  isDemo?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -138,6 +139,7 @@ export interface Order {
 export interface WhatsAppWebhookLog {
   id: string;
   timestamp: string;
+  merchantId?: string;
   recipientPhone: string;
   recipientRole: 'MERCHANT' | 'CUSTOMER';
   eventType:
@@ -150,6 +152,8 @@ export interface WhatsAppWebhookLog {
   orderNumber: string;
   messageBody: string;
   magicLinkUrl?: string;
-  deliveryStatus: 'DISPATCHED' | 'DELIVERED';
+  deliveryStatus: 'DISPATCHED' | 'DELIVERED' | 'FAILED';
+  providerMessage?: string;
+  providerId?: string;
 }
 

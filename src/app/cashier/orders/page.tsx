@@ -12,6 +12,7 @@ import {
   WhatsappLogo,
 } from '@phosphor-icons/react';
 import {
+  Merchant,
   Order,
   OrderItem,
   OrderStatus,
@@ -76,6 +77,7 @@ const KANBAN_COLUMNS: Array<{
 ];
 
 export default function CashierKanbanPage() {
+  const [merchant, setMerchant] = useState<Merchant | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [tables, setTables] = useState<TableSession[]>([]);
   const [whatsappLogs, setWhatsappLogs] = useState<WhatsAppWebhookLog[]>([]);
@@ -83,6 +85,9 @@ export default function CashierKanbanPage() {
   const [loading, setLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [testWaPhone, setTestWaPhone] = useState('');
+  const [sendingTestWa, setSendingTestWa] = useState(false);
+  const [testWaFeedback, setTestWaFeedback] = useState<string | null>(null);
 
   const prevPendingCountRef = useRef<number>(-1);
 
@@ -150,6 +155,7 @@ export default function CashierKanbanPage() {
       }
       prevPendingCountRef.current = pendingCount;
 
+      if (data.merchant) setMerchant(data.merchant);
       setOrders(fetchedOrders);
       setTables(data.tables || []);
       setWhatsappLogs(data.whatsappLogs || []);
@@ -328,6 +334,38 @@ export default function CashierKanbanPage() {
     }
   };
 
+  const handleSendTestFonnte = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const target = (testWaPhone || merchant?.ownerWhatsapp || '').trim();
+    if (!target) return;
+    setSendingTestWa(true);
+    setTestWaFeedback(null);
+    try {
+      const res = await fetch('/api/v1/webhooks/whatsapp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipientPhone: target,
+          recipientRole: 'MERCHANT',
+          orderNumber: 'TEST-FONNTE',
+          messageBody: `🔔 *[${merchant?.name || 'Saber Culinary'}]* Uji koneksi notifikasi WhatsApp via Fonnte API berhasil! Kasir siap menerima pesanan real-time.`,
+          magicLinkUrl: '/cashier/orders',
+        }),
+      });
+      const data = await res.json();
+      if (data.dispatched) {
+        setWhatsappLogs((prev) => [data.dispatched, ...prev].slice(0, 25));
+        setTestWaFeedback(
+          data.dispatched.deliveryStatus === 'DELIVERED'
+            ? `Pesan WhatsApp terkirim ke ${data.dispatched.recipientPhone} (${data.dispatched.providerMessage || 'Delivered'}).`
+            : `Gagal kirim ke ${data.dispatched.recipientPhone}: ${data.dispatched.providerMessage || 'Periksa nomor tujuan.'}`
+        );
+      }
+    } finally {
+      setSendingTestWa(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
@@ -344,10 +382,23 @@ export default function CashierKanbanPage() {
       {/* Top Control Header — Opaque Grouped Card (liquid-glass.md) */}
       <div className="mb-6 flex flex-col justify-between gap-4 rounded-[22px] border border-black/[0.08] bg-white p-5 shadow-apple-sm sm:flex-row sm:items-center">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="hig-caption text-[11px] font-semibold uppercase tracking-[0.06em] text-[#515154]">
-              Kitchen & Cashier Dispatch
+              Kitchen &amp; Cashier Dispatch
             </span>
+            {merchant && (
+              <span
+                className={cn(
+                  'rounded-full px-2.5 py-0.5 text-[10px] font-bold',
+                  merchant.isDemo || merchant.slug === 'warungmakan'
+                    ? 'bg-[#0090FF]/12 text-[#0066CC]'
+                    : 'bg-emerald-500/12 text-[#1D7D32]'
+                )}
+              >
+                {merchant.isDemo || merchant.slug === 'warungmakan' ? 'DEMO:' : 'RESTO:'}{' '}
+                {merchant.name}
+              </span>
+            )}
             {highlightedId && (
               <span className="rounded-full bg-amber-500/15 px-3 py-0.5 text-[11px] font-bold text-[#B25000]">
                 Magic Link Order Highlighted
@@ -607,30 +658,54 @@ export default function CashierKanbanPage() {
         </div>
       </LayoutGroup>
 
-      {/* Saber Central Automated WhatsApp Gateway Bot Outbound Telemetry Feed */}
+      {/* Saber Central Automated WhatsApp Gateway Bot Outbound Telemetry Feed (Fonnte) */}
       <section className="mt-8 rounded-[26px] border border-black/[0.06] bg-white p-6 shadow-apple-sm">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/12 text-[#1D7D32]">
               <WhatsappLogo aria-hidden="true" weight="duotone" className="h-5 w-5" />
             </div>
             <div>
               <h2 className="text-sm font-bold text-zinc-950">
-                Saber Central Automated WhatsApp Gateway Bot Log
+                Saber x Fonnte Automated WhatsApp Bot Log
               </h2>
               <p className="text-[11px] text-zinc-500">
-                Webhook <code className="font-mono">/api/v1/webhooks/whatsapp</code> • Zero Merchant
-                API Configuration
+                Real-time notification via <code className="font-mono">api.fonnte.com</code> •{' '}
+                Otomatis ke Pemilik &amp; Pelanggan
               </p>
             </div>
           </div>
-          <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-3 py-1 text-[11px] font-bold text-[#1D7D32]">
-            Gateway Connected
-          </span>
+
+          <form onSubmit={handleSendTestFonnte} className="flex flex-wrap items-center gap-2">
+            <input
+              type="tel"
+              value={testWaPhone}
+              onChange={(e) => setTestWaPhone(e.target.value)}
+              placeholder={merchant?.ownerWhatsapp || '0812xxxxxxxx'}
+              aria-label="Nomor WhatsApp uji coba Fonnte"
+              className="min-h-[38px] w-44 rounded-full border border-zinc-200 bg-[#F5F5F7] px-3.5 font-mono text-xs outline-none focus:border-apple-blue focus:bg-white"
+            />
+            <button
+              type="submit"
+              disabled={sendingTestWa}
+              className="apple-interactive inline-flex min-h-[38px] items-center rounded-full bg-[#1D7D32] px-4 text-xs font-bold text-white hover:brightness-110 disabled:opacity-60"
+            >
+              {sendingTestWa ? 'Mengirim...' : 'Tes WA Fonnte'}
+            </button>
+          </form>
         </div>
 
+        {testWaFeedback && (
+          <div
+            role="status"
+            className="mb-4 rounded-xl border border-black/[0.08] bg-[#F5F5F7] px-3.5 py-2 text-xs font-medium text-[#1D1D1F]"
+          >
+            {testWaFeedback}
+          </div>
+        )}
+
         <div className="divide-y divide-black/[0.05] text-xs">
-          {whatsappLogs.slice(0, 6).map((log) => (
+          {whatsappLogs.slice(0, 8).map((log) => (
             <div
               key={log.id}
               className="flex flex-col justify-between gap-2 py-3 sm:flex-row sm:items-center"
@@ -653,8 +728,21 @@ export default function CashierKanbanPage() {
                   <span className="rounded bg-zinc-100 px-2 py-0.5 font-mono text-[10px] text-zinc-600">
                     {log.eventType}
                   </span>
+                  <span
+                    className={cn(
+                      'rounded-full px-2 py-0.5 font-mono text-[10px] font-bold',
+                      log.deliveryStatus === 'FAILED'
+                        ? 'bg-red-50 text-[#D70015]'
+                        : 'bg-emerald-50 text-[#1D7D32]'
+                    )}
+                  >
+                    {log.deliveryStatus}
+                  </span>
                 </div>
-                <p className="text-xs text-zinc-800">{log.messageBody}</p>
+                <p className="whitespace-pre-line text-xs text-zinc-800">{log.messageBody}</p>
+                {log.providerMessage && (
+                  <p className="text-[11px] text-[#515154]">{log.providerMessage}</p>
+                )}
               </div>
               {log.magicLinkUrl && (
                 <Link
