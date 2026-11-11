@@ -8,6 +8,8 @@ import {
 import { formatIdr } from '@/lib/utils';
 import { OrderStatus, PaymentStatus, PaymentType } from '@/types/schema';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   const store = getStore();
   const magicToken = req.nextUrl.searchParams.get('magicToken');
@@ -15,14 +17,17 @@ export async function GET(req: NextRequest) {
     ? store.orders.find((o) => o.magicToken === magicToken)
     : undefined;
 
-  return NextResponse.json({
-    merchant: store.merchants[0],
-    branch: store.branches[0],
-    orders: store.orders,
-    tables: store.tableSessions,
-    whatsappLogs: store.whatsappLogs.slice(0, 25),
-    highlightedOrderId: highlightedOrder?.id || null,
-  });
+  return NextResponse.json(
+    {
+      merchant: store.merchants[0],
+      branch: store.branches[0],
+      orders: store.orders,
+      tables: store.tableSessions,
+      whatsappLogs: store.whatsappLogs.slice(0, 25),
+      highlightedOrderId: highlightedOrder?.id || null,
+    },
+    { headers: { 'Cache-Control': 'no-store' } }
+  );
 }
 
 export async function PATCH(req: NextRequest) {
@@ -184,6 +189,7 @@ export async function PATCH(req: NextRequest) {
 
     // Action 4: Customer uploads payment receipt proof
     if (body.action === 'upload_receipt' && body.receiptImageUrl) {
+      const merchant = store.merchants[0];
       const receipt = {
         id: createUuid(),
         orderId: order.id,
@@ -195,6 +201,15 @@ export async function PATCH(req: NextRequest) {
       order.orderStatus = OrderStatus.PAYMENT_PENDING_APPROVAL;
       order.updatedAt = new Date().toISOString();
       saveStore(store);
+
+      dispatchWhatsAppNotification({
+        recipientPhone: merchant?.ownerWhatsapp || '+6281288990011',
+        recipientRole: 'MERCHANT',
+        eventType: 'RECEIPT_UPLOADED',
+        orderNumber: order.orderNumber,
+        messageBody: `[SABER F&B WA BOT] Bukti pembayaran ${formatIdr(order.totalAmountIdr)} untuk #${order.orderNumber} (${order.customerName}) telah diunggah. Periksa di Kasir Kanban.`,
+        magicLinkUrl: `/cashier/orders`,
+      });
 
       return NextResponse.json({
         success: true,

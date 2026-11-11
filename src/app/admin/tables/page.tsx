@@ -6,7 +6,7 @@ import QRCode from 'qrcode';
 import { pdf } from '@react-pdf/renderer';
 import { QrCode, Trash, WifiHigh } from '@phosphor-icons/react';
 import { Branch, Merchant, TableSession } from '@/types/schema';
-import { cn } from '@/lib/utils';
+import { buildStorefrontUrl, cn, formatStorefrontDisplayUrl } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { APPLE_SPRINGS, triggerCausalHaptic } from '@/lib/apple-motion';
 import { TableQrPdfDocument, TableWithQrDataUrl } from '@/components/TableQrPdfDocument';
@@ -25,26 +25,36 @@ export default function AdminTablesPage() {
   const [wifiPassword, setWifiPassword] = useState('kopi100persen');
   const [pageSize, setPageSize] = useState<'A4' | 'A5'>('A4');
 
-  const enrichWithQr = async (rawTables: TableSession[]): Promise<TableWithQrDataUrl[]> => {
+  const enrichWithQr = async (
+    rawTables: TableSession[],
+    merchantSlug?: string
+  ): Promise<TableWithQrDataUrl[]> => {
+    const activeSlug = merchantSlug || merchant?.slug || 'warungmakan';
+    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : undefined;
+
     return Promise.all(
       rawTables.map(async (t) => {
-        const qrPngDataUrl = await QRCode.toDataURL(t.qrCodeUrl, {
+        const resolvedUrl = buildStorefrontUrl(activeSlug, {
+          tableNumber: t.tableNumber,
+          baseOrigin: currentOrigin,
+        });
+        const qrPngDataUrl = await QRCode.toDataURL(resolvedUrl, {
           width: 480,
           margin: 1,
           color: { dark: '#1D1D1F', light: '#FFFFFF' },
         });
-        return { ...t, qrPngDataUrl };
+        return { ...t, qrCodeUrl: resolvedUrl, qrPngDataUrl };
       })
     );
   };
 
   const loadTables = async () => {
     try {
-      const res = await fetch('/api/v1/tables');
+      const res = await fetch('/api/v1/tables', { cache: 'no-store' });
       const data = await res.json();
       setMerchant(data.merchant);
       setBranch(data.branch);
-      const enriched = await enrichWithQr(data.tables || []);
+      const enriched = await enrichWithQr(data.tables || [], data.merchant?.slug);
       setTables(enriched);
       if (data.tables?.[0]) {
         setWifiName(data.tables[0].wifiName || 'KopiNusantara_5G');
@@ -182,7 +192,7 @@ export default function AdminTablesPage() {
           <p className="mt-1 text-xs text-zinc-500">
             Setiap meja menghasilkan URL unik{' '}
             <code className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-apple-blue">
-              https://{merchant?.slug}.saberconsulting.id?table=[tableId]
+              https://{formatStorefrontDisplayUrl(merchant?.slug || 'warungmakan')}?table=[tableId]
             </code>
           </p>
         </div>

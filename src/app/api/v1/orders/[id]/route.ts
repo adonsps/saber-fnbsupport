@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStore } from '@/lib/store';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   _req: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -15,9 +17,12 @@ export async function GET(
     return NextResponse.json({ error: 'Pesanan tidak ditemukan' }, { status: 404 });
   }
 
-  return NextResponse.json({
-    order,
-    merchant: store.merchants[0],
-    branch: store.branches[0],
-  });
+  return NextResponse.json(
+    {
+      order,
+      merchant: store.merchants[0],
+      branch: store.branches[0],
+    },
+    { headers: { 'Cache-Control': 'no-store' } }
+  );
 }

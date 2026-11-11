@@ -11,6 +11,7 @@ import {
 } from '@phosphor-icons/react';
 import { Category, MenuItem, Merchant } from '@/types/schema';
 import { cn, formatIdr } from '@/lib/utils';
+import { useDialogLightDismiss } from '@/lib/client-helpers';
 import { motion } from 'framer-motion';
 import { APPLE_SPRINGS, triggerCausalHaptic } from '@/lib/apple-motion';
 
@@ -25,6 +26,8 @@ export default function AdminMenuPage() {
   // Native <dialog> refs following Modern Web Guidance
   const catDialogRef = useRef<HTMLDialogElement>(null);
   const itemDialogRef = useRef<HTMLDialogElement>(null);
+  useDialogLightDismiss(catDialogRef);
+  useDialogLightDismiss(itemDialogRef);
 
   // Category modal state
   const [catNameId, setCatNameId] = useState('');
@@ -563,6 +566,7 @@ export default function AdminMenuPage() {
       {/* Native <dialog> Category Modal (HIG Sheet Anatomy per sheets.md) */}
       <dialog
         ref={catDialogRef}
+        closedby="any"
         aria-labelledby="cat-modal-title"
         className="w-full max-w-md rounded-[26px] border border-black/10 bg-white p-0 shadow-apple-lg"
       >
@@ -638,6 +642,7 @@ export default function AdminMenuPage() {
       {/* Native <dialog> Menu Item Modal (HIG Sheet Anatomy per sheets.md) */}
       <dialog
         ref={itemDialogRef}
+        closedby="any"
         aria-labelledby="item-modal-title"
         className="w-full max-w-2xl rounded-[26px] border border-black/10 bg-white p-0 shadow-apple-lg"
       >

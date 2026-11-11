@@ -143,6 +143,7 @@ export interface WhatsAppWebhookLog {
   eventType:
     | 'NEW_ORDER_MAGIC_LINK'
     | 'STOCK_CONFIRMED_INVOICE'
+    | 'RECEIPT_UPLOADED'
     | 'PAYMENT_APPROVED_KITCHEN'
     | 'ORDER_READY_SERVED'
     | 'RECEIPT_REJECTED';

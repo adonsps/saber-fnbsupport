@@ -9,6 +9,8 @@ import {
 import { formatIdr, normalizeWhatsapp } from '@/lib/utils';
 import { Order, OrderStatus, OrderType, PaymentStatus, PaymentType } from '@/types/schema';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();

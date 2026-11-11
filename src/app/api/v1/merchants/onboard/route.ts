@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createUuid, DEFAULT_QRIS_SVG, getStore, saveStore } from '@/lib/store';
-import { normalizeWhatsapp } from '@/lib/utils';
+import {
+  buildStorefrontUrl,
+  getOriginFromHeaders,
+  isReservedSlug,
+  normalizeWhatsapp,
+} from '@/lib/utils';
+
+export const dynamic = 'force-dynamic';
 
 const OnboardSchema = z.object({
   businessName: z.string().min(2, 'Nama bisnis wajib diisi'),
@@ -48,7 +55,15 @@ export async function POST(req: NextRequest) {
     }
 
     const data = parsed.data;
+    if (isReservedSlug(data.slug)) {
+      return NextResponse.json(
+        { error: `Slug "${data.slug}" dicadangkan oleh sistem.` },
+        { status: 400 }
+      );
+    }
+
     const store = getStore();
+    const origin = getOriginFromHeaders(req.headers);
     const now = new Date().toISOString();
 
     let merchant = store.merchants.find((m) => m.slug === data.slug) || store.merchants[0];
@@ -110,10 +125,13 @@ export async function POST(req: NextRequest) {
       store.branches.unshift(branch);
     }
 
-    // Update table session QR target URLs with the active slug
+    // Update table session QR target URLs with the active slug (Option B Zero-Wildcard path URLs)
     store.tableSessions = store.tableSessions.map((t) => ({
       ...t,
-      qrCodeUrl: `https://${merchant.slug}.saberconsulting.id?table=${encodeURIComponent(t.tableNumber)}`,
+      qrCodeUrl: buildStorefrontUrl(merchant.slug, {
+        tableNumber: t.tableNumber,
+        baseOrigin: origin,
+      }),
     }));
 
     saveStore(store);
@@ -123,7 +141,7 @@ export async function POST(req: NextRequest) {
       merchant,
       branch,
       miniSiteUrl: `/${merchant.slug}`,
-      subdomainUrl: `https://${merchant.slug}.saberconsulting.id`,
+      subdomainUrl: buildStorefrontUrl(merchant.slug, { baseOrigin: origin }),
     });
   } catch (err) {
     return NextResponse.json(
