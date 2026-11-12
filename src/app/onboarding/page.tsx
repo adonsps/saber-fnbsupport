@@ -84,6 +84,7 @@ function OnboardingWizardContent() {
     available: false,
     message: 'Masukkan nama restoran Anda untuk membuat alamat URL toko.',
   });
+  const [confirmSlugQrBreak, setConfirmSlugQrBreak] = useState(false);
 
   // Step 2: Operations & Delivery
   const [address, setAddress] = useState('');
@@ -309,7 +310,18 @@ function OnboardingWizardContent() {
         }
       }
       if (!slugStatus.valid || !slugStatus.available) {
-        setErrorMsg('Pastikan subdomain slug valid dan tersedia sebelum melanjutkan.');
+        setErrorMsg('Pastikan alamat URL slug valid dan tersedia sebelum melanjutkan.');
+        return;
+      }
+      if (
+        onboardingMode === 'edit' &&
+        editingOriginalSlug &&
+        slug.trim().toLowerCase() !== editingOriginalSlug.toLowerCase() &&
+        !confirmSlugQrBreak
+      ) {
+        setErrorMsg(
+          'Centang konfirmasi cetak ulang QR meja karena Anda mengubah alamat slug toko.'
+        );
         return;
       }
       setStep(2);
@@ -622,12 +634,44 @@ function OnboardingWizardContent() {
                         slugStatus.checking
                           ? 'bg-zinc-100 text-zinc-600'
                           : slugStatus.valid && slugStatus.available
-                          ? 'bg-emerald-50 text-[#1D7D32]'
-                          : 'bg-red-50 text-[#D70015]'
+                            ? 'bg-emerald-50 text-[#1D7D32]'
+                            : 'bg-red-50 text-[#D70015]'
                       )}
                     >
-                      {slugStatus.checking ? 'Memeriksa ketersediaan subdomain...' : slugStatus.message}
+                      {slugStatus.checking
+                        ? 'Memeriksa ketersediaan alamat toko...'
+                        : slugStatus.message}
                     </div>
+
+                    {/* MG4: Explicit Warning When Changing Existing Store Slug (Breaks Printed Table QRs) */}
+                    {onboardingMode === 'edit' &&
+                      editingOriginalSlug &&
+                      slug.trim().toLowerCase() !== editingOriginalSlug.toLowerCase() && (
+                        <div
+                          role="alert"
+                          className="mt-2.5 space-y-2 rounded-xl border border-amber-300 bg-amber-50 p-3.5 text-xs text-amber-950"
+                        >
+                          <p className="font-bold">
+                            Peringatan: Mengubah alamat slug memutus QR Meja lama
+                          </p>
+                          <p className="leading-relaxed text-amber-900">
+                            Semua QR Code meja yang sudah dicetak untuk{' '}
+                            <code className="font-mono font-bold">/{editingOriginalSlug}</code> tidak
+                            akan mengarah ke toko Anda lagi setelah diubah menjadi{' '}
+                            <code className="font-mono font-bold">/{slug}</code>. Pastikan Anda
+                            mencetak ulang stiker QR meja di halaman Kelola Meja.
+                          </p>
+                          <label className="flex cursor-pointer items-center gap-2 font-semibold text-amber-950">
+                            <input
+                              type="checkbox"
+                              checked={confirmSlugQrBreak}
+                              onChange={(e) => setConfirmSlugQrBreak(e.target.checked)}
+                              className="h-4 w-4 accent-amber-700"
+                            />
+                            <span>Saya mengerti &amp; akan mencetak ulang QR meja</span>
+                          </label>
+                        </div>
+                      )}
                   </div>
 
                   <div>

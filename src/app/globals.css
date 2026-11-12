@@ -34,9 +34,20 @@
   /* Perceptual Color Space Interpolation (Modern Web Guidance visual-effects) */
   --in-oklab: ;
   --in-oklch: ;
+  --target-size: 32px;
 
   font: 100%/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", system-ui, sans-serif;
   font-optical-sizing: auto;
+}
+
+@media (pointer: coarse) {
+  :root {
+    --target-size: 44px;
+  }
+}
+
+.pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
 
 @supports (background: linear-gradient(in oklab, white, black)) {

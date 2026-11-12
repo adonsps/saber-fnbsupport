@@ -25,6 +25,7 @@ import {
 import { cn, formatIdr } from '@/lib/utils';
 import { useDialogLightDismiss } from '@/lib/client-helpers';
 import { APPLE_SPRINGS, triggerCausalHaptic } from '@/lib/apple-motion';
+import { DemoModeBanner } from '@/components/DemoModeBanner';
 
 type KanbanColumnId =
   | 'PENDING_STOCK'
@@ -42,36 +43,36 @@ const KANBAN_COLUMNS: Array<{
 }> = [
   {
     id: 'PENDING_STOCK',
-    title: 'Pending Stock',
-    subtitle: 'Verify kitchen availability',
+    title: 'Cek Stok Dapur',
+    subtitle: 'Pastikan bahan tersedia',
     accentBar: 'border-t-2 border-t-[#B25000]',
     statuses: [OrderStatus.PENDING_STOCK_CONFIRMATION],
   },
   {
     id: 'AWAITING_PAYMENT',
-    title: 'Awaiting Payment',
-    subtitle: 'Pending QRIS or cash audit',
+    title: 'Menunggu Pembayaran',
+    subtitle: 'Verifikasi QRIS atau tunai',
     accentBar: 'border-t-2 border-t-apple-blue',
     statuses: [OrderStatus.AWAITING_PAYMENT, OrderStatus.PAYMENT_PENDING_APPROVAL],
   },
   {
     id: 'IN_KITCHEN',
-    title: 'In Kitchen',
-    subtitle: 'Active cooking & prep',
+    title: 'Sedang Dimasak',
+    subtitle: 'Proses dapur & penyajian',
     accentBar: 'border-t-2 border-t-purple-700',
     statuses: [OrderStatus.IN_KITCHEN],
   },
   {
     id: 'READY_DELIVERY',
-    title: 'Ready for Service',
-    subtitle: 'Ready for table or courier',
+    title: 'Siap Disajikan',
+    subtitle: 'Siap ke meja atau kurir',
     accentBar: 'border-t-2 border-t-[#1D7D32]',
     statuses: [OrderStatus.READY_FOR_DELIVERY],
   },
   {
     id: 'COMPLETED',
-    title: 'Completed',
-    subtitle: 'Settled & table session reset',
+    title: 'Selesai',
+    subtitle: 'Lunas & meja dikosongkan',
     accentBar: 'border-t-2 border-t-[#515154]',
     statuses: [OrderStatus.COMPLETED],
   },
@@ -90,6 +91,8 @@ export default function CashierKanbanPage() {
   const [testWaPhone, setTestWaPhone] = useState('');
   const [sendingTestWa, setSendingTestWa] = useState(false);
   const [testWaFeedback, setTestWaFeedback] = useState<string | null>(null);
+  const [orderSearch, setOrderSearch] = useState('');
+  const [mobileStage, setMobileStage] = useState<KanbanColumnId>('PENDING_STOCK');
 
   const prevPendingCountRef = useRef<number>(-1);
 
@@ -97,16 +100,19 @@ export default function CashierKanbanPage() {
   const stockDialogRef = useRef<HTMLDialogElement>(null);
   const receiptDialogRef = useRef<HTMLDialogElement>(null);
   const tableDialogRef = useRef<HTMLDialogElement>(null);
+  const cancelDialogRef = useRef<HTMLDialogElement>(null);
 
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [editableItems, setEditableItems] = useState<OrderItem[]>([]);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [cancelReason, setCancelReason] = useState('');
   const [moveTargetTable, setMoveTargetTable] = useState('');
   const [mergeTargetOrderId, setMergeTargetOrderId] = useState('');
 
   useDialogLightDismiss(stockDialogRef);
   useDialogLightDismiss(receiptDialogRef);
   useDialogLightDismiss(tableDialogRef);
+  useDialogLightDismiss(cancelDialogRef);
 
   const currentActiveOrder = activeOrder
     ? orders.find((o) => o.id === activeOrder.id) || activeOrder
@@ -275,7 +281,11 @@ export default function CashierKanbanPage() {
     }
   };
 
-  const handleAdvanceStatus = async (orderId: string, nextStatus: OrderStatus) => {
+  const handleAdvanceStatus = async (
+    orderId: string,
+    nextStatus: OrderStatus,
+    reason?: string
+  ) => {
     triggerCausalHaptic(10);
     setBusyId(orderId);
     try {
@@ -285,6 +295,7 @@ export default function CashierKanbanPage() {
         body: JSON.stringify({
           orderId,
           orderStatus: nextStatus,
+          cancelReason: reason,
         }),
       });
       const data = await res.json();
@@ -294,6 +305,20 @@ export default function CashierKanbanPage() {
     } finally {
       setBusyId(null);
     }
+  };
+
+  const openCancelOrderModal = (order: Order) => {
+    triggerCausalHaptic(8);
+    setActiveOrder(order);
+    setCancelReason('');
+    cancelDialogRef.current?.showModal();
+  };
+
+  const handleConfirmCancelOrder = async () => {
+    if (!activeOrder) return;
+    await handleAdvanceStatus(activeOrder.id, OrderStatus.CANCELLED, cancelReason.trim());
+    stockDialogRef.current?.close();
+    cancelDialogRef.current?.close();
   };
 
   const handleMoveTable = async () => {
@@ -384,15 +409,26 @@ export default function CashierKanbanPage() {
 
   const vacantTables = tables.filter((t) => !t.isOccupied);
   const editableSubtotal = editableItems.reduce((acc, i) => acc + i.totalPriceIdr, 0);
+  const filteredOrders = orders.filter((o) => {
+    const q = orderSearch.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      o.orderNumber.toLowerCase().includes(q) ||
+      o.customerName.toLowerCase().includes(q) ||
+      (o.tableNumber || '').toLowerCase().includes(q)
+    );
+  });
 
   return (
-    <div className="mx-auto max-w-[1600px] px-4 pt-6 sm:px-6">
+    <div className="mx-auto max-w-[1600px] px-4 pb-10 pt-6 sm:px-6">
+      <DemoModeBanner merchant={merchant} />
+
       {/* Top Control Header — Opaque Grouped Card (liquid-glass.md) */}
-      <div className="mb-6 flex flex-col justify-between gap-4 rounded-[22px] border border-black/[0.08] bg-white p-5 shadow-apple-sm sm:flex-row sm:items-center">
+      <div className="mb-5 flex flex-col justify-between gap-4 rounded-[22px] border border-black/[0.08] bg-white p-5 shadow-apple-sm sm:flex-row sm:items-center">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="hig-caption text-[11px] font-semibold uppercase tracking-[0.06em] text-[#515154]">
-              Kitchen &amp; Cashier Dispatch
+              Pusat Operasi Kasir &amp; Dapur
             </span>
             {merchant && (
               <span
@@ -409,20 +445,26 @@ export default function CashierKanbanPage() {
             )}
             {highlightedId && (
               <span className="rounded-full bg-amber-500/15 px-3 py-0.5 text-[11px] font-bold text-[#B25000]">
-                Magic Link Order Highlighted
+                Pesanan dari Tautan WhatsApp Disorot
               </span>
             )}
           </div>
-          <h1 className="hig-title-2 mt-1 text-[#1D1D1F]">
-            Cashier & Kitchen Order Board
-          </h1>
+          <h1 className="hig-title-2 mt-1 text-[#1D1D1F]">Papan Pesanan Kasir &amp; Dapur</h1>
           <p className="text-xs text-[#515154]">
-            Verify stock before billing, inspect QRIS proofs, move or merge tables, and automatically
-            release table sessions when orders complete.
+            Konfirmasi ketersediaan stok, periksa bukti bayar QRIS, kelola pindah/gabung meja, atau
+            batalkan pesanan untuk melepas meja secara otomatis.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
+          <input
+            type="search"
+            value={orderSearch}
+            onChange={(e) => setOrderSearch(e.target.value)}
+            placeholder="Cari #ORD, nama, meja..."
+            aria-label="Cari pesanan"
+            className="min-h-[44px] w-full rounded-full border border-black/[0.1] bg-[#F5F5F7] px-4 text-xs font-medium outline-none focus:border-apple-blue focus:bg-white sm:w-56"
+          />
           <button
             type="button"
             onClick={() => {
@@ -442,7 +484,7 @@ export default function CashierKanbanPage() {
             ) : (
               <SpeakerSlash aria-hidden="true" weight="duotone" className="h-4 w-4" />
             )}
-            <span>{soundEnabled ? 'Chime On' : 'Muted'}</span>
+            <span>{soundEnabled ? 'Bel Aktif' : 'Senyap'}</span>
           </button>
 
           <button
@@ -453,22 +495,54 @@ export default function CashierKanbanPage() {
             }}
             className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-4 text-xs font-bold text-white hover:bg-apple-blueHover"
           >
-            Refresh Board
+            Segarkan Papan
           </button>
         </div>
+      </div>
+
+      {/* Mobile Compact Stage Switcher (< md) */}
+      <div className="no-scrollbar apple-snap-scroller mb-4 gap-1.5 pb-1 md:hidden">
+        {KANBAN_COLUMNS.map((col) => {
+          const count = filteredOrders.filter((o) => col.statuses.includes(o.orderStatus)).length;
+          const active = mobileStage === col.id;
+          return (
+            <button
+              key={col.id}
+              type="button"
+              onClick={() => setMobileStage(col.id)}
+              className={cn(
+                'inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-full px-3.5 text-xs font-bold transition-colors',
+                active
+                  ? 'bg-[#1D1D1F] text-white shadow-sm'
+                  : 'border border-black/[0.08] bg-white text-[#515154]'
+              )}
+            >
+              <span>{col.title}</span>
+              <span
+                className={cn(
+                  'rounded-full px-2 py-0.5 font-mono text-[10px] font-bold',
+                  active ? 'bg-white/20 text-white' : 'bg-[#F5F5F7] text-[#1D1D1F]'
+                )}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* 5-Column Kanban Board — Opaque Grouped Tertiary Columns (NO backdrop-blur in content layer per liquid-glass.md) + Emil Reposition Springs (§3, §4) */}
       <LayoutGroup>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
           {KANBAN_COLUMNS.map((col) => {
-            const colOrders = orders.filter((o) => col.statuses.includes(o.orderStatus));
+            const colOrders = filteredOrders.filter((o) => col.statuses.includes(o.orderStatus));
 
             return (
               <div
                 key={col.id}
                 className={cn(
-                  'flex min-h-[520px] flex-col rounded-[22px] border border-black/[0.08] bg-[#EFEFF4]/75 p-3.5',
+                  'flex flex-col rounded-[22px] border border-black/[0.08] bg-[#EFEFF4]/75 p-3.5 md:min-h-[520px]',
+                  mobileStage !== col.id && 'hidden md:flex',
                   col.accentBar
                 )}
               >
@@ -495,14 +569,13 @@ export default function CashierKanbanPage() {
                         transition={APPLE_SPRINGS.default}
                         className="flex h-32 items-center justify-center rounded-2xl border border-dashed border-black/15 bg-white/60 text-xs font-medium text-[#515154]"
                       >
-                        No tickets in stage
+                        Belum ada pesanan di tahap ini
                       </motion.div>
                     ) : (
                       colOrders.map((order) => {
                         const isHighlighted = highlightedId === order.id;
-                        const hasProof =
-                          order.paymentStatus === PaymentStatus.PROOF_UPLOADED ||
-                          order.receipts.length > 0;
+                        const hasProofPending = order.paymentStatus === PaymentStatus.PROOF_UPLOADED;
+                        const isProofRejected = order.paymentStatus === PaymentStatus.REJECTED;
 
                         return (
                           <motion.article
@@ -549,14 +622,14 @@ export default function CashierKanbanPage() {
 
                             {order.specialNotes && (
                               <p className="mt-2 rounded-xl bg-amber-50 px-2.5 py-1.5 text-[11px] font-medium text-[#B25000]">
-                                Note: {order.specialNotes}
+                                Catatan: {order.specialNotes}
                               </p>
                             )}
 
                             <div className="mt-2.5 flex items-center justify-between text-xs">
                               <span className="text-[11px] font-semibold text-[#515154]">
                                 {order.paymentType === PaymentType.CASH
-                                  ? 'Cash at Counter'
+                                  ? 'Tunai di Kasir'
                                   : 'QRIS / Transfer'}
                               </span>
                               <span className="font-mono font-bold tabular-nums text-[#1D1D1F]">
@@ -570,15 +643,15 @@ export default function CashierKanbanPage() {
                                 <button
                                   type="button"
                                   onClick={() => openStockAuditModal(order)}
-                                  className="apple-interactive flex min-h-[42px] w-full items-center justify-center rounded-xl bg-[#B25000] px-3 text-xs font-bold text-white hover:brightness-110"
+                                  className="apple-interactive flex min-h-[44px] w-full items-center justify-center rounded-xl bg-[#B25000] px-3 text-xs font-bold text-white hover:brightness-110"
                                 >
-                                  Verify Stock & Send Bill
+                                  Cek Stok &amp; Kirim Tagihan
                                 </button>
                               )}
 
                               {col.id === 'AWAITING_PAYMENT' && (
                                 <>
-                                  {hasProof ? (
+                                  {hasProofPending ? (
                                     <div className="space-y-1.5">
                                       <div className="rounded-xl border border-emerald-500/20 bg-emerald-50 px-2.5 py-1.5 text-center text-[11px] font-bold text-[#1D7D32]">
                                         Bukti Transfer Diterima • Siap Diperiksa
@@ -586,10 +659,14 @@ export default function CashierKanbanPage() {
                                       <button
                                         type="button"
                                         onClick={() => openReceiptModal(order)}
-                                        className="apple-interactive flex min-h-[42px] w-full items-center justify-center rounded-xl bg-apple-blue px-3 text-xs font-bold text-white hover:bg-apple-blueHover"
+                                        className="apple-interactive flex min-h-[44px] w-full items-center justify-center rounded-xl bg-apple-blue px-3 text-xs font-bold text-white hover:bg-apple-blueHover"
                                       >
-                                        Inspect Payment Proof
+                                        Periksa Bukti Bayar
                                       </button>
+                                    </div>
+                                  ) : isProofRejected ? (
+                                    <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-center text-[11px] font-bold text-[#D70015]">
+                                      Bukti Ditolak • Menunggu Unggah Ulang Pelanggan
                                     </div>
                                   ) : order.paymentType === PaymentType.CASH ? (
                                     <button
@@ -598,13 +675,13 @@ export default function CashierKanbanPage() {
                                       onClick={() =>
                                         handleAdvanceStatus(order.id, OrderStatus.IN_KITCHEN)
                                       }
-                                      className="apple-interactive flex min-h-[42px] w-full items-center justify-center rounded-xl bg-[#1D7D32] px-3 text-xs font-bold text-white hover:brightness-110"
+                                      className="apple-interactive flex min-h-[44px] w-full items-center justify-center rounded-xl bg-[#1D7D32] px-3 text-xs font-bold text-white hover:brightness-110"
                                     >
-                                      Accept Cash → Kitchen
+                                      Terima Tunai → Masak
                                     </button>
                                   ) : (
                                     <div className="rounded-xl bg-blue-50 px-3 py-2 text-center text-[11px] font-semibold text-apple-blue">
-                                      Awaiting customer QRIS upload...
+                                      Menunggu pelanggan unggah bukti QRIS...
                                     </div>
                                   )}
                                 </>
@@ -617,9 +694,9 @@ export default function CashierKanbanPage() {
                                   onClick={() =>
                                     handleAdvanceStatus(order.id, OrderStatus.READY_FOR_DELIVERY)
                                   }
-                                  className="apple-interactive flex min-h-[42px] w-full items-center justify-center rounded-xl bg-purple-700 px-3 text-xs font-bold text-white hover:bg-purple-800"
+                                  className="apple-interactive flex min-h-[44px] w-full items-center justify-center rounded-xl bg-purple-700 px-3 text-xs font-bold text-white hover:bg-purple-800"
                                 >
-                                  Mark Ready for Service
+                                  Tandai Siap Disajikan
                                 </button>
                               )}
 
@@ -630,27 +707,36 @@ export default function CashierKanbanPage() {
                                   onClick={() =>
                                     handleAdvanceStatus(order.id, OrderStatus.COMPLETED)
                                   }
-                                  className="apple-interactive flex min-h-[42px] w-full items-center justify-center rounded-xl bg-[#1D7D32] px-3 text-xs font-bold text-white hover:brightness-110"
+                                  className="apple-interactive flex min-h-[44px] w-full items-center justify-center rounded-xl bg-[#1D7D32] px-3 text-xs font-bold text-white hover:brightness-110"
                                 >
-                                  Complete & Reset Table
+                                  Selesaikan &amp; Kosongkan Meja
                                 </button>
                               )}
 
-                              <div className="flex items-center justify-between gap-1 pt-1">
+                              <div className="flex flex-wrap items-center justify-between gap-1 pt-1">
                                 {col.id !== 'COMPLETED' && (
-                                  <button
-                                    type="button"
-                                    onClick={() => openTableControlsModal(order)}
-                                    className="apple-interactive inline-flex min-h-[36px] items-center rounded-lg bg-[#F5F5F7] px-2.5 py-1 text-[11px] font-semibold text-[#1D1D1F] hover:bg-zinc-200"
-                                  >
-                                    Move / Merge
-                                  </button>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => openTableControlsModal(order)}
+                                      className="apple-interactive inline-flex min-h-[40px] items-center rounded-lg bg-[#F5F5F7] px-2.5 py-1 text-[11px] font-semibold text-[#1D1D1F] hover:bg-zinc-200"
+                                    >
+                                      Pindah / Gabung
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => openCancelOrderModal(order)}
+                                      className="apple-interactive inline-flex min-h-[40px] items-center rounded-lg bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-[#D70015] hover:bg-red-100"
+                                    >
+                                      Batalkan
+                                    </button>
+                                  </div>
                                 )}
                                 <Link
                                   href={`/order/${order.id}`}
-                                  className="inline-flex min-h-[36px] items-center rounded-lg px-2 py-1 text-[11px] font-semibold text-apple-blue hover:bg-apple-blue/10"
+                                  className="inline-flex min-h-[40px] items-center rounded-lg px-2 py-1 text-[11px] font-semibold text-apple-blue hover:bg-apple-blue/10"
                                 >
-                                  Order Pass →
+                                  Pass →
                                 </Link>
                               </div>
                             </div>
@@ -777,25 +863,25 @@ export default function CashierKanbanPage() {
             onClick={() => stockDialogRef.current?.close()}
             className="apple-interactive inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-apple-blue hover:underline"
           >
-            Cancel
+            Batal
           </button>
           <div className="text-center">
             <h3 id="stock-modal-title" className="text-sm font-bold text-[#1D1D1F]">
-              Verify Stock #{currentActiveOrder?.orderNumber}
+              Cek Stok #{currentActiveOrder?.orderNumber}
             </h3>
             <p className="hig-caption text-[11px] font-medium text-[#515154]">
-              Step 2 • Partial Stock Audit
+              Tahap 2 • Audit Stok Dapur
             </p>
           </div>
           <span className="min-w-[44px] text-right font-mono text-xs font-bold text-[#515154]">
-            {editableItems.length} items
+            {editableItems.length} item
           </span>
         </div>
 
         <div className="space-y-4 p-6">
           <p className="text-xs text-[#515154]">
-            Adjust quantities or remove unavailable items. The invoice total updates automatically
-            before Saber WhatsApp Bot sends payment instructions to the customer.
+            Sesuaikan jumlah porsi atau hapus menu yang habis. Total tagihan diperbarui otomatis
+            sebelum instruksi pembayaran dikirim ke pelanggan via WhatsApp.
           </p>
 
           <div className="divide-y divide-black/[0.06] rounded-2xl border border-black/[0.08] bg-[#F5F5F7] px-4">
@@ -804,16 +890,16 @@ export default function CashierKanbanPage() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-bold text-[#1D1D1F]">{item.itemTitleSnapshot}</p>
                   <p className="font-mono text-[11px] text-[#515154]">
-                    {formatIdr(item.unitPriceIdr)} / portion
+                    {formatIdr(item.unitPriceIdr)} / porsi
                   </p>
                 </div>
 
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
-                    aria-label="Decrease portion"
+                    aria-label="Kurangi porsi"
                     onClick={() => updateEditableItemQty(idx, -1)}
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#1D1D1F] shadow-sm"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#1D1D1F] shadow-sm"
                   >
                     <Minus aria-hidden="true" weight="bold" className="h-3.5 w-3.5" />
                   </button>
@@ -822,40 +908,55 @@ export default function CashierKanbanPage() {
                   </span>
                   <button
                     type="button"
-                    aria-label="Increase portion"
+                    aria-label="Tambah porsi"
                     onClick={() => updateEditableItemQty(idx, 1)}
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#1D1D1F] shadow-sm"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#1D1D1F] shadow-sm"
                   >
                     <Plus aria-hidden="true" weight="bold" className="h-3.5 w-3.5" />
                   </button>
                   <button
                     type="button"
-                    aria-label="Remove item"
+                    aria-label="Hapus item"
                     onClick={() => updateEditableItemQty(idx, -item.quantity)}
-                    className="ml-1 flex h-9 w-9 items-center justify-center rounded-full text-[#D70015] hover:bg-red-50"
+                    className="ml-1 flex h-10 w-10 items-center justify-center rounded-full text-[#D70015] hover:bg-red-50"
                   >
                     <Trash aria-hidden="true" weight="regular" className="h-4 w-4" />
                   </button>
                 </div>
               </div>
             ))}
+            {editableItems.length === 0 && (
+              <p className="py-5 text-center text-xs font-semibold text-[#D70015]">
+                Semua item habis. Gunakan tombol Batalkan Pesanan di bawah.
+              </p>
+            )}
           </div>
 
           <div className="flex items-center justify-between rounded-2xl bg-[#1D1D1F] px-4 py-3.5 text-white">
-            <span className="text-xs font-medium text-zinc-300">Recalculated Total (+Delivery)</span>
+            <span className="text-xs font-medium text-zinc-300">Total Tagihan (+Ongkir)</span>
             <span className="font-mono text-base font-bold tabular-nums">
               {formatIdr(editableSubtotal + Number(activeOrder?.deliveryFeeIdr || 0))}
             </span>
           </div>
 
-          <button
-            type="button"
-            disabled={editableItems.length === 0 || busyId === activeOrder?.id}
-            onClick={handleConfirmStockAudit}
-            className="apple-interactive flex min-h-[46px] w-full items-center justify-center rounded-full bg-apple-blue px-5 py-2.5 text-xs font-bold text-white hover:bg-apple-blueHover disabled:opacity-50"
-          >
-            Confirm Stock & Send WhatsApp Invoice
-          </button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              disabled={busyId === activeOrder?.id}
+              onClick={() => currentActiveOrder && openCancelOrderModal(currentActiveOrder)}
+              className="apple-interactive inline-flex min-h-[46px] items-center justify-center rounded-full border border-red-200 bg-red-50 px-5 py-2.5 text-xs font-bold text-[#D70015] hover:bg-red-100"
+            >
+              Batalkan Pesanan
+            </button>
+            <button
+              type="button"
+              disabled={editableItems.length === 0 || busyId === activeOrder?.id}
+              onClick={handleConfirmStockAudit}
+              className="apple-interactive flex min-h-[46px] flex-1 items-center justify-center rounded-full bg-apple-blue px-5 py-2.5 text-xs font-bold text-white hover:bg-apple-blueHover disabled:opacity-50"
+            >
+              Konfirmasi Stok &amp; Kirim Tagihan WA
+            </button>
+          </div>
         </div>
       </dialog>
 
@@ -872,14 +973,14 @@ export default function CashierKanbanPage() {
             onClick={() => receiptDialogRef.current?.close()}
             className="apple-interactive inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-apple-blue hover:underline"
           >
-            Cancel
+            Batal
           </button>
           <div className="text-center">
             <h3 id="receipt-modal-title" className="text-sm font-bold text-[#1D1D1F]">
-              Verify Receipt #{currentActiveOrder?.orderNumber}
+              Periksa Bukti #{currentActiveOrder?.orderNumber}
             </h3>
             <p className="hig-caption text-[11px] font-medium text-[#515154]">
-              Step 4 • Payment Proof Audit
+              Tahap 4 • Verifikasi Pembayaran
             </p>
           </div>
           <span className="min-w-[44px]" />
@@ -887,7 +988,7 @@ export default function CashierKanbanPage() {
 
         <div className="space-y-4 p-6">
           <div className="flex items-center justify-between rounded-2xl bg-[#F5F5F7] px-4 py-3 text-xs">
-            <span className="font-semibold text-[#515154]">Expected Order Total</span>
+            <span className="font-semibold text-[#515154]">Total Tagihan Diharapkan</span>
             <span className="font-mono text-base font-bold text-apple-blue">
               {currentActiveOrder ? formatIdr(currentActiveOrder.totalAmountIdr) : '-'}
             </span>
@@ -897,24 +998,24 @@ export default function CashierKanbanPage() {
             <div className="overflow-hidden rounded-2xl border border-black/10 bg-zinc-50 p-2">
               <img
                 src={currentActiveOrder.receipts[0].receiptImageUrl}
-                alt="Uploaded Payment Receipt"
+                alt="Bukti Transfer Pelanggan"
                 className="mx-auto max-h-72 rounded-xl object-contain"
               />
             </div>
           ) : (
-            <p className="text-center text-xs text-[#515154]">No transfer receipt image uploaded.</p>
+            <p className="text-center text-xs text-[#515154]">Belum ada foto bukti transfer.</p>
           )}
 
           <div>
             <label htmlFor="rejectReason" className="block text-xs font-semibold text-[#1D1D1F]">
-              Rejection Note (If Rejecting)
+              Catatan Penolakan (Jika Ditolak)
             </label>
             <input
               id="rejectReason"
               type="text"
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder="e.g. Transfer amount short by Rp 10.000 or blurry screenshot"
+              placeholder="Contoh: Nominal kurang Rp 10.000 atau foto buram"
               className="mt-1 min-h-[44px] w-full rounded-xl border border-zinc-200 px-3 text-xs"
             />
           </div>
@@ -925,14 +1026,14 @@ export default function CashierKanbanPage() {
               onClick={() => handleVerifyReceipt(false)}
               className="apple-interactive inline-flex min-h-[46px] items-center justify-center rounded-full border border-red-200 bg-red-50 px-4 text-xs font-bold text-[#D70015] hover:bg-red-100"
             >
-              Reject Receipt
+              Tolak Bukti
             </button>
             <button
               type="button"
               onClick={() => handleVerifyReceipt(true)}
               className="apple-interactive inline-flex min-h-[46px] items-center justify-center rounded-full bg-[#1D7D32] px-4 text-xs font-bold text-white hover:brightness-110"
             >
-              Approve → Kitchen
+              Setujui → Masak
             </button>
           </div>
         </div>
@@ -951,10 +1052,10 @@ export default function CashierKanbanPage() {
             onClick={() => tableDialogRef.current?.close()}
             className="apple-interactive inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-apple-blue hover:underline"
           >
-            Cancel
+            Batal
           </button>
           <h3 id="table-ctrl-title" className="text-sm font-bold text-[#1D1D1F]">
-            Manage Table #{currentActiveOrder?.orderNumber}
+            Kelola Meja #{currentActiveOrder?.orderNumber}
           </h3>
           <span className="min-w-[44px]" />
         </div>
@@ -962,18 +1063,18 @@ export default function CashierKanbanPage() {
         <div className="space-y-5 p-6">
           {/* Move Table */}
           <div className="space-y-2.5 rounded-2xl border border-black/[0.06] bg-[#F5F5F7]/70 p-4">
-            <p className="text-xs font-bold text-zinc-950">Move Table (Pindah ke Meja Kosong)</p>
+            <p className="text-xs font-bold text-zinc-950">Pindah ke Meja Kosong</p>
             <select
               value={moveTargetTable}
               onChange={(e) => setMoveTargetTable(e.target.value)}
-              className="min-h-[42px] w-full rounded-xl border border-zinc-200 bg-white px-3 text-xs font-semibold"
+              className="min-h-[44px] w-full rounded-xl border border-zinc-200 bg-white px-3 text-xs font-semibold"
             >
               {vacantTables.length === 0 ? (
                 <option value="">Tidak ada meja kosong</option>
               ) : (
                 vacantTables.map((t) => (
                   <option key={t.id} value={t.tableNumber}>
-                    {t.tableNumber} (Vacant)
+                    {t.tableNumber} (Kosong)
                   </option>
                 ))
               )}
@@ -982,7 +1083,7 @@ export default function CashierKanbanPage() {
               type="button"
               disabled={!moveTargetTable}
               onClick={handleMoveTable}
-              className="apple-interactive w-full rounded-full bg-zinc-950 py-2 text-xs font-bold text-white disabled:opacity-50"
+              className="apple-interactive min-h-[44px] w-full rounded-full bg-zinc-950 py-2 text-xs font-bold text-white disabled:opacity-50"
             >
               Pindahkan Meja
             </button>
@@ -990,11 +1091,11 @@ export default function CashierKanbanPage() {
 
           {/* Merge Tables */}
           <div className="space-y-2.5 rounded-2xl border border-black/[0.06] bg-[#F5F5F7]/70 p-4">
-            <p className="text-xs font-bold text-zinc-950">Merge Tables (Gabung Tagihan)</p>
+            <p className="text-xs font-bold text-zinc-950">Gabung Tagihan (Merge Tables)</p>
             <select
               value={mergeTargetOrderId}
               onChange={(e) => setMergeTargetOrderId(e.target.value)}
-              className="min-h-[42px] w-full rounded-xl border border-zinc-200 bg-white px-3 text-xs font-semibold"
+              className="min-h-[44px] w-full rounded-xl border border-zinc-200 bg-white px-3 text-xs font-semibold"
             >
               {orders
                 .filter(
@@ -1013,9 +1114,69 @@ export default function CashierKanbanPage() {
               type="button"
               disabled={!mergeTargetOrderId}
               onClick={handleMergeTables}
-              className="apple-interactive w-full rounded-full bg-purple-600 py-2 text-xs font-bold text-white disabled:opacity-50"
+              className="apple-interactive min-h-[44px] w-full rounded-full bg-purple-600 py-2 text-xs font-bold text-white disabled:opacity-50"
             >
               Gabung ke Pesanan Tujuan
+            </button>
+          </div>
+        </div>
+      </dialog>
+
+      {/* Modal 4: Cancel Order Confirmation (<dialog>) */}
+      <dialog
+        ref={cancelDialogRef}
+        closedby="any"
+        aria-labelledby="cancel-order-title"
+        className="w-full max-w-md rounded-[26px] border border-black/10 bg-white p-0 shadow-apple-lg"
+      >
+        <div className="liquid-glass-regular flex items-center justify-between px-5 py-3">
+          <button
+            type="button"
+            onClick={() => cancelDialogRef.current?.close()}
+            className="apple-interactive inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-apple-blue hover:underline"
+          >
+            Kembali
+          </button>
+          <h3 id="cancel-order-title" className="text-sm font-bold text-[#D70015]">
+            Batalkan #{currentActiveOrder?.orderNumber}
+          </h3>
+          <span className="min-w-[44px]" />
+        </div>
+
+        <div className="space-y-4 p-6">
+          <p className="text-xs leading-relaxed text-[#515154]">
+            Pesanan akan ditandai <strong className="text-[#D70015]">Dibatalkan</strong>, meja yang
+            dipakai akan langsung dikosongkan, dan pelanggan menerima notifikasi WhatsApp otomatis.
+          </p>
+          <div>
+            <label htmlFor="cancelReason" className="block text-xs font-semibold text-[#1D1D1F]">
+              Alasan Pembatalan (Opsional)
+            </label>
+            <input
+              id="cancelReason"
+              type="text"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Contoh: Stok bahan habis atau permintaan pelanggan"
+              className="mt-1 min-h-[44px] w-full rounded-xl border border-zinc-200 px-3 text-xs outline-none focus:border-apple-blue"
+            />
+          </div>
+
+          <div className="flex gap-2.5 pt-1">
+            <button
+              type="button"
+              onClick={() => cancelDialogRef.current?.close()}
+              className="apple-interactive inline-flex min-h-[46px] flex-1 items-center justify-center rounded-full border border-zinc-200 bg-[#F5F5F7] text-xs font-bold text-[#1D1D1F]"
+            >
+              Tutup
+            </button>
+            <button
+              type="button"
+              disabled={busyId === currentActiveOrder?.id}
+              onClick={handleConfirmCancelOrder}
+              className="apple-interactive inline-flex min-h-[46px] flex-1 items-center justify-center rounded-full bg-[#D70015] text-xs font-bold text-white hover:brightness-110 disabled:opacity-60"
+            >
+              Ya, Batalkan Pesanan
             </button>
           </div>
         </div>
