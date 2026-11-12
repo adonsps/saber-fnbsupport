@@ -75,11 +75,15 @@ export async function POST(req: NextRequest) {
     const branchCategoryIds = new Set(bundle.categories.map((c) => c.id));
 
     if (body.entity === 'category') {
+      const nameId = String(body.nameId || '').trim();
+      if (!nameId) {
+        return NextResponse.json({ error: 'Nama kategori wajib diisi.' }, { status: 400 });
+      }
       const newCategory = {
         id: createUuid(),
         branchId,
-        nameId: String(body.nameId || '').trim(),
-        nameEn: String(body.nameEn || body.nameId || '').trim(),
+        nameId,
+        nameEn: String(body.nameEn || nameId).trim(),
         displayOrder: Number(body.displayOrder || bundle.categories.length + 1),
       };
       store.categories.push(newCategory);
@@ -88,6 +92,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         category: newCategory,
+        categories: updated.categories,
+      });
+    }
+
+    if (body.entity === 'update_category') {
+      const cat = store.categories.find((c) => c.id === body.id && c.branchId === branchId);
+      if (!cat) {
+        return NextResponse.json({ error: 'Kategori tidak ditemukan.' }, { status: 404 });
+      }
+      const nameId = String(body.nameId ?? cat.nameId).trim();
+      if (!nameId) {
+        return NextResponse.json({ error: 'Nama kategori wajib diisi.' }, { status: 400 });
+      }
+      cat.nameId = nameId;
+      cat.nameEn = String(body.nameEn ?? cat.nameEn ?? nameId).trim();
+      saveStore(store);
+      const updated = getScopedMerchantBundle(store, merchant);
+      return NextResponse.json({
+        success: true,
+        category: cat,
         categories: updated.categories,
       });
     }
@@ -113,12 +137,24 @@ export async function POST(req: NextRequest) {
       if (body.categoryId && !branchCategoryIds.has(body.categoryId)) {
         return NextResponse.json({ error: 'Kategori tidak valid.' }, { status: 403 });
       }
+      if (body.titleId !== undefined && !String(body.titleId).trim()) {
+        return NextResponse.json({ error: 'Nama menu (ID) wajib diisi.' }, { status: 400 });
+      }
+      const nextPrice =
+        body.priceIdr !== undefined ? Number(body.priceIdr) : Number(existing.priceIdr);
+      if (!Number.isFinite(nextPrice) || nextPrice <= 0) {
+        return NextResponse.json(
+          { error: 'Harga menu harus lebih besar dari Rp 0.' },
+          { status: 400 }
+        );
+      }
+
       existing.categoryId = body.categoryId || existing.categoryId;
-      existing.titleId = body.titleId ?? existing.titleId;
-      existing.titleEn = body.titleEn ?? existing.titleEn;
+      existing.titleId = body.titleId !== undefined ? String(body.titleId).trim() : existing.titleId;
+      existing.titleEn = body.titleEn !== undefined ? String(body.titleEn).trim() : existing.titleEn;
       existing.descriptionId = body.descriptionId ?? existing.descriptionId;
       existing.descriptionEn = body.descriptionEn ?? existing.descriptionEn;
-      existing.priceIdr = Number(body.priceIdr ?? existing.priceIdr);
+      existing.priceIdr = nextPrice;
       existing.imageUrl = body.imageUrl ?? existing.imageUrl;
       if (typeof body.isSoldOut === 'boolean') {
         existing.isSoldOut = body.isSoldOut;
@@ -132,19 +168,38 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    const titleId = String(body.titleId || '').trim();
+    if (!titleId) {
+      return NextResponse.json({ error: 'Nama menu wajib diisi.' }, { status: 400 });
+    }
+    const parsedPrice = Number(body.priceIdr);
+    if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+      return NextResponse.json(
+        { error: 'Harga menu harus lebih besar dari Rp 0.' },
+        { status: 400 }
+      );
+    }
+
     const targetCategoryId =
       body.categoryId && branchCategoryIds.has(body.categoryId)
         ? body.categoryId
         : bundle.categories[0]?.id;
 
+    if (!targetCategoryId) {
+      return NextResponse.json(
+        { error: 'Buat minimal 1 kategori menu terlebih dahulu.' },
+        { status: 400 }
+      );
+    }
+
     const newItem = {
       id: createUuid(),
       categoryId: targetCategoryId,
-      titleId: String(body.titleId || '').trim(),
-      titleEn: String(body.titleEn || body.titleId || '').trim(),
+      titleId,
+      titleEn: String(body.titleEn || titleId).trim(),
       descriptionId: String(body.descriptionId || '').trim(),
       descriptionEn: String(body.descriptionEn || body.descriptionId || '').trim(),
-      priceIdr: Number(body.priceIdr || 0),
+      priceIdr: parsedPrice,
       imageUrl:
         body.imageUrl ||
         'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=900&q=80',
@@ -169,6 +224,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const id = req.nextUrl.searchParams.get('id');
+  const entity = req.nextUrl.searchParams.get('entity');
   if (!id) {
     return NextResponse.json({ error: 'ID diperlukan' }, { status: 400 });
   }
@@ -179,6 +235,24 @@ export async function DELETE(req: NextRequest) {
   });
 
   const bundle = getScopedMerchantBundle(store, merchant);
+
+  if (entity === 'category') {
+    const branchId = bundle.branch?.id;
+    const cat = store.categories.find((c) => c.id === id && c.branchId === branchId);
+    if (!cat) {
+      return NextResponse.json({ error: 'Kategori tidak ditemukan.' }, { status: 404 });
+    }
+    store.categories = store.categories.filter((c) => c.id !== id);
+    store.menuItems = store.menuItems.filter((item) => item.categoryId !== id);
+    saveStore(store);
+    const updated = getScopedMerchantBundle(store, merchant);
+    return NextResponse.json({
+      success: true,
+      categories: updated.categories,
+      menuItems: updated.menuItems,
+    });
+  }
+
   const branchCategoryIds = new Set(bundle.categories.map((c) => c.id));
   store.menuItems = store.menuItems.filter(
     (item) => !(item.id === id && branchCategoryIds.has(item.categoryId))

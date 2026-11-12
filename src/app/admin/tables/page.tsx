@@ -10,6 +10,7 @@ import { buildStorefrontUrl, cn, formatStorefrontDisplayUrl } from '@/lib/utils'
 import { motion } from 'framer-motion';
 import { APPLE_SPRINGS, triggerCausalHaptic } from '@/lib/apple-motion';
 import { TableQrPdfDocument, TableWithQrDataUrl } from '@/components/TableQrPdfDocument';
+import { DemoModeBanner } from '@/components/DemoModeBanner';
 
 export default function AdminTablesPage() {
   const [merchant, setMerchant] = useState<Merchant | null>(null);
@@ -179,15 +180,17 @@ export default function AdminTablesPage() {
   const occupiedCount = tables.filter((t) => t.isOccupied).length;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl px-4 pb-12 pt-6 sm:px-6 lg:px-8">
+      <DemoModeBanner merchant={merchant} />
+
       {/* Header Banner */}
       <div className="mb-6 flex flex-col justify-between gap-4 rounded-[26px] border border-black/[0.06] bg-white p-6 shadow-apple-sm sm:flex-row sm:items-center">
         <div>
           <span className="text-[11px] font-bold uppercase tracking-wider text-apple-blue">
-            Floor & Print Engine
+            Manajemen Meja &amp; Cetak QR
           </span>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-950">
-            Manajemen Meja & Generator PDF QR
+            Manajemen Meja &amp; Generator PDF QR
           </h1>
           <p className="mt-1 text-xs text-zinc-500">
             Setiap meja menghasilkan URL unik{' '}
@@ -210,7 +213,7 @@ export default function AdminTablesPage() {
                     setPageSize(sz);
                   }}
                   className={cn(
-                    'relative z-10 rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors',
+                    'relative z-10 min-h-[38px] rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors',
                     active ? 'text-zinc-950' : 'text-zinc-500 hover:text-zinc-900'
                   )}
                 >
@@ -221,7 +224,7 @@ export default function AdminTablesPage() {
                       className="absolute inset-0 -z-10 rounded-full bg-white shadow-sm"
                     />
                   )}
-                  {sz} Sheet
+                  Kertas {sz}
                 </button>
               );
             })}
@@ -233,7 +236,7 @@ export default function AdminTablesPage() {
             onClick={handleDownloadPdf}
             className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-6 py-2.5 text-xs font-bold text-white shadow-apple-sm hover:bg-apple-blueHover disabled:opacity-50"
           >
-            {printingPdf ? 'Generating PDF...' : `Print Table QRs (${pageSize} PDF)`}
+            {printingPdf ? 'Membuat PDF...' : `Unduh PDF QR (${pageSize})`}
           </button>
 
           <button
@@ -241,7 +244,7 @@ export default function AdminTablesPage() {
             onClick={() => window.print()}
             className="no-print apple-interactive inline-flex min-h-[44px] items-center rounded-full border border-zinc-300 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-800 hover:bg-zinc-50"
           >
-            Browser Print
+            Cetak Browser
           </button>
         </div>
       </div>
@@ -267,7 +270,7 @@ export default function AdminTablesPage() {
             />
             <button
               type="submit"
-              className="apple-interactive inline-flex items-center rounded-xl bg-zinc-950 px-4 text-xs font-bold text-white hover:bg-zinc-800"
+              className="apple-interactive inline-flex min-h-[44px] items-center rounded-xl bg-zinc-950 px-4 text-xs font-bold text-white hover:bg-zinc-800"
             >
               Tambah
             </button>
@@ -299,9 +302,9 @@ export default function AdminTablesPage() {
             <button
               type="button"
               onClick={handleBulkCreate}
-              className="apple-interactive flex-1 rounded-xl bg-apple-blue px-4 text-xs font-bold text-white hover:bg-apple-blueHover"
+              className="apple-interactive min-h-[44px] flex-1 rounded-xl bg-apple-blue px-4 text-xs font-bold text-white hover:bg-apple-blueHover"
             >
-              Generate 1–{bulkCount}
+              Buat 1–{bulkCount} Meja
             </button>
           </div>
         </div>
@@ -316,7 +319,7 @@ export default function AdminTablesPage() {
             <button
               type="button"
               onClick={handleUpdateWifiAll}
-              className="text-[11px] font-bold text-apple-blue hover:underline"
+              className="inline-flex min-h-[36px] items-center text-[11px] font-bold text-apple-blue hover:underline"
             >
               Terapkan ke Semua
             </button>
@@ -344,10 +347,10 @@ export default function AdminTablesPage() {
       <div className="mb-4 flex items-center justify-between text-xs font-medium text-zinc-600">
         <div className="flex items-center gap-4">
           <span>
-            Vacant: <strong className="tabular-nums text-[#1D7D32]">{tables.length - occupiedCount}</strong>
+            Kosong: <strong className="tabular-nums text-[#1D7D32]">{tables.length - occupiedCount}</strong>
           </span>
           <span>
-            Occupied / Session Active:{' '}
+            Terisi / Aktif:{' '}
             <strong className="tabular-nums text-[#B25000]">{occupiedCount}</strong>
           </span>
         </div>
@@ -390,7 +393,7 @@ export default function AdminTablesPage() {
                     : 'bg-emerald-500/15 text-[#1D7D32]'
                 )}
               >
-                {table.isOccupied ? 'Occupied' : 'Vacant'}
+                {table.isOccupied ? 'Terisi' : 'Kosong'}
               </span>
             </div>
 
@@ -403,12 +406,12 @@ export default function AdminTablesPage() {
                   className="h-40 w-40"
                 />
               </div>
-              <p className="mt-3 text-xs font-bold text-apple-blue">Scan to View Menu & Order</p>
+              <p className="mt-3 text-xs font-bold text-apple-blue">Scan untuk Lihat Menu &amp; Pesan</p>
               <p className="mt-1 max-w-full truncate font-mono text-[11px] text-[#515154]">
                 {table.qrCodeUrl}
               </p>
               <div className="mt-2.5 w-full rounded-xl bg-white px-3 py-1.5 text-[11px] text-[#515154]">
-                Wi-Fi: <strong className="text-[#1D1D1F]">{table.wifiName}</strong> • Pass:{' '}
+                Wi-Fi: <strong className="text-[#1D1D1F]">{table.wifiName}</strong> • Sandi:{' '}
                 <strong className="font-mono text-[#1D1D1F]">{table.wifiPassword}</strong>
               </div>
             </div>
@@ -418,25 +421,25 @@ export default function AdminTablesPage() {
                 href={`/${merchant?.slug || 'warungmakan'}?table=${encodeURIComponent(
                   table.tableNumber
                 )}`}
-                className="apple-interactive inline-flex min-h-[40px] items-center rounded-full bg-apple-blue px-4 py-1.5 text-xs font-semibold text-white hover:bg-apple-blueHover"
+                className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-4 py-1.5 text-xs font-semibold text-white hover:bg-apple-blueHover"
               >
-                Simulate QR Scan
+                Simulasi Scan QR
               </Link>
 
               <div className="flex items-center gap-1">
                 <button
                   type="button"
                   onClick={() => handleResetOccupancy(table)}
-                  title="Toggle table Vacant or Occupied"
-                  className="apple-interactive inline-flex min-h-[40px] items-center rounded-full bg-[#F5F5F7] px-3 py-1.5 text-[11px] font-semibold text-[#1D1D1F] hover:bg-zinc-200"
+                  title="Ubah status meja Kosong / Terisi"
+                  className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-[#F5F5F7] px-3 py-1.5 text-[11px] font-semibold text-[#1D1D1F] hover:bg-zinc-200"
                 >
-                  {table.isOccupied ? 'Set Vacant' : 'Set Occupied'}
+                  {table.isOccupied ? 'Kosongkan' : 'Tandai Terisi'}
                 </button>
                 <button
                   type="button"
-                  aria-label={`Delete ${table.tableNumber}`}
+                  aria-label={`Hapus ${table.tableNumber}`}
                   onClick={() => handleDeleteTable(table.id)}
-                  className="flex h-9 w-9 items-center justify-center rounded-full text-[#515154] hover:bg-red-50 hover:text-[#D70015]"
+                  className="flex h-11 w-11 items-center justify-center rounded-full text-[#515154] hover:bg-red-50 hover:text-[#D70015]"
                 >
                   <Trash aria-hidden="true" weight="regular" className="h-4 w-4" />
                 </button>

@@ -10,6 +10,7 @@ import {
   resolveWorkspaceMerchant,
   saveStore,
 } from '@/lib/store';
+import { evaluateStoreHours } from '@/lib/store-hours';
 import {
   formatIdr,
   getOriginFromHeaders,
@@ -48,13 +49,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const hoursCheck = evaluateStoreHours(branch.operationalHours);
+    if (!hoursCheck.isWithinHours) {
+      return NextResponse.json(
+        {
+          error: `Maaf, toko sedang di luar jam operasional (${hoursCheck.statusLabelId}).`,
+        },
+        { status: 403 }
+      );
+    }
+
     const customerName = String(body.customerName || '').trim();
     const customerWhatsapp = normalizeWhatsapp(String(body.customerWhatsapp || ''));
     const orderType: OrderType = body.orderType || OrderType.WALK_IN_TABLE;
     const paymentType: PaymentType = body.paymentType || PaymentType.BANK_TRANSFER_QRIS;
     const tableNumber = body.tableNumber ? String(body.tableNumber).trim().toUpperCase() : undefined;
     const deliveryAddress = body.deliveryAddress ? String(body.deliveryAddress).trim() : undefined;
-    const scheduledPickupTime = body.scheduledPickupTime || undefined;
+    const scheduledPickupTime = body.scheduledPickupTime
+      ? String(body.scheduledPickupTime).trim()
+      : undefined;
     const specialNotes = body.specialNotes ? String(body.specialNotes).trim() : undefined;
 
     if (!customerName || !customerWhatsapp) {
@@ -64,29 +77,91 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!Object.values(OrderType).includes(orderType)) {
+      return NextResponse.json({ error: 'Jenis pesanan tidak valid.' }, { status: 400 });
+    }
+
+    if (!Object.values(PaymentType).includes(paymentType)) {
+      return NextResponse.json({ error: 'Metode pembayaran tidak valid.' }, { status: 400 });
+    }
+
+    if (orderType === OrderType.SELF_DELIVERY) {
+      if (!branch.isSelfDeliveryEnabled) {
+        return NextResponse.json(
+          { error: 'Layanan antar kurir toko sedang tidak tersedia.' },
+          { status: 400 }
+        );
+      }
+      if (!deliveryAddress) {
+        return NextResponse.json(
+          { error: 'Alamat pengantaran wajib diisi untuk pesanan antar.' },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (orderType === OrderType.PRE_ORDER_PICKUP && !scheduledPickupTime) {
+      return NextResponse.json(
+        { error: 'Waktu pengambilan (Pick-up) wajib dipilih.' },
+        { status: 400 }
+      );
+    }
+
     if (!Array.isArray(body.items) || body.items.length === 0) {
       return NextResponse.json({ error: 'Keranjang pesanan masih kosong.' }, { status: 400 });
     }
 
+    const branchCategoryIds = new Set(bundle.categories.map((c) => c.id));
     const orderId = createUuid();
     const nextNum = 1025 + store.orders.length;
     const orderNumber = `ORD-${nextNum}`;
 
-    const orderItems = body.items.map((item: { menuItemId: string; quantity: number; notes?: string }) => {
-      const found = store.menuItems.find((m) => m.id === item.menuItemId);
-      const unitPrice = found ? Number(found.priceIdr) : 0;
-      const qty = Math.max(Number(item.quantity || 1), 1);
-      return {
+    const orderItems = [];
+    for (const item of body.items as Array<{
+      menuItemId: string;
+      quantity: number;
+      notes?: string;
+    }>) {
+      const found = bundle.menuItems.find(
+        (m) => m.id === item.menuItemId && branchCategoryIds.has(m.categoryId)
+      );
+      if (!found) {
+        return NextResponse.json(
+          { error: 'Terdapat item menu yang tidak ditemukan atau bukan milik toko ini.' },
+          { status: 400 }
+        );
+      }
+      if (found.isSoldOut) {
+        return NextResponse.json(
+          { error: `Maaf, menu "${found.titleId}" baru saja habis (Sold Out).` },
+          { status: 400 }
+        );
+      }
+      const unitPrice = Number(found.priceIdr);
+      if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
+        return NextResponse.json(
+          { error: `Harga menu "${found.titleId}" tidak valid.` },
+          { status: 400 }
+        );
+      }
+      const qty = Math.floor(Number(item.quantity));
+      if (!Number.isFinite(qty) || qty < 1) {
+        return NextResponse.json(
+          { error: `Jumlah item "${found.titleId}" harus minimal 1.` },
+          { status: 400 }
+        );
+      }
+      orderItems.push({
         id: createUuid(),
         orderId,
-        menuItemId: item.menuItemId,
-        itemTitleSnapshot: found ? found.titleId : 'Menu Spesial',
+        menuItemId: found.id,
+        itemTitleSnapshot: found.titleId,
         unitPriceIdr: unitPrice,
         quantity: qty,
         totalPriceIdr: unitPrice * qty,
         notes: item.notes,
-      };
-    });
+      });
+    }
 
     const subtotalIdr = orderItems.reduce((acc: number, i: { totalPriceIdr: number }) => acc + i.totalPriceIdr, 0);
     const deliveryFeeIdr =

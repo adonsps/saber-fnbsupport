@@ -13,9 +13,28 @@ import {
   saveStore,
 } from '@/lib/store';
 import { formatIdr, getOriginFromHeaders, normalizeBaseOrigin } from '@/lib/utils';
-import { OrderStatus, PaymentStatus, PaymentType } from '@/types/schema';
+import { Order, OrderStatus, PaymentStatus, PaymentType } from '@/types/schema';
 
 export const dynamic = 'force-dynamic';
+
+function releaseOrderTable(
+  store: ReturnType<typeof getStore>,
+  branchId: string,
+  order: Pick<Order, 'id' | 'tableNumber'>
+) {
+  store.tableSessions.forEach((t) => {
+    if (t.branchId !== branchId) return;
+    const matchesOrder = t.activeOrderId === order.id;
+    const matchesTableWithoutOtherOrder =
+      order.tableNumber &&
+      t.tableNumber.toUpperCase() === order.tableNumber.toUpperCase() &&
+      (!t.activeOrderId || t.activeOrderId === order.id);
+    if (matchesOrder || matchesTableWithoutOtherOrder) {
+      t.isOccupied = false;
+      t.activeOrderId = undefined;
+    }
+  });
+}
 
 export async function GET(req: NextRequest) {
   const store = getStore();
@@ -152,17 +171,7 @@ export async function PATCH(req: NextRequest) {
         .join(' • ');
       targetOrder.updatedAt = new Date().toISOString();
 
-      if (sourceOrder.tableNumber) {
-        const srcTable = store.tableSessions.find(
-          (t) =>
-            t.branchId === sourceOrder.branchId &&
-            t.tableNumber.toUpperCase() === sourceOrder.tableNumber?.toUpperCase()
-        );
-        if (srcTable) {
-          srcTable.isOccupied = false;
-          srcTable.activeOrderId = undefined;
-        }
-      }
+      releaseOrderTable(store, sourceOrder.branchId, sourceOrder);
 
       sourceOrder.orderStatus = OrderStatus.CANCELLED;
       sourceOrder.updatedAt = new Date().toISOString();
@@ -193,6 +202,21 @@ export async function PATCH(req: NextRequest) {
 
     // Action 4: Customer uploads payment receipt proof (customer action allowed via order UUID)
     if (body.action === 'upload_receipt' && body.receiptImageUrl) {
+      if (
+        order.orderStatus === OrderStatus.CANCELLED ||
+        order.orderStatus === OrderStatus.COMPLETED
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              order.orderStatus === OrderStatus.CANCELLED
+                ? 'Pesanan ini telah dibatalkan dan tidak dapat menerima bukti bayar baru.'
+                : 'Pesanan ini sudah selesai.',
+          },
+          { status: 409 }
+        );
+      }
+
       const receipt = {
         id: createUuid(),
         orderId: order.id,
@@ -299,6 +323,13 @@ export async function PATCH(req: NextRequest) {
             }
           );
 
+        if (filtered.length === 0) {
+          return NextResponse.json(
+            { error: 'Minimal 1 item harus tersedia untuk konfirmasi, atau batalkan pesanan.' },
+            { status: 400 }
+          );
+        }
+
         order.items = filtered;
         order.subtotalIdr = filtered.reduce(
           (acc: number, i: { totalPriceIdr: number }) => acc + i.totalPriceIdr,
@@ -389,7 +420,7 @@ export async function PATCH(req: NextRequest) {
       });
     }
 
-    // Action 6: Generic status transition (e.g. IN_KITCHEN -> READY_FOR_DELIVERY -> COMPLETED)
+    // Action 6: Generic status transition (e.g. IN_KITCHEN -> READY_FOR_DELIVERY -> COMPLETED -> CANCELLED)
     if (body.orderStatus) {
       const nextStatus = body.orderStatus as OrderStatus;
       order.orderStatus = nextStatus;
@@ -414,16 +445,28 @@ export async function PATCH(req: NextRequest) {
         });
       }
 
-      if (nextStatus === OrderStatus.COMPLETED && order.tableNumber) {
-        const tbl = store.tableSessions.find(
-          (t) =>
-            t.branchId === branch.id &&
-            t.tableNumber.toUpperCase() === order.tableNumber?.toUpperCase()
-        );
-        if (tbl) {
-          tbl.isOccupied = false;
-          tbl.activeOrderId = undefined;
+      if (nextStatus === OrderStatus.CANCELLED) {
+        const cancelReason = body.cancelReason ? String(body.cancelReason).trim() : '';
+        if (cancelReason) {
+          order.specialNotes = [order.specialNotes, `[Dibatalkan Kasir: ${cancelReason}]`]
+            .filter(Boolean)
+            .join(' • ');
         }
+        releaseOrderTable(store, branch.id, order);
+
+        await dispatchWhatsAppNotification({
+          merchantId: merchant.id,
+          recipientPhone: order.customerWhatsapp,
+          recipientRole: 'CUSTOMER',
+          eventType: 'RECEIPT_REJECTED',
+          orderNumber: order.orderNumber,
+          messageBody: `❌ Halo *${order.customerName}*, mohon maaf pesanan *#${order.orderNumber}* di *${merchant.name}* terpaksa dibatalkan${cancelReason ? ` (${cancelReason})` : ''}. Anda dapat memesan ulang lewat menu kami:`,
+          magicLinkUrl: `${origin}/${merchant.slug}`,
+        });
+      }
+
+      if (nextStatus === OrderStatus.COMPLETED) {
+        releaseOrderTable(store, branch.id, order);
       }
 
       saveStore(store);

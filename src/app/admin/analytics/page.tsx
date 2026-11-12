@@ -24,6 +24,7 @@ import {
 import { cn, formatIdr } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { APPLE_SPRINGS, triggerCausalHaptic } from '@/lib/apple-motion';
+import { DemoModeBanner } from '@/components/DemoModeBanner';
 
 export default function AdminAnalyticsPage() {
   const [merchant, setMerchant] = useState<Merchant | null>(null);
@@ -216,19 +217,21 @@ export default function AdminAnalyticsPage() {
   const cashSharePct = 100 - qrisSharePct;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl px-4 pb-12 pt-6 sm:px-6 lg:px-8">
+      <DemoModeBanner merchant={merchant} />
+
       {/* Header & Export Capabilities */}
       <div className="mb-6 flex flex-col justify-between gap-4 rounded-[26px] border border-black/[0.06] bg-white p-6 shadow-apple-sm sm:flex-row sm:items-center">
         <div>
           <span className="text-[11px] font-bold uppercase tracking-wider text-apple-blue">
-            Operational Telemetry & Shift Summary
+            Laporan Operasional &amp; Shift
           </span>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-950">
             Ringkasan Shift Harian — {merchant?.name}
           </h1>
           <p className="mt-0.5 text-xs text-zinc-500">
-            0% Potongan Komisi • Laporan real-time pendapatan kotor, mix saluran order, dan kontrol
-            darurat toko.
+            0% Potongan Komisi • Laporan real-time pendapatan kotor, porsi saluran order, dan
+            kontrol darurat toko.
           </p>
         </div>
 
@@ -236,8 +239,8 @@ export default function AdminAnalyticsPage() {
           <div className="inline-flex rounded-full border border-zinc-200 bg-[#F5F5F7] p-1">
             {(
               [
-                { id: 'ALL', label: 'Semua Shift Aktif' },
-                { id: 'SETTLED_ONLY', label: 'Completed Only' },
+                { id: 'ALL', label: 'Semua Pesanan Aktif' },
+                { id: 'SETTLED_ONLY', label: 'Pesanan Selesai' },
               ] as const
             ).map((scope) => {
               const active = filterScope === scope.id;
@@ -250,7 +253,7 @@ export default function AdminAnalyticsPage() {
                     setFilterScope(scope.id);
                   }}
                   className={cn(
-                    'relative z-10 rounded-full px-3 py-1 text-xs font-bold transition-colors',
+                    'relative z-10 min-h-[38px] rounded-full px-3 py-1 text-xs font-bold transition-colors',
                     active ? 'text-zinc-950' : 'text-zinc-500 hover:text-zinc-900'
                   )}
                 >
@@ -272,7 +275,7 @@ export default function AdminAnalyticsPage() {
             onClick={handleExportCsv}
             className="apple-interactive inline-flex min-h-[44px] items-center rounded-full border border-black/[0.12] bg-[#F5F5F7] px-4 text-xs font-bold text-[#1D1D1F] hover:bg-[#EFEFF4]"
           >
-            Export Sales CSV
+            Ekspor CSV Penjualan
           </button>
 
           <button
@@ -280,7 +283,7 @@ export default function AdminAnalyticsPage() {
             onClick={() => window.print()}
             className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-5 text-xs font-bold text-white hover:bg-apple-blueHover"
           >
-            Download Shift Report PDF
+            Cetak Laporan Shift (PDF)
           </button>
         </div>
       </div>
@@ -309,11 +312,11 @@ export default function AdminAnalyticsPage() {
             </div>
             <div>
               <h2 className="text-sm font-bold text-zinc-950">
-                Emergency Switch: {merchant?.isStoreOpen ? 'Store Accepting Orders' : 'Store PAUSED'}
+                Sakelar Darurat:{' '}
+                {merchant?.isStoreOpen ? 'Toko Menerima Pesanan' : 'Toko DIJEDA'}
               </h2>
               <p className="text-xs text-zinc-500">
-                Set <code className="font-mono">isStoreOpen = false</code> untuk mengunci checkout
-                mini-site saat dapur kewalahan.
+                Jeda pesanan sementara jika dapur kewalahan agar pelanggan melihat status tutup.
               </p>
             </div>
           </div>
@@ -322,13 +325,13 @@ export default function AdminAnalyticsPage() {
             type="button"
             onClick={handleToggleStorePause}
             className={cn(
-              'apple-interactive inline-flex min-h-[42px] shrink-0 items-center rounded-full px-4 text-xs font-bold text-white',
+              'apple-interactive inline-flex min-h-[44px] shrink-0 items-center rounded-full px-4 text-xs font-bold text-white',
               merchant?.isStoreOpen
                 ? 'bg-[#D70015] hover:brightness-110'
                 : 'bg-[#1D7D32] hover:brightness-110'
             )}
           >
-            {merchant?.isStoreOpen ? 'Pause Incoming Orders' : 'Re-Open Store'}
+            {merchant?.isStoreOpen ? 'Jeda Pesanan Masuk' : 'Buka Kembali Toko'}
           </button>
         </div>
 
@@ -340,11 +343,10 @@ export default function AdminAnalyticsPage() {
             </div>
             <div>
               <h2 className="text-sm font-bold text-zinc-950">
-                Sold-Out Reset Engine ({metrics.soldOutCount} Item Habis)
+                Reset Stok Menu Harian ({metrics.soldOutCount} Menu Habis)
               </h2>
               <p className="text-xs text-zinc-500">
-                Reset massal seluruh menu kembali ke <code className="font-mono">isSoldOut = false</code>{' '}
-                di awal shift pagi.
+                Kembalikan semua menu yang habis menjadi tersedia lagi di awal shift pagi.
               </p>
             </div>
           </div>
@@ -352,7 +354,7 @@ export default function AdminAnalyticsPage() {
           <button
             type="button"
             onClick={handleSoldOutResetEngine}
-            className="apple-interactive inline-flex min-h-[42px] shrink-0 items-center rounded-full bg-zinc-950 px-4 text-xs font-bold text-white hover:bg-apple-blue"
+            className="apple-interactive inline-flex min-h-[44px] shrink-0 items-center rounded-full bg-zinc-950 px-4 text-xs font-bold text-white hover:bg-apple-blue"
           >
             Reset Semua Stok
           </button>
@@ -372,44 +374,44 @@ export default function AdminAnalyticsPage() {
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-[24px] border border-black/[0.06] bg-white p-5 shadow-apple-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-zinc-500">Gross Sales Today</span>
+            <span className="text-xs font-semibold text-zinc-500">Total Penjualan Kotor</span>
             <TrendUp aria-hidden="true" weight="duotone" className="h-4 w-4 text-[#1D7D32]" />
           </div>
           <p className="mt-2 font-mono text-2xl font-bold tabular-nums text-zinc-950">
             {formatIdr(metrics.grossSales)}
           </p>
           <p className="mt-1 text-[11px] font-medium text-[#1D7D32]">
-            100% Net Kept (Rp 0 Komisi Marketplace)
+            100% Milik Resto (Rp 0 Komisi Platform)
           </p>
         </div>
 
         <div className="rounded-[24px] border border-black/[0.06] bg-white p-5 shadow-apple-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-zinc-500">Total Orders</span>
+            <span className="text-xs font-semibold text-zinc-500">Jumlah Pesanan</span>
             <Receipt aria-hidden="true" weight="duotone" className="h-4 w-4 text-apple-blue" />
           </div>
           <p className="mt-2 font-mono text-2xl font-bold tabular-nums text-zinc-950">
             {metrics.totalOrders}
           </p>
           <p className="mt-1 text-[11px] text-zinc-500">
-            {metrics.settledCount} pesanan telah Completed / Lunas
+            {metrics.settledCount} pesanan telah selesai &amp; lunas
           </p>
         </div>
 
         <div className="rounded-[24px] border border-black/[0.06] bg-white p-5 shadow-apple-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-zinc-500">Average Order Value (AOV)</span>
+            <span className="text-xs font-semibold text-zinc-500">Rata-rata per Transaksi</span>
             <ChartBar aria-hidden="true" weight="duotone" className="h-4 w-4 text-purple-600" />
           </div>
           <p className="mt-2 font-mono text-2xl font-bold tabular-nums text-zinc-950">
             {formatIdr(metrics.aov)}
           </p>
-          <p className="mt-1 text-[11px] text-zinc-500">Rata-rata nilai keranjang per transaksi</p>
+          <p className="mt-1 text-[11px] text-zinc-500">Rata-rata nilai keranjang pelanggan</p>
         </div>
 
         <div className="rounded-[24px] border border-black/[0.06] bg-white p-5 shadow-apple-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-zinc-500">Active Occupied Tables</span>
+            <span className="text-xs font-semibold text-zinc-500">Meja Sedang Terisi</span>
             <UsersThree aria-hidden="true" weight="duotone" className="h-4 w-4 text-[#B25000]" />
           </div>
           <p className="mt-2 font-mono text-2xl font-bold tabular-nums text-zinc-950">
@@ -417,7 +419,7 @@ export default function AdminAnalyticsPage() {
             <span className="text-sm font-medium text-zinc-400">/ {metrics.totalTables}</span>
           </p>
           <p className="mt-1 text-[11px] text-zinc-500">
-            Otomatis kembali Vacant saat order Completed
+            Otomatis kosong kembali saat pesanan selesai atau dibatalkan
           </p>
         </div>
       </section>
@@ -426,25 +428,25 @@ export default function AdminAnalyticsPage() {
       <section className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Order Volume Breakdown */}
         <div className="rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-sm">
-          <h2 className="text-base font-bold text-zinc-950">Order Volume Breakdown</h2>
+          <h2 className="text-base font-bold text-zinc-950">Distribusi Saluran Pesanan</h2>
           <p className="mt-0.5 text-xs text-zinc-500">
-            Perbandingan saluran pemesanan: Walk-In QR vs Pre-Order Pick-Up vs Self-Delivery
+            Perbandingan pesanan Scan QR Meja vs Pre-Order Ambil vs Antar Kurir Toko
           </p>
 
           <div className="mt-6 space-y-4">
             {[
               {
-                label: 'Walk-In Table QR',
+                label: 'Makan di Meja (Scan QR)',
                 count: metrics.channelCounts.walkIn,
                 barClass: 'bg-apple-blue',
               },
               {
-                label: 'Advance Pre-Order (Pick Up)',
+                label: 'Pre-Order Ambil Sendiri',
                 count: metrics.channelCounts.preOrder,
                 barClass: 'bg-purple-500',
               },
               {
-                label: 'Store Self-Delivery',
+                label: 'Antar Kurir Toko',
                 count: metrics.channelCounts.delivery,
                 barClass: 'bg-amber-500',
               },
@@ -452,7 +454,7 @@ export default function AdminAnalyticsPage() {
               <div key={row.label} className="space-y-1.5">
                 <div className="flex justify-between text-xs font-semibold">
                   <span className="text-zinc-800">{row.label}</span>
-                  <span className="font-mono tabular-nums text-zinc-950">{row.count} order</span>
+                  <span className="font-mono tabular-nums text-zinc-950">{row.count} pesanan</span>
                 </div>
                 <div className="h-3 w-full overflow-hidden rounded-full bg-[#F5F5F7]">
                   <div
@@ -469,9 +471,9 @@ export default function AdminAnalyticsPage() {
         <div className="rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-sm">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-base font-bold text-zinc-950">Payment Channel Split</h2>
+              <h2 className="text-base font-bold text-zinc-950">Porsi Metode Pembayaran</h2>
               <p className="mt-0.5 text-xs text-zinc-500">
-                Perbandingan settlement tunai (Cash) vs Bank Transfer / QRIS Statis
+                Perbandingan pembayaran Tunai di Kasir vs Transfer Bank / QRIS Statis
               </p>
             </div>
             <CreditCard aria-hidden="true" weight="duotone" className="h-5 w-5 text-apple-blue" />
@@ -506,7 +508,7 @@ export default function AdminAnalyticsPage() {
 
               <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4">
                 <div className="text-xs font-bold text-[#1D7D32]">
-                  Pay at Cashier / Cash ({cashSharePct}%)
+                  Bayar Tunai di Kasir ({cashSharePct}%)
                 </div>
                 <p className="mt-2 font-mono text-lg font-bold tabular-nums text-zinc-950">
                   {formatIdr(metrics.cashTotal)}
@@ -524,13 +526,13 @@ export default function AdminAnalyticsPage() {
       <section className="mt-6 rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-sm">
         <div className="mb-4 flex items-center gap-2">
           <Trophy aria-hidden="true" weight="duotone" className="h-5 w-5 text-[#B25000]" />
-          <h2 className="text-base font-bold text-zinc-950">Top 5 Best-Selling Dishes</h2>
+          <h2 className="text-base font-bold text-zinc-950">5 Menu Terlaris Hari Ini</h2>
         </div>
 
         <div
           tabIndex={0}
           role="region"
-          aria-label="Top 5 Best-Selling Dishes"
+          aria-label="5 Menu Terlaris Hari Ini"
           className="overflow-x-auto"
         >
           <table className="w-full border-collapse text-left text-xs">
@@ -539,8 +541,8 @@ export default function AdminAnalyticsPage() {
                 <th className="py-3 pr-4">Peringkat</th>
                 <th className="py-3 pr-4">Nama Hidangan</th>
                 <th className="py-3 pr-4">Kategori</th>
-                <th className="py-3 pr-4 text-right">Units Sold</th>
-                <th className="py-3 text-right">Total Revenue (IDR)</th>
+                <th className="py-3 pr-4 text-right">Terjual</th>
+                <th className="py-3 text-right">Total Pendapatan (IDR)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-black/[0.05]">

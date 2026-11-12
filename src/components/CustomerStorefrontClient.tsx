@@ -20,6 +20,12 @@ import {
 import { cn, formatIdr } from '@/lib/utils';
 import { useDialogLightDismiss } from '@/lib/client-helpers';
 import {
+  persistClientLang,
+  resolveClientLang,
+  UiLang,
+} from '@/lib/order-labels';
+import { evaluateStoreHours } from '@/lib/store-hours';
+import {
   APPLE_SPRINGS,
   projectMomentum,
   rubberband,
@@ -45,7 +51,7 @@ export function CustomerStorefrontClient({
   initialTable?: string;
 }) {
   const router = useRouter();
-  const [lang, setLang] = useState<'ID' | 'EN'>('ID');
+  const [lang, setLang] = useState<UiLang>('ID');
   const [merchant, setMerchant] = useState<Merchant | null>(null);
   const [branch, setBranch] = useState<Branch | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -62,6 +68,7 @@ export function CustomerStorefrontClient({
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategoryId, setActiveCategoryId] = useState<string>('ALL');
   const [cart, setCart] = useState<Record<string, CartEntry>>({});
+  const [storeNotice, setStoreNotice] = useState<string | null>(null);
 
   // Checkout Modal State (Native <dialog>) + Apple 1:1 Direct Manipulation & Rubber-Banding (§2, §6, §9)
   const checkoutDialogRef = useRef<HTMLDialogElement>(null);
@@ -76,8 +83,27 @@ export function CustomerStorefrontClient({
   const [paymentType, setPaymentType] = useState<PaymentType>(PaymentType.BANK_TRANSFER_QRIS);
   const [submitting, setSubmitting] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{
+    customerName?: string;
+    customerWhatsapp?: string;
+    scheduledPickupTime?: string;
+    deliveryAddress?: string;
+  }>({});
+
+  const custNameInputRef = useRef<HTMLInputElement>(null);
+  const custWaInputRef = useRef<HTMLInputElement>(null);
+  const pickupInputRef = useRef<HTMLInputElement>(null);
+  const addressInputRef = useRef<HTMLTextAreaElement>(null);
 
   const cartStorageKey = `saber_fnb_cart_${slug}`;
+  const cartReconciledRef = useRef(false);
+
+  useEffect(() => {
+    const initial = resolveClientLang(
+      typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+    );
+    setLang(initial);
+  }, []);
 
   useEffect(() => {
     if (initialTable) {
@@ -122,7 +148,21 @@ export function CustomerStorefrontClient({
     checkoutDialogRef.current?.close();
   };
 
-  // Hydrate Cart from localStorage
+  const hoursEval = useMemo(
+    () => evaluateStoreHours(branch?.operationalHours),
+    [branch?.operationalHours]
+  );
+
+  const isStoreOpenNow = Boolean(merchant?.isStoreOpen) && hoursEval.isWithinHours;
+
+  // Reset SELF_DELIVERY tab if merchant disables delivery
+  useEffect(() => {
+    if (branch && !branch.isSelfDeliveryEnabled && orderType === OrderType.SELF_DELIVERY) {
+      setOrderType(OrderType.WALK_IN_TABLE);
+    }
+  }, [branch, orderType]);
+
+  // Hydrate & reconcile saved Cart against active menu items (drop sold-out or removed items with notice)
   useEffect(() => {
     try {
       const saved = localStorage.getItem(cartStorageKey);
@@ -134,6 +174,37 @@ export function CustomerStorefrontClient({
     }
   }, [cartStorageKey]);
 
+  useEffect(() => {
+    if (menuItems.length === 0 || cartReconciledRef.current) return;
+    cartReconciledRef.current = true;
+    setCart((prev) => {
+      const keys = Object.keys(prev);
+      if (keys.length === 0) return prev;
+      const next: Record<string, CartEntry> = {};
+      const dropped: string[] = [];
+      for (const id of keys) {
+        const found = menuItems.find((m) => m.id === id);
+        if (!found) {
+          dropped.push(id.slice(0, 6));
+          continue;
+        }
+        if (found.isSoldOut) {
+          dropped.push(lang === 'ID' ? found.titleId : found.titleEn || found.titleId);
+          continue;
+        }
+        next[id] = prev[id];
+      }
+      if (dropped.length > 0) {
+        setStoreNotice(
+          lang === 'ID'
+            ? `Item berikut dari keranjang sebelumnya habis/tidak tersedia dan telah dihapus: ${dropped.join(', ')}.`
+            : `Unavailable or sold-out items from your previous basket were removed: ${dropped.join(', ')}.`
+        );
+      }
+      return dropped.length > 0 ? next : prev;
+    });
+  }, [menuItems, lang]);
+
   // Persist Cart to localStorage
   useEffect(() => {
     try {
@@ -144,6 +215,19 @@ export function CustomerStorefrontClient({
   }, [cart, cartStorageKey]);
 
   const updateCartQty = (menuItemId: string, delta: number) => {
+    if (delta > 0 && !isStoreOpenNow) {
+      setStoreNotice(
+        !merchant?.isStoreOpen
+          ? lang === 'ID'
+            ? 'Maaf, toko sedang menjeda pesanan masuk sementara.'
+            : 'Sorry, the store has temporarily paused incoming orders.'
+          : lang === 'ID'
+            ? `Maaf, toko sedang tutup di luar jam operasional (${hoursEval.statusLabelId}).`
+            : `Sorry, the store is currently closed (${hoursEval.statusLabelEn}).`
+      );
+      return;
+    }
+    setStoreNotice(null);
     triggerCausalHaptic(8);
     setCart((prev) => {
       const current = prev[menuItemId]?.quantity || 0;
@@ -224,28 +308,20 @@ export function CustomerStorefrontClient({
   const handleOpenCheckout = () => {
     triggerCausalHaptic(10);
     setCheckoutError(null);
+    setFieldErrors({});
     setSheetDragY(0);
-    if (!merchant?.isStoreOpen) {
-      alert(
-        lang === 'ID'
-          ? 'Maaf, toko sedang menjeda pesanan masuk sementara.'
-          : 'Sorry, the store has temporarily paused incoming orders.'
+    if (!isStoreOpenNow) {
+      setStoreNotice(
+        !merchant?.isStoreOpen
+          ? lang === 'ID'
+            ? 'Maaf, toko sedang menjeda pesanan masuk sementara.'
+            : 'Sorry, the store has temporarily paused incoming orders.'
+          : lang === 'ID'
+            ? `Maaf, toko sedang tutup di luar jam operasional (${hoursEval.statusLabelId}).`
+            : `Sorry, the store is currently closed (${hoursEval.statusLabelEn}).`
       );
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
-    }
-    if (orderType === OrderType.PRE_ORDER_PICKUP && !scheduledPickupTime) {
-      setCheckoutError(
-        lang === 'ID'
-          ? 'Pilih estimasi waktu ambil (Pick-Up) terlebih dahulu.'
-          : 'Please select an estimated pick-up date and time.'
-      );
-    }
-    if (orderType === OrderType.SELF_DELIVERY && !deliveryAddress.trim()) {
-      setCheckoutError(
-        lang === 'ID'
-          ? 'Masukkan alamat pengantaran lengkap di halaman utama.'
-          : 'Please enter your full delivery address.'
-      );
     }
     checkoutDialogRef.current?.showModal();
   };
@@ -308,23 +384,46 @@ export function CustomerStorefrontClient({
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setCheckoutError(null);
+    const nextErrors: {
+      customerName?: string;
+      customerWhatsapp?: string;
+      scheduledPickupTime?: string;
+      deliveryAddress?: string;
+    } = {};
 
-    if (!customerName.trim() || !customerWhatsapp.trim()) {
-      setCheckoutError(
-        lang === 'ID'
-          ? 'Nama dan Nomor WhatsApp wajib diisi untuk menerima notifikasi status.'
-          : 'Name and WhatsApp number are required for live order alerts.'
-      );
-      return;
+    if (!customerName.trim()) {
+      nextErrors.customerName =
+        lang === 'ID' ? 'Nama pelanggan wajib diisi.' : 'Customer name is required.';
     }
-
+    if (!customerWhatsapp.trim()) {
+      nextErrors.customerWhatsapp =
+        lang === 'ID' ? 'Nomor WhatsApp aktif wajib diisi.' : 'Active WhatsApp number is required.';
+    }
+    if (orderType === OrderType.PRE_ORDER_PICKUP && !scheduledPickupTime.trim()) {
+      nextErrors.scheduledPickupTime =
+        lang === 'ID' ? 'Waktu pengambilan wajib dipilih.' : 'Pick-up date & time is required.';
+    }
     if (orderType === OrderType.SELF_DELIVERY && !deliveryAddress.trim()) {
+      nextErrors.deliveryAddress =
+        lang === 'ID' ? 'Alamat pengantaran wajib diisi.' : 'Delivery address is required.';
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
       setCheckoutError(
-        lang === 'ID' ? 'Alamat pengantaran wajib diisi.' : 'Delivery address is required.'
+        Object.values(nextErrors)[0] ||
+          (lang === 'ID'
+            ? 'Lengkapi kolom wajib sebelum melanjutkan.'
+            : 'Please complete all required fields.')
       );
+      if (nextErrors.customerName) custNameInputRef.current?.focus();
+      else if (nextErrors.customerWhatsapp) custWaInputRef.current?.focus();
+      else if (nextErrors.scheduledPickupTime) pickupInputRef.current?.focus();
+      else if (nextErrors.deliveryAddress) addressInputRef.current?.focus();
       return;
     }
 
+    setFieldErrors({});
     setSubmitting(true);
     try {
       const res = await fetch('/api/v1/orders/guest-checkout', {
@@ -350,17 +449,27 @@ export function CustomerStorefrontClient({
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Gagal mengirim pesanan');
+        throw new Error(
+          data.error ||
+            (lang === 'ID' ? 'Gagal mengirim pesanan' : 'Failed to submit your order')
+        );
       }
 
       triggerCausalHaptic([10, 40, 12]);
       // Clear local cart after successful submission
       setCart({});
       localStorage.removeItem(cartStorageKey);
+      persistClientLang(lang);
       checkoutDialogRef.current?.close();
-      router.push(`/order/${data.order.id}`);
+      router.push(`/order/${data.order.id}?lang=${lang}`);
     } catch (err) {
-      setCheckoutError(err instanceof Error ? err.message : 'Gagal membuat pesanan');
+      setCheckoutError(
+        err instanceof Error
+          ? err.message
+          : lang === 'ID'
+            ? 'Gagal membuat pesanan'
+            : 'Failed to place order'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -417,6 +526,7 @@ export function CustomerStorefrontClient({
                 onClick={() => {
                   triggerCausalHaptic(6);
                   setLang(code);
+                  persistClientLang(code);
                 }}
                 className={cn(
                   'relative min-h-[36px] min-w-[44px] rounded-full px-3.5 py-1 text-xs font-bold transition-colors',
@@ -452,19 +562,26 @@ export function CustomerStorefrontClient({
                 <span
                   className={cn(
                     'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold',
-                    merchant?.isStoreOpen
-                      ? 'bg-[#1D7D32] text-white'
-                      : 'bg-[#D70015] text-white'
+                    isStoreOpenNow ? 'bg-[#1D7D32] text-white' : 'bg-[#D70015] text-white'
                   )}
                 >
-                  {merchant?.isStoreOpen
+                  {isStoreOpenNow
                     ? lang === 'ID'
                       ? 'Buka • Terima Pesanan'
                       : 'Open • Accepting Orders'
-                    : lang === 'ID'
-                    ? 'Tutup Sementara — Pesanan Dijeda'
-                    : 'Paused — Orders Closed'}
+                    : !merchant?.isStoreOpen
+                      ? lang === 'ID'
+                        ? 'Tutup Sementara — Pesanan Dijeda'
+                        : 'Paused — Orders Closed'
+                      : lang === 'ID'
+                        ? 'Tutup • Di Luar Jam Operasional'
+                        : 'Closed • Outside Opening Hours'}
                 </span>
+                {hoursEval.hasSchedule && (
+                  <span className="inline-flex items-center rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm">
+                    {lang === 'ID' ? hoursEval.statusLabelId : hoursEval.statusLabelEn}
+                  </span>
+                )}
                 {isTableLocked && tableNumber && (
                   <span className="inline-flex items-center rounded-full bg-apple-blue px-2.5 py-0.5 font-mono text-[11px] font-bold text-white">
                     {tableNumber}
@@ -484,22 +601,88 @@ export function CustomerStorefrontClient({
         </div>
       </div>
 
-      {/* Store Paused Alert Banner */}
-      {!merchant?.isStoreOpen && (
+      {/* Opening Hours Weekly Schedule Disclosure */}
+      {hoursEval.schedule.length > 0 && (
+        <details className="mx-4 mt-3 rounded-2xl border border-black/[0.06] bg-white px-4 py-2.5 text-xs shadow-apple-sm sm:mx-0">
+          <summary className="flex min-h-[36px] cursor-pointer list-none items-center justify-between font-semibold text-[#1D1D1F]">
+            <span>
+              {lang === 'ID' ? 'Jam Operasional Toko' : 'Store Opening Hours'} •{' '}
+              <span className="font-normal text-[#515154]">
+                {lang === 'ID' ? hoursEval.statusLabelId : hoursEval.statusLabelEn}
+              </span>
+            </span>
+            <span className="text-[11px] font-semibold text-apple-blue">
+              {lang === 'ID' ? 'Lihat Jadwal ▾' : 'View Schedule ▾'}
+            </span>
+          </summary>
+          <div className="mt-2.5 grid grid-cols-1 gap-1.5 border-t border-black/[0.06] pt-2.5 sm:grid-cols-2">
+            {hoursEval.schedule.map((s) => (
+              <div
+                key={s.dayIndex}
+                className="flex items-center justify-between rounded-xl bg-[#F5F5F7] px-3 py-1.5 text-[11px]"
+              >
+                <span className="font-semibold text-[#1D1D1F]">
+                  {lang === 'ID' ? s.dayLabelId : s.dayLabelEn}
+                </span>
+                <span
+                  className={cn(
+                    'font-mono font-medium',
+                    s.isOpen ? 'text-[#1D7D32]' : 'text-[#D70015]'
+                  )}
+                >
+                  {s.isOpen
+                    ? `${s.openTime} – ${s.closeTime} WIB`
+                    : lang === 'ID'
+                      ? 'Tutup'
+                      : 'Closed'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+
+      {/* Store Closed / Hours Closed Alert Banner */}
+      {!isStoreOpenNow && (
         <div
           role="status"
           className="mx-4 mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-xs text-[#D70015] sm:mx-0"
         >
           <p className="font-bold">
-            {lang === 'ID'
-              ? 'Toko Sedang Menjeda Pesanan Masuk'
-              : 'Store Temporarily Paused'}
+            {!merchant?.isStoreOpen
+              ? lang === 'ID'
+                ? 'Toko Sedang Menjeda Pesanan Masuk'
+                : 'Store Temporarily Paused'
+              : lang === 'ID'
+                ? 'Toko Sedang Tutup (Di Luar Jam Operasional)'
+                : 'Store Currently Closed'}
           </p>
           <p className="mt-0.5">
-            {lang === 'ID'
-              ? 'Dapur sedang penuh atau toko tutup sementara. Anda tetap dapat melihat menu.'
-              : 'Kitchen is currently paused. You can browse the menu and check back shortly.'}
+            {!merchant?.isStoreOpen
+              ? lang === 'ID'
+                ? 'Dapur sedang penuh atau toko tutup sementara. Anda tetap dapat melihat menu.'
+                : 'Kitchen is currently paused. You can browse the menu and check back shortly.'
+              : lang === 'ID'
+                ? `${hoursEval.statusLabelId}. Pemesanan dibuka kembali sesuai jadwal operasional.`
+                : `${hoursEval.statusLabelEn}. Ordering will reopen during scheduled hours.`}
           </p>
+        </div>
+      )}
+
+      {/* Inline Store Notice (reconciled cart items, out-of-hours clicks, etc.) */}
+      {storeNotice && (
+        <div
+          role="status"
+          className="mx-4 mt-4 flex items-start justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-xs font-medium text-amber-950 sm:mx-0"
+        >
+          <span>{storeNotice}</span>
+          <button
+            type="button"
+            onClick={() => setStoreNotice(null)}
+            className="shrink-0 font-bold text-amber-800 hover:underline"
+          >
+            {lang === 'ID' ? 'Tutup' : 'Dismiss'}
+          </button>
         </div>
       )}
 
@@ -507,8 +690,11 @@ export function CustomerStorefrontClient({
       <div className="mx-4 mt-4 rounded-[24px] border border-black/[0.06] bg-white p-4 shadow-apple-sm sm:mx-0">
         <div
           role="tablist"
-          aria-label="Order Channel"
-          className="grid grid-cols-3 gap-1.5 rounded-2xl bg-[#F5F5F7] p-1"
+          aria-label={lang === 'ID' ? 'Saluran Pemesanan' : 'Order Channel'}
+          className={cn(
+            'grid gap-1.5 rounded-2xl bg-[#F5F5F7] p-1',
+            branch?.isSelfDeliveryEnabled ? 'grid-cols-3' : 'grid-cols-2'
+          )}
         >
           {[
             {
@@ -521,11 +707,15 @@ export function CustomerStorefrontClient({
               labelId: 'Pre-Order Ambil',
               labelEn: 'Pre-Order Pick Up',
             },
-            {
-              type: OrderType.SELF_DELIVERY,
-              labelId: 'Antar Kurir Toko',
-              labelEn: 'Self-Delivery',
-            },
+            ...(branch?.isSelfDeliveryEnabled
+              ? [
+                  {
+                    type: OrderType.SELF_DELIVERY,
+                    labelId: 'Antar Kurir Toko',
+                    labelEn: 'Self-Delivery',
+                  },
+                ]
+              : []),
           ].map((tab) => {
             const active = orderType === tab.type;
             return (
@@ -756,6 +946,10 @@ export function CustomerStorefrontClient({
                           <span className="rounded-full bg-[#F5F5F7] px-3 py-1.5 text-xs font-semibold text-[#515154]">
                             {lang === 'ID' ? 'Stok Habis' : 'Sold Out'}
                           </span>
+                        ) : !isStoreOpenNow ? (
+                          <span className="rounded-full bg-[#F5F5F7] px-3 py-1.5 text-xs font-semibold text-[#515154]">
+                            {lang === 'ID' ? 'Toko Tutup' : 'Closed'}
+                          </span>
                         ) : qty === 0 ? (
                           <button
                             type="button"
@@ -765,12 +959,12 @@ export function CustomerStorefrontClient({
                             {lang === 'ID' ? '+ Tambah' : '+ Add'}
                           </button>
                         ) : (
-                          <div className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-apple-blue/10 px-1.5 py-1 ring-1 ring-apple-blue/30">
+                          <div className="inline-flex min-h-[44px] items-center gap-1 rounded-full bg-apple-blue/10 px-1 py-1 ring-1 ring-apple-blue/30">
                             <button
                               type="button"
-                              aria-label={`Kurangi ${title}`}
+                              aria-label={lang === 'ID' ? `Kurangi ${title}` : `Decrease ${title}`}
                               onClick={() => updateCartQty(item.id, -1)}
-                              className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#1D1D1F] shadow-sm"
+                              className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#1D1D1F] shadow-sm"
                             >
                               <Minus aria-hidden="true" weight="bold" className="h-3.5 w-3.5" />
                             </button>
@@ -779,9 +973,9 @@ export function CustomerStorefrontClient({
                             </span>
                             <button
                               type="button"
-                              aria-label={`Tambah ${title}`}
+                              aria-label={lang === 'ID' ? `Tambah ${title}` : `Increase ${title}`}
                               onClick={() => updateCartQty(item.id, 1)}
-                              className="flex h-9 w-9 items-center justify-center rounded-full bg-apple-blue text-white shadow-sm"
+                              className="flex h-10 w-10 items-center justify-center rounded-full bg-apple-blue text-white shadow-sm"
                             >
                               <Plus aria-hidden="true" weight="bold" className="h-3.5 w-3.5" />
                             </button>
@@ -805,12 +999,12 @@ export function CustomerStorefrontClient({
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 76, opacity: 0, scale: 0.94 }}
             transition={APPLE_SPRINGS.sheet}
-            className="fixed inset-x-0 bottom-4 z-40 mx-auto max-w-2xl px-4"
+            className="pb-safe fixed inset-x-0 bottom-4 z-40 mx-auto max-w-2xl px-4"
           >
             <button
               type="button"
               onClick={handleOpenCheckout}
-              className="apple-material-dark apple-interactive flex w-full items-center justify-between rounded-full px-5 py-3.5 text-white hover:brightness-110"
+              className="apple-material-dark apple-interactive flex min-h-[54px] w-full items-center justify-between rounded-full px-5 py-3 text-white hover:brightness-110"
             >
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-apple-blue font-mono text-xs font-bold tabular-nums text-white shadow-sm">
@@ -822,10 +1016,14 @@ export function CustomerStorefrontClient({
                   </p>
                   <p className="apple-caption text-[11px] text-zinc-300">
                     {orderType === OrderType.WALK_IN_TABLE
-                      ? tableNumber || 'Dine-In'
+                      ? tableNumber || (lang === 'ID' ? 'Makan di Meja' : 'Dine-In')
                       : orderType === OrderType.SELF_DELIVERY
-                      ? 'Self-Delivery'
-                      : 'Pre-Order Pick Up'}
+                        ? lang === 'ID'
+                          ? 'Antar Kurir Toko'
+                          : 'Self-Delivery'
+                        : lang === 'ID'
+                          ? 'Pre-Order Ambil'
+                          : 'Pre-Order Pick Up'}
                   </p>
                 </div>
               </div>
@@ -835,7 +1033,7 @@ export function CustomerStorefrontClient({
                   {formatIdr(cartSummary.totalAmountIdr)}
                 </span>
                 <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-bold text-white">
-                  {lang === 'ID' ? 'Checkout →' : 'Checkout →'}
+                  {lang === 'ID' ? 'Pesan →' : 'Checkout →'}
                 </span>
               </div>
             </button>
@@ -888,7 +1086,11 @@ export function CustomerStorefrontClient({
           </div>
         </div>
 
-        <form onSubmit={handlePlaceOrder} className="max-h-[80vh] space-y-5 overflow-y-auto p-6">
+        <form
+          onSubmit={handlePlaceOrder}
+          noValidate
+          className="max-h-[80vh] space-y-5 overflow-y-auto p-6"
+        >
           {checkoutError && (
             <div
               role="alert"
@@ -905,16 +1107,29 @@ export function CustomerStorefrontClient({
                 {lang === 'ID' ? 'Nama Anda' : 'Customer Name'} <span className="text-red-500">*</span>
               </label>
               <input
+                ref={custNameInputRef}
                 id="custName"
                 type="text"
                 required
                 autoFocus
                 autoComplete="name"
+                aria-invalid={Boolean(fieldErrors.customerName)}
+                aria-describedby={fieldErrors.customerName ? 'err-custName' : undefined}
                 value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                placeholder="Contoh: Budi Santoso"
-                className="mt-1 min-h-[46px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/60 px-4 text-sm outline-none focus:border-apple-blue focus:bg-white"
+                onChange={(e) => {
+                  setCustomerName(e.target.value);
+                  if (fieldErrors.customerName) {
+                    setFieldErrors((prev) => ({ ...prev, customerName: undefined }));
+                  }
+                }}
+                placeholder={lang === 'ID' ? 'Contoh: Budi Santoso' : 'e.g. Alex Johnson'}
+                className="mt-1 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/60 px-4 text-sm outline-none focus:border-apple-blue focus:bg-white aria-[invalid=true]:border-[#D70015]"
               />
+              {fieldErrors.customerName && (
+                <p id="err-custName" className="mt-1 text-[11px] font-semibold text-[#D70015]">
+                  {fieldErrors.customerName}
+                </p>
+              )}
             </div>
 
             <div>
@@ -923,21 +1138,35 @@ export function CustomerStorefrontClient({
                 <span className="text-red-500">*</span>
               </label>
               <input
+                ref={custWaInputRef}
                 id="custWa"
                 type="tel"
                 inputMode="tel"
                 required
                 autoComplete="tel"
+                aria-invalid={Boolean(fieldErrors.customerWhatsapp)}
+                aria-describedby={fieldErrors.customerWhatsapp ? 'err-custWa' : 'hint-custWa'}
                 value={customerWhatsapp}
-                onChange={(e) => setCustomerWhatsapp(e.target.value)}
+                onChange={(e) => {
+                  setCustomerWhatsapp(e.target.value);
+                  if (fieldErrors.customerWhatsapp) {
+                    setFieldErrors((prev) => ({ ...prev, customerWhatsapp: undefined }));
+                  }
+                }}
                 placeholder="0812xxxxxxxx"
-                className="mt-1 min-h-[46px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/60 px-4 font-mono text-sm outline-none focus:border-apple-blue focus:bg-white"
+                className="mt-1 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/60 px-4 font-mono text-sm outline-none focus:border-apple-blue focus:bg-white aria-[invalid=true]:border-[#D70015]"
               />
-              <p className="mt-1 text-[11px] text-zinc-500">
-                {lang === 'ID'
-                  ? 'Nota, status konfirmasi stok, & notifikasi makanan siap dikirim via WhatsApp.'
-                  : 'Stock confirmation & payment invoice links are sent via WhatsApp.'}
-              </p>
+              {fieldErrors.customerWhatsapp ? (
+                <p id="err-custWa" className="mt-1 text-[11px] font-semibold text-[#D70015]">
+                  {fieldErrors.customerWhatsapp}
+                </p>
+              ) : (
+                <p id="hint-custWa" className="mt-1 text-[11px] text-zinc-500">
+                  {lang === 'ID'
+                    ? 'Nota, status konfirmasi stok, & notifikasi makanan siap dikirim via WhatsApp.'
+                    : 'Stock confirmation & payment invoice links are sent via WhatsApp.'}
+                </p>
+              )}
             </div>
 
             {orderType === OrderType.WALK_IN_TABLE && (
@@ -953,12 +1182,80 @@ export function CustomerStorefrontClient({
                   onChange={(e) => setTableNumber(e.target.value.toUpperCase())}
                   placeholder="TABLE 04"
                   className={cn(
-                    'mt-1 min-h-[44px] w-full rounded-2xl border px-3.5 font-mono text-xs font-bold uppercase',
+                    'mt-1 min-h-[48px] w-full rounded-2xl border px-3.5 font-mono text-xs font-bold uppercase',
                     isTableLocked
                       ? 'border-apple-blue/30 bg-apple-blue/5 text-apple-blue'
                       : 'border-zinc-200 bg-[#F5F5F7]/60 text-zinc-950'
                   )}
                 />
+              </div>
+            )}
+
+            {orderType === OrderType.PRE_ORDER_PICKUP && (
+              <div>
+                <label htmlFor="modalPickupTime" className="block text-xs font-semibold text-zinc-800">
+                  {lang === 'ID' ? 'Waktu Pengambilan (Pick-Up)' : 'Estimated Pick-Up Time'}{' '}
+                  <span className="text-red-500">*</span>
+                </label>
+                <input
+                  ref={pickupInputRef}
+                  id="modalPickupTime"
+                  type="datetime-local"
+                  required
+                  aria-invalid={Boolean(fieldErrors.scheduledPickupTime)}
+                  aria-describedby={fieldErrors.scheduledPickupTime ? 'err-pickupTime' : undefined}
+                  value={scheduledPickupTime}
+                  onChange={(e) => {
+                    setScheduledPickupTime(e.target.value);
+                    if (fieldErrors.scheduledPickupTime) {
+                      setFieldErrors((prev) => ({ ...prev, scheduledPickupTime: undefined }));
+                    }
+                  }}
+                  className="mt-1 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/60 px-4 text-xs font-medium outline-none focus:border-apple-blue focus:bg-white aria-[invalid=true]:border-[#D70015]"
+                />
+                {fieldErrors.scheduledPickupTime && (
+                  <p id="err-pickupTime" className="mt-1 text-[11px] font-semibold text-[#D70015]">
+                    {fieldErrors.scheduledPickupTime}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {orderType === OrderType.SELF_DELIVERY && (
+              <div>
+                <label
+                  htmlFor="modalDeliveryAddress"
+                  className="block text-xs font-semibold text-zinc-800"
+                >
+                  {lang === 'ID' ? 'Alamat Pengantaran Lengkap' : 'Full Delivery Address'}{' '}
+                  <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  ref={addressInputRef}
+                  id="modalDeliveryAddress"
+                  rows={2}
+                  required
+                  aria-invalid={Boolean(fieldErrors.deliveryAddress)}
+                  aria-describedby={fieldErrors.deliveryAddress ? 'err-deliveryAddr' : undefined}
+                  value={deliveryAddress}
+                  onChange={(e) => {
+                    setDeliveryAddress(e.target.value);
+                    if (fieldErrors.deliveryAddress) {
+                      setFieldErrors((prev) => ({ ...prev, deliveryAddress: undefined }));
+                    }
+                  }}
+                  placeholder={
+                    lang === 'ID'
+                      ? 'Jl. Nama Jalan, No. Rumah, Patokan...'
+                      : 'Street address, unit number, landmark...'
+                  }
+                  className="mt-1 w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/60 p-3 text-xs outline-none focus:border-apple-blue focus:bg-white aria-[invalid=true]:border-[#D70015]"
+                />
+                {fieldErrors.deliveryAddress && (
+                  <p id="err-deliveryAddr" className="mt-1 text-[11px] font-semibold text-[#D70015]">
+                    {fieldErrors.deliveryAddress}
+                  </p>
+                )}
               </div>
             )}
 
@@ -989,7 +1286,7 @@ export function CustomerStorefrontClient({
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
               <label
                 className={cn(
-                  'flex cursor-pointer items-center gap-3 rounded-2xl border p-3.5 transition-all',
+                  'flex min-h-[48px] cursor-pointer items-center gap-3 rounded-2xl border p-3.5 transition-all',
                   paymentType === PaymentType.BANK_TRANSFER_QRIS
                     ? 'border-apple-blue bg-apple-blue/5 ring-2 ring-apple-blue/15'
                     : 'border-zinc-200 bg-white'
@@ -1003,14 +1300,20 @@ export function CustomerStorefrontClient({
                   className="accent-apple-blue"
                 />
                 <div>
-                  <p className="text-xs font-bold text-zinc-950">Bank Transfer / QRIS</p>
-                  <p className="text-[10px] text-zinc-500">Upload bukti setelah stok ok</p>
+                  <p className="text-xs font-bold text-zinc-950">
+                    {lang === 'ID' ? 'Transfer Bank / QRIS' : 'Bank Transfer / QRIS'}
+                  </p>
+                  <p className="text-[10px] text-zinc-500">
+                    {lang === 'ID'
+                      ? 'Unggah bukti setelah stok dikonfirmasi'
+                      : 'Upload proof after stock confirmation'}
+                  </p>
                 </div>
               </label>
 
               <label
                 className={cn(
-                  'flex cursor-pointer items-center gap-3 rounded-2xl border p-3.5 transition-all',
+                  'flex min-h-[48px] cursor-pointer items-center gap-3 rounded-2xl border p-3.5 transition-all',
                   paymentType === PaymentType.CASH
                     ? 'border-apple-blue bg-apple-blue/5 ring-2 ring-apple-blue/15'
                     : 'border-zinc-200 bg-white'
@@ -1024,8 +1327,14 @@ export function CustomerStorefrontClient({
                   className="accent-apple-blue"
                 />
                 <div>
-                  <p className="text-xs font-bold text-zinc-950">Bayar di Kasir (Cash)</p>
-                  <p className="text-[10px] text-zinc-500">Bayar tunai langsung di kasir</p>
+                  <p className="text-xs font-bold text-zinc-950">
+                    {lang === 'ID' ? 'Bayar di Kasir (Tunai)' : 'Cash at Cashier'}
+                  </p>
+                  <p className="text-[10px] text-zinc-500">
+                    {lang === 'ID'
+                      ? 'Bayar tunai langsung di kasir'
+                      : 'Pay directly in cash at cashier'}
+                  </p>
                 </div>
               </label>
             </div>
@@ -1033,7 +1342,9 @@ export function CustomerStorefrontClient({
 
           {/* Order Summary Breakdown */}
           <div className="rounded-2xl border border-black/[0.06] bg-[#F5F5F7] p-4 text-xs">
-            <p className="mb-2 font-bold text-zinc-950">Ringkasan Pesanan</p>
+            <p className="mb-2 font-bold text-zinc-950">
+              {lang === 'ID' ? 'Ringkasan Pesanan' : 'Order Summary'}
+            </p>
             <div className="space-y-1.5">
               {cartSummary.detailed.map((d) => (
                 <div key={d.menuItemId} className="flex justify-between gap-2 text-zinc-700">
@@ -1054,14 +1365,14 @@ export function CustomerStorefrontClient({
               </div>
               {cartSummary.deliveryFeeIdr > 0 && (
                 <div className="flex justify-between text-zinc-600">
-                  <span>Ongkos Kirim Toko</span>
+                  <span>{lang === 'ID' ? 'Ongkos Kirim Toko' : 'Store Delivery Fee'}</span>
                   <span className="font-mono tabular-nums">
                     {formatIdr(cartSummary.deliveryFeeIdr)}
                   </span>
                 </div>
               )}
               <div className="flex justify-between pt-1 text-sm font-bold text-zinc-950">
-                <span>Total Tagihan</span>
+                <span>{lang === 'ID' ? 'Total Tagihan' : 'Total Due'}</span>
                 <span className="font-mono tabular-nums text-apple-blue">
                   {formatIdr(cartSummary.totalAmountIdr)}
                 </span>
@@ -1074,7 +1385,13 @@ export function CustomerStorefrontClient({
             disabled={submitting}
             className="apple-interactive flex min-h-[48px] w-full items-center justify-center rounded-full bg-apple-blue px-6 py-3 text-sm font-bold text-white shadow-apple-sm hover:bg-apple-blueHover disabled:opacity-60"
           >
-            {submitting ? 'Mengirim Pesanan...' : 'Place Order & Request Confirmation'}
+            {submitting
+              ? lang === 'ID'
+                ? 'Mengirim Pesanan...'
+                : 'Sending Order...'
+              : lang === 'ID'
+                ? 'Kirim Pesanan & Minta Konfirmasi'
+                : 'Place Order & Request Confirmation'}
           </button>
         </form>
       </dialog>
