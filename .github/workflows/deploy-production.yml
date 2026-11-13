@@ -13,9 +13,10 @@ concurrency:
 env:
   SSH_HOST: ${{ secrets.VPS_IP || secrets.SSH_HOST }}
   SSH_USER: ${{ secrets.SSH_USER || 'root' }}
-  SSH_PORT: ${{ secrets.SSH_PORT || 22 }}
+  SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
   APP_DIR: /var/www/saber-fnbsupport
   DOMAIN: fnbsupport.saberconsulting.id
+  FALLBACK_DOMAIN: fnbsupport.31.97.66.234.sslip.io
   PORT: 3040
 
 jobs:
@@ -45,8 +46,21 @@ jobs:
       - name: Build Production Next.js App
         run: npm run build
 
+      - name: Check VPS SSH Secrets Availability
+        id: vps_check
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY }}
+          SSH_HOST_VAL: ${{ secrets.VPS_IP || secrets.SSH_HOST }}
+        run: |
+          if [ -n "$SSH_KEY" ] && [ -n "$SSH_HOST_VAL" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Remote VPS deploy skipped: configure VPS_IP, SSH_PRIVATE_KEY, and SSH_KNOWN_HOSTS repository secrets to enable automated VPS rollout."
+          fi
+
       - name: Setup SSH Connection (Pinned Host Key Policy)
-        if: ${{ secrets.SSH_PRIVATE_KEY != '' || secrets.VPS_SSH_KEY != '' }}
+        if: steps.vps_check.outputs.ready == 'true'
         env:
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY || secrets.VPS_SSH_KEY }}
           SSH_KNOWN_HOSTS_DATA: ${{ secrets.SSH_KNOWN_HOSTS }}
@@ -63,15 +77,16 @@ jobs:
           chmod 644 ~/.ssh/known_hosts
 
       - name: Ensure Target Directory Exists on VPS
-        if: ${{ secrets.SSH_PRIVATE_KEY != '' || secrets.VPS_SSH_KEY != '' }}
+        if: steps.vps_check.outputs.ready == 'true'
         run: |
           ssh -i ~/.ssh/id_ed25519 -p "${SSH_PORT}" -o StrictHostKeyChecking=yes "${SSH_USER}@${SSH_HOST}" "mkdir -p ${APP_DIR}"
 
       - name: Sync Project Files to Production VPS
-        if: ${{ secrets.SSH_PRIVATE_KEY != '' || secrets.VPS_SSH_KEY != '' }}
+        if: steps.vps_check.outputs.ready == 'true'
         run: |
           rsync -avz --delete \
             --exclude '.git*' \
+            --exclude '.env*' \
             --exclude 'node_modules' \
             --exclude '.next' \
             -e "ssh -i ~/.ssh/id_ed25519 -p ${SSH_PORT} -o StrictHostKeyChecking=yes" \
@@ -79,33 +94,58 @@ jobs:
             "${SSH_USER}@${SSH_HOST}:${APP_DIR}/"
 
       - name: Deploy via Docker Compose
-        if: ${{ secrets.SSH_PRIVATE_KEY != '' || secrets.VPS_SSH_KEY != '' }}
+        if: steps.vps_check.outputs.ready == 'true'
         run: |
           ssh -i ~/.ssh/id_ed25519 -p "${SSH_PORT}" -o StrictHostKeyChecking=yes "${SSH_USER}@${SSH_HOST}" "cd ${APP_DIR} && PORT=${PORT} CONTAINER_NAME=saber-fnbsupport-production-app docker compose -p saber-fnbsupport-production up -d --build --remove-orphans"
 
       - name: Configure Host Nginx Reverse Proxy (Hardened + SSL)
-        if: ${{ secrets.SSH_PRIVATE_KEY != '' || secrets.VPS_SSH_KEY != '' }}
+        if: steps.vps_check.outputs.ready == 'true'
         run: |
           ssh -i ~/.ssh/id_ed25519 -p "${SSH_PORT}" -o StrictHostKeyChecking=yes "${SSH_USER}@${SSH_HOST}" "cat << 'EOF' > /etc/nginx/sites-available/saber-fnbsupport-production
           server {
               listen 80;
-              server_name ${DOMAIN} *.saberconsulting.id;
+              server_name ${DOMAIN} ${FALLBACK_DOMAIN};
+              client_max_body_size 20M;
+
+              server_tokens off;
+              add_header X-Content-Type-Options \"nosniff\" always;
+              add_header X-Frame-Options \"SAMEORIGIN\" always;
+              add_header X-XSS-Protection \"1; mode=block\" always;
+              add_header Referrer-Policy \"strict-origin-when-cross-origin\" always;
 
               location /.well-known/acme-challenge/ {
                   root /var/www/html;
               }
 
               location / {
-                  return 301 https://\$host\$request_uri;
+                  proxy_pass http://127.0.0.1:${PORT};
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade \$http_upgrade;
+                  proxy_set_header Connection \"upgrade\";
+                  proxy_set_header Host \$host;
+                  proxy_set_header X-Forwarded-Host \$host;
+                  proxy_set_header X-Real-IP \$remote_addr;
+                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto \$scheme;
               }
           }
+          EOF
+          SSL_DOMAIN=\"\"
+          if [ -f /etc/letsencrypt/live/${DOMAIN}/fullchain.pem ]; then
+            SSL_DOMAIN=\"${DOMAIN}\"
+          elif [ -f /etc/letsencrypt/live/${FALLBACK_DOMAIN}/fullchain.pem ]; then
+            SSL_DOMAIN=\"${FALLBACK_DOMAIN}\"
+          fi
+          if [ -n \"\$SSL_DOMAIN\" ]; then
+            cat << 'EOF' | sed \"s|__SSL_DOMAIN__|\$SSL_DOMAIN|g\" >> /etc/nginx/sites-available/saber-fnbsupport-production
 
           server {
               listen 443 ssl;
-              server_name ${DOMAIN} *.saberconsulting.id;
+              server_name ${DOMAIN} ${FALLBACK_DOMAIN};
+              client_max_body_size 20M;
 
-              ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
-              ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+              ssl_certificate /etc/letsencrypt/live/__SSL_DOMAIN__/fullchain.pem;
+              ssl_certificate_key /etc/letsencrypt/live/__SSL_DOMAIN__/privkey.pem;
               include /etc/letsencrypt/options-ssl-nginx.conf;
               ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 
@@ -121,17 +161,18 @@ jobs:
                   proxy_set_header Upgrade \$http_upgrade;
                   proxy_set_header Connection \"upgrade\";
                   proxy_set_header Host \$host;
+                  proxy_set_header X-Forwarded-Host \$host;
                   proxy_set_header X-Real-IP \$remote_addr;
                   proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
                   proxy_set_header X-Forwarded-Proto \$scheme;
               }
           }
           EOF
+          fi
           ln -sf /etc/nginx/sites-available/saber-fnbsupport-production /etc/nginx/sites-enabled/saber-fnbsupport-production && nginx -t && nginx -s reload"
 
       - name: Verify Live Production Health
-        if: ${{ secrets.SSH_PRIVATE_KEY != '' || secrets.VPS_SSH_KEY != '' }}
+        if: steps.vps_check.outputs.ready == 'true'
         run: |
           ssh -i ~/.ssh/id_ed25519 -p "${SSH_PORT}" -o StrictHostKeyChecking=yes "${SSH_USER}@${SSH_HOST}" "curl -fsS --max-time 15 http://127.0.0.1:${PORT}/ > /dev/null"
           echo "✓ Production healthy on port ${PORT}"
-

@@ -1,0 +1,483 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================================
+ * 1. APPLE HIG + STUDIO CRAFT COMPACT TOKEN SYSTEM
+ *    References:
+ *    - dickwu/apple-design-skill: color.md, dark-mode.md, accessibility.md,
+ *      liquid-glass.md, typography.md, layout.md, buttons.md, sheets.md
+ *    - emilkowalski/skills: apple-design (Fluid Interfaces & Spring Physics)
+ *    - Modern Web Guidance: natural-interactions, typography, visual-effects
+ * ============================================================================ */
+:root {
+  /* Content Layer Hierarchy (Strictly Opaque — NO Glass in Content Layer per liquid-glass.md) */
+  --surface: #F5F5F7;
+  --bg-grouped-primary: #F5F5F7;
+  --bg-grouped-secondary: #FFFFFF;
+  --bg-grouped-tertiary: #EFEFF4;
+  --bg-elevated-sheet: #FFFFFF;
+
+  /* Measured WCAG AA/AAA Text Hierarchy (accessibility.md › Vision) */
+  --label-primary: #1D1D1F;   /* 16.8:1 on #FFFFFF, 15.3:1 on #F5F5F7 (AAA) */
+  --label-secondary: #515154; /* 7.8:1 on #FFFFFF, 7.1:1 on #F5F5F7 (AAA) */
+  --label-tertiary: #6E6E73;  /* 5.1:1 on #FFFFFF, 4.6:1 on #F5F5F7 (AA) */
+
+  /* Semantic System Accents (color.md › System colors) */
+  --accent: #0066CC;          /* 5.6:1 on #FFFFFF */
+  --accent-hover: #0055B3;
+  --signal-green: #1D7D32;    /* 5.2:1 on #FFFFFF */
+  --signal-amber: #B25000;    /* 5.1:1 on #FFFFFF */
+  --signal-red: #D70015;      /* 5.4:1 on #FFFFFF */
+  --separator-hairline: rgba(60, 60, 67, 0.14);
+
+  /* Perceptual Color Space Interpolation (Modern Web Guidance visual-effects) */
+  --in-oklab: ;
+  --in-oklch: ;
+  --target-size: 32px;
+
+  font: 100%/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", system-ui, sans-serif;
+  font-optical-sizing: auto;
+}
+
+@media (pointer: coarse) {
+  :root {
+    --target-size: 44px;
+  }
+}
+
+.pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+@supports (background: linear-gradient(in oklab, white, black)) {
+  :root {
+    --in-oklab: in oklab;
+    --in-oklch: in oklch;
+  }
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  background-color: var(--bg-grouped-primary);
+  color: var(--label-primary);
+  font-optical-sizing: auto;
+}
+
+body {
+  background-color: var(--bg-grouped-primary);
+  color: var(--label-primary);
+  line-height: 1.5;
+  text-align: start;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  overflow-wrap: break-word;
+}
+
+/* ============================================================================
+ * 2. APPLE HIG DYNAMIC TYPE & TRACKING SCALE (typography.md › Specifications)
+ *    - Weights restricted to Regular (400), Medium (500), Semibold (600), Bold (700)
+ *    - Never Ultralight/Thin/Light (typography.md › Ensuring legibility)
+ *    - Max fluid scale ratio <= 2.5x min (Modern Web Guidance typography)
+ * ============================================================================ */
+h1,
+h2,
+h3,
+th {
+  font-optical-sizing: auto;
+  letter-spacing: -0.02em;
+}
+
+p,
+blockquote,
+dd {
+  text-wrap: pretty;
+  overflow-wrap: break-word;
+}
+
+.apple-display,
+.hig-large-title {
+  /* Max (2.75rem) is 1.57x min (1.75rem) <= 2.5x per WCAG 1.4.4 */
+  font-size: clamp(1.75rem, 1.15rem + 2vw, 2.75rem);
+  line-height: 1.08;
+  letter-spacing: -0.022em;
+  font-weight: 700;
+  font-optical-sizing: auto;
+  text-wrap: balance;
+}
+
+.hig-culinary-serif {
+  font-family: "New York", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  font-size: clamp(1.625rem, 1.1rem + 1.8vw, 2.5rem);
+  line-height: 1.1;
+  letter-spacing: -0.018em;
+  font-weight: 700;
+  text-wrap: balance;
+}
+
+.apple-headline,
+.hig-title-2 {
+  font-size: clamp(1.25rem, 1rem + 0.8vw, 1.625rem);
+  line-height: 1.18;
+  letter-spacing: -0.019em;
+  font-weight: 700;
+  font-optical-sizing: auto;
+  text-wrap: balance;
+}
+
+.hig-headline {
+  font-size: 1.0625rem; /* 17pt iOS Headline */
+  line-height: 1.29;    /* 22pt leading */
+  letter-spacing: -0.016em;
+  font-weight: 600;
+}
+
+.hig-body {
+  font-size: 1.0625rem; /* 17pt iOS Body default */
+  line-height: 1.47;    /* 24-25pt comfortable reading leading */
+  letter-spacing: -0.016em;
+  font-weight: 400;
+}
+
+.apple-caption,
+.hig-caption {
+  font-size: 0.75rem;   /* 12pt Caption 1 (>= 11pt minimum floor) */
+  letter-spacing: 0.008em;
+  line-height: 1.35;
+}
+
+/* ============================================================================
+ * 3. FLUID INTERACTION & FOCUS STATES (Emil §1 + HIG accessibility.md)
+ *    - Instant pointer-down response
+ *    - 2px CanvasText focus-visible ring with 3px offset (>= 3:1 contrast)
+ * ============================================================================ */
+:where(button, [role="button"], .apple-interactive) {
+  transition:
+    transform 100ms ease-out,
+    box-shadow 150ms ease-out,
+    background-color 150ms ease-out,
+    border-color 150ms ease-out,
+    color 150ms ease-out;
+}
+
+:where(button:not(:disabled), [role="button"]:not([aria-disabled="true"]), .apple-interactive):active {
+  transform: scale(0.97);
+}
+
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid CanvasText;
+  outline-offset: 3px;
+}
+
+/* ============================================================================
+ * 4. STRICT TWO-LAYER LIQUID GLASS SYSTEM (liquid-glass.md)
+ *    Rule 1: Liquid Glass belongs ONLY in the floating Functional Layer
+ *            (navigation bars, sticky category bars, floating basket, sheet headers).
+ *    Rule 2: Content Layer (cards, Kanban columns, tables) uses opaque surfaces.
+ *    Rule 3: Clear Glass over photos pairs blur(12px) with a 35% dark dimming layer.
+ *    Rule 4: Scroll Edge Effect softens the boundary beneath sticky bars.
+ * ============================================================================ */
+
+/* Regular Liquid Glass — Floating Navigation Bars, Sticky Toolbars & Sheet Chrome */
+.liquid-glass-regular,
+.liquid-glass-bar,
+.apple-material-toolbar {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  border: 1px solid rgba(60, 60, 67, 0.12);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.65),
+    0 6px 20px -8px rgba(0, 0, 0, 0.06);
+}
+
+/* Responsive Workspace Navbar (modern-web-guidance › navbar pattern) */
+.saber-header-inner > * {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.saber-site-header.is-measuring * {
+  transition: none !important;
+}
+
+.saber-site-header:not(.is-wide) .saber-site-menu:not([popover]) {
+  display: none;
+}
+
+.saber-menu-button {
+  anchor-name: --saber-menu-btn;
+}
+
+.saber-site-menu[popover] {
+  position: fixed;
+  inset: auto;
+  inset-block-start: 4.5rem;
+  inset-block-start: anchor(--saber-menu-btn bottom);
+  inset-inline-end: 0.75rem;
+  inline-size: min(86dvw, 22rem);
+  max-inline-size: calc(100dvw - 1.5rem);
+  block-size: fit-content;
+  max-block-size: calc(100dvh - 6rem);
+  margin: 0;
+  margin-block-start: 0.5rem;
+  overflow: auto;
+  padding: 0.75rem;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(15, 30, 54, 0.12);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: 0 24px 48px -12px rgba(15, 30, 54, 0.22);
+  transform-origin: top right;
+  opacity: 0;
+  transform: scale(0.95) translateY(-6px);
+}
+
+.saber-site-menu[popover]:is(:popover-open, .\:popover-open) {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.saber-site-menu[popover]::backdrop {
+  background: rgba(15, 30, 54, 0.24);
+  backdrop-filter: blur(4px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .saber-site-menu[popover] {
+    transition:
+      opacity 180ms ease-out,
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      display 220ms,
+      overlay 220ms;
+    transition-behavior: allow-discrete;
+  }
+
+  @starting-style {
+    .saber-site-menu[popover]:is(:popover-open, .\:popover-open) {
+      opacity: 0;
+      transform: scale(0.94) translateY(-8px);
+    }
+  }
+}
+
+.saber-site-header.is-wide .saber-menu-button {
+  display: none;
+}
+
+.saber-site-header.is-wide .saber-site-menu {
+  position: static;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  inline-size: auto;
+  max-inline-size: none;
+  block-size: auto;
+  max-block-size: none;
+  overflow: visible;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+  box-shadow: none;
+  opacity: 1;
+  transform: none;
+  translate: none;
+}
+
+.saber-site-header.is-wide .saber-site-menu::backdrop {
+  display: none;
+}
+
+.saber-site-header.is-wide .saber-mobile-context {
+  display: none;
+}
+
+/* Clear Liquid Glass — Floating Controls Over Rich Media/Hero Photography (liquid-glass.md › Which variant) */
+.liquid-glass-clear {
+  background: rgba(0, 0, 0, 0.35); /* 35% dimming layer per liquid-glass.md */
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.22),
+    0 8px 24px -6px rgba(0, 0, 0, 0.28);
+}
+
+/* Floating Dark Liquid Glass — Sticky Bottom Basket Pill & Sheet Action Bar */
+.liquid-glass-bar-dark,
+.apple-material-dark {
+  background: rgba(28, 28, 30, 0.86);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 24px 48px -12px rgba(0, 0, 0, 0.32),
+    0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+/* Content Layer Grouped Surface — Opaque Elevated Card (NO backdrop-blur in content layer) */
+.apple-hero-surface,
+.hig-grouped-card {
+  background: linear-gradient(
+    180deg var(--in-oklab),
+    #FFFFFF 0%,
+    #FAFAFC 100%
+  );
+  border: 1px solid rgba(60, 60, 67, 0.12);
+  box-shadow:
+    0 10px 28px -8px rgba(0, 0, 0, 0.05),
+    0 2px 6px -1px rgba(0, 0, 0, 0.03),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
+}
+
+/* Signature Studio Craft Element: Tactile Perforated Table Pass & Kitchen Ticket */
+.saber-ticket-pass {
+  position: relative;
+  background-color: #FFFFFF;
+  border: 1px solid rgba(60, 60, 67, 0.14);
+  box-shadow:
+    0 8px 24px -6px rgba(0, 0, 0, 0.06),
+    0 2px 5px -1px rgba(0, 0, 0, 0.03);
+}
+
+.saber-ticket-divider {
+  position: relative;
+  border-bottom: 1.5px dashed rgba(60, 60, 67, 0.2);
+}
+
+/* ============================================================================
+ * 5. NATIVE <dialog> SHEETS & SCROLL CONTAINMENT (sheets.md + natural-interactions)
+ * ============================================================================ */
+dialog:modal {
+  overscroll-behavior: contain;
+}
+
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background: rgba(29, 29, 31, 0.44);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  dialog[open] {
+    animation: apple-sheet-materialize 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@keyframes apple-sheet-materialize {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+    filter: blur(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+/* Native swipeable horizontal scrollers */
+.apple-snap-scroller {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.apple-snap-scroller > * {
+  scroll-snap-align: start;
+}
+
+/* Accessible form control sizing (>= 16px prevents iOS Safari auto-zoom) & user-invalid styling */
+input,
+textarea,
+select {
+  font: inherit;
+  font-size: max(1rem, 1em);
+}
+
+input:user-invalid,
+textarea:user-invalid,
+select:user-invalid {
+  border-color: var(--signal-red);
+}
+
+/* Tablist layout & horizontal scroller affordances */
+[role="tab"] {
+  position: relative;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ============================================================================
+ * 6. ACCESSIBILITY MEDIA QUERIES (accessibility.md + Emil §14)
+ * ============================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 150ms !important;
+    scroll-behavior: auto !important;
+  }
+  :where(button, [role="button"], .apple-interactive):active {
+    transform: none !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .liquid-glass-regular,
+  .apple-material-toolbar {
+    background: #FFFFFF !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .liquid-glass-clear,
+  .liquid-glass-bar-dark,
+  .apple-material-dark {
+    background: #1C1C1E !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  dialog::backdrop {
+    background: rgba(28, 28, 30, 0.82) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .liquid-glass-regular,
+  .apple-material-toolbar,
+  .apple-hero-surface,
+  .hig-grouped-card,
+  .saber-ticket-pass,
+  dialog {
+    border: 1.5px solid #1D1D1F !important;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #FFFFFF !important;
+  }
+}

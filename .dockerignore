@@ -1,0 +1,7 @@
+node_modules
+.next
+.git
+.env*
+.saber-fnb-db.json
+.saber-session-secret
+
