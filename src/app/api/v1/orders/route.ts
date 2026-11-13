@@ -24,14 +24,22 @@ function releaseOrderTable(
 ) {
   store.tableSessions.forEach((t) => {
     if (t.branchId !== branchId) return;
-    const matchesOrder = t.activeOrderId === order.id;
+    const existingIds = Array.isArray(t.activeOrderIds)
+      ? t.activeOrderIds.filter((id) => id !== order.id)
+      : t.activeOrderId && t.activeOrderId !== order.id
+        ? [t.activeOrderId]
+        : [];
+    const matchesOrder =
+      t.activeOrderId === order.id ||
+      (Array.isArray(t.activeOrderIds) && t.activeOrderIds.includes(order.id));
     const matchesTableWithoutOtherOrder =
       order.tableNumber &&
       t.tableNumber.toUpperCase() === order.tableNumber.toUpperCase() &&
-      (!t.activeOrderId || t.activeOrderId === order.id);
+      existingIds.length === 0;
     if (matchesOrder || matchesTableWithoutOtherOrder) {
-      t.isOccupied = false;
-      t.activeOrderId = undefined;
+      t.activeOrderIds = existingIds;
+      t.activeOrderId = existingIds[0];
+      t.isOccupied = existingIds.length > 0;
     }
   });
 }

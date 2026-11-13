@@ -177,3 +177,123 @@ export function evaluateStoreHours(rawHours?: string, now: Date = new Date()): S
     schedule,
   };
 }
+
+export interface ScheduledValidationResult {
+  valid: boolean;
+  isoString?: string;
+  errorId?: string;
+  errorEn?: string;
+}
+
+/**
+ * Formats a Date into `YYYY-MM-DDTHH:mm` in Asia/Jakarta (WIB) for `<input type="datetime-local" min=...>`.
+ */
+export function getNowLocalInputWib(now: Date = new Date()): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(now);
+
+  const get = (type: string) => parts.find((p) => p.type === type)?.value || '00';
+  const hour = get('hour') === '24' ? '00' : get('hour');
+  return `${get('year')}-${get('month')}-${get('day')}T${hour}:${get('minute')}`;
+}
+
+/**
+ * Parses and validates a scheduled pickup/delivery datetime string in WIB (UTC+7):
+ * - Rejects invalid/unparseable date strings
+ * - Rejects timestamps in the past (with 2-minute grace window)
+ * - Rejects timestamps more than 14 days in the future
+ * - Rejects timestamps outside the branch operationalHours when configured
+ */
+export function validateScheduledDateTime(
+  rawValue: string | undefined | null,
+  rawHours?: string,
+  now: Date = new Date()
+): ScheduledValidationResult {
+  const trimmed = String(rawValue || '').trim();
+  if (!trimmed) {
+    return {
+      valid: false,
+      errorId: 'Tanggal dan jam terjadwal wajib diisi.',
+      errorEn: 'Scheduled date and time are required.',
+    };
+  }
+
+  // If input is `YYYY-MM-DDTHH:mm` (no timezone), interpret as WIB (+07:00)
+  const hasTz = /(?:Z|[+-]\d{2}:\d{2})$/i.test(trimmed);
+  const normalized = hasTz ? trimmed : `${trimmed.length === 16 ? `${trimmed}:00` : trimmed}+07:00`;
+  const parsed = new Date(normalized);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return {
+      valid: false,
+      errorId: 'Format tanggal & jam tidak valid. Pilih ulang dari kalender.',
+      errorEn: 'Invalid date & time format. Please select a valid date and time.',
+    };
+  }
+
+  const minAllowedMs = now.getTime() - 2 * 60 * 1000;
+  if (parsed.getTime() < minAllowedMs) {
+    return {
+      valid: false,
+      errorId: 'Waktu jadwal tidak boleh di masa lalu. Pilih waktu setelah sekarang.',
+      errorEn: 'Scheduled time cannot be in the past. Please choose a future time.',
+    };
+  }
+
+  const maxAllowedMs = now.getTime() + 14 * 24 * 60 * 60 * 1000;
+  if (parsed.getTime() > maxAllowedMs) {
+    return {
+      valid: false,
+      errorId: 'Jadwal maksimal 14 hari ke depan.',
+      errorEn: 'Scheduled orders can be placed up to 14 days ahead.',
+    };
+  }
+
+  const evaluation = evaluateStoreHours(rawHours, parsed);
+  if (evaluation.hasSchedule && !evaluation.isWithinHours) {
+    const dayLabelId = evaluation.today?.dayLabelId || 'hari tersebut';
+    const dayLabelEn = evaluation.today?.dayLabelEn || 'that day';
+    const hrs = evaluation.today?.isOpen
+      ? `${evaluation.today.openTime}–${evaluation.today.closeTime} WIB`
+      : null;
+    return {
+      valid: false,
+      errorId: hrs
+        ? `Di luar jam operasional restoran pada ${dayLabelId} (${hrs}).`
+        : `Restoran tutup pada hari ${dayLabelId}. Pilih hari/jam operasional lain.`,
+      errorEn: hrs
+        ? `Outside restaurant operating hours on ${dayLabelEn} (${hrs}).`
+        : `Restaurant is closed on ${dayLabelEn}. Please pick another operating day/time.`,
+    };
+  }
+
+  return {
+    valid: true,
+    isoString: parsed.toISOString(),
+  };
+}
+
+export function formatScheduledWib(rawValue?: string | null, lang: 'id' | 'en' = 'id'): string {
+  if (!rawValue) return '-';
+  const hasTz = /(?:Z|[+-]\d{2}:\d{2})$/i.test(rawValue.trim());
+  const normalized = hasTz ? rawValue.trim() : `${rawValue.trim()}+07:00`;
+  const d = new Date(normalized);
+  if (Number.isNaN(d.getTime())) return rawValue;
+  return new Intl.DateTimeFormat(lang === 'en' ? 'en-US' : 'id-ID', {
+    timeZone: 'Asia/Jakarta',
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(d) + ' WIB';
+}
+

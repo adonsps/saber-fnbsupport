@@ -10,7 +10,9 @@ import {
   resolveWorkspaceMerchant,
   saveStore,
 } from '@/lib/store';
-import { evaluateStoreHours } from '@/lib/store-hours';
+import { evaluateStoreHours, formatScheduledWib, validateScheduledDateTime } from '@/lib/store-hours';
+import { buildGoogleMapsUrl, haversineDistanceKm, parseLatLng } from '@/lib/geo';
+import { getOrderTypeLabel } from '@/lib/order-labels';
 import {
   formatIdr,
   getOriginFromHeaders,
@@ -65,8 +67,11 @@ export async function POST(req: NextRequest) {
     const paymentType: PaymentType = body.paymentType || PaymentType.BANK_TRANSFER_QRIS;
     const tableNumber = body.tableNumber ? String(body.tableNumber).trim().toUpperCase() : undefined;
     const deliveryAddress = body.deliveryAddress ? String(body.deliveryAddress).trim() : undefined;
-    const scheduledPickupTime = body.scheduledPickupTime
+    const rawScheduledPickupTime = body.scheduledPickupTime
       ? String(body.scheduledPickupTime).trim()
+      : undefined;
+    const rawScheduledDeliveryTime = body.scheduledDeliveryTime
+      ? String(body.scheduledDeliveryTime).trim()
       : undefined;
     const specialNotes = body.specialNotes ? String(body.specialNotes).trim() : undefined;
 
@@ -85,6 +90,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Metode pembayaran tidak valid.' }, { status: 400 });
     }
 
+    let deliveryCoords: { lat: number; lng: number } | null = null;
+    let deliveryDistanceKm: number | undefined;
+    let validatedScheduledPickupTime: string | undefined;
+    let validatedScheduledDeliveryTime: string | undefined;
+
     if (orderType === OrderType.SELF_DELIVERY) {
       if (!branch.isSelfDeliveryEnabled) {
         return NextResponse.json(
@@ -98,13 +108,58 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
+      deliveryCoords = parseLatLng(body.deliveryLat, body.deliveryLng);
+      if (
+        deliveryCoords &&
+        typeof branch.branchLat === 'number' &&
+        typeof branch.branchLng === 'number'
+      ) {
+        deliveryDistanceKm = haversineDistanceKm(
+          { lat: branch.branchLat, lng: branch.branchLng },
+          deliveryCoords
+        );
+        if (branch.maxDeliveryRadiusKm > 0 && deliveryDistanceKm > branch.maxDeliveryRadiusKm) {
+          return NextResponse.json(
+            {
+              error: `Jarak pengantaran (${deliveryDistanceKm.toFixed(1)} km) melebihi batas radius kurir toko (${branch.maxDeliveryRadiusKm} km).`,
+            },
+            { status: 400 }
+          );
+        }
+      }
+      if (rawScheduledDeliveryTime) {
+        const schedCheck = validateScheduledDateTime(
+          rawScheduledDeliveryTime,
+          branch.operationalHours
+        );
+        if (!schedCheck.valid) {
+          return NextResponse.json(
+            { error: schedCheck.errorId || 'Waktu pengantaran terjadwal tidak valid.' },
+            { status: 400 }
+          );
+        }
+        validatedScheduledDeliveryTime = schedCheck.isoString;
+      }
     }
 
-    if (orderType === OrderType.PRE_ORDER_PICKUP && !scheduledPickupTime) {
-      return NextResponse.json(
-        { error: 'Waktu pengambilan (Pick-up) wajib dipilih.' },
-        { status: 400 }
+    if (orderType === OrderType.PRE_ORDER_PICKUP) {
+      if (!rawScheduledPickupTime) {
+        return NextResponse.json(
+          { error: 'Waktu pengambilan (Pick-up) wajib dipilih.' },
+          { status: 400 }
+        );
+      }
+      const schedCheck = validateScheduledDateTime(
+        rawScheduledPickupTime,
+        branch.operationalHours
       );
+      if (!schedCheck.valid) {
+        return NextResponse.json(
+          { error: schedCheck.errorId || 'Waktu pengambilan (Pick-up) tidak valid.' },
+          { status: 400 }
+        );
+      }
+      validatedScheduledPickupTime = schedCheck.isoString;
     }
 
     if (!Array.isArray(body.items) || body.items.length === 0) {
@@ -182,7 +237,13 @@ export async function POST(req: NextRequest) {
       customerWhatsapp,
       tableNumber: orderType === OrderType.WALK_IN_TABLE ? tableNumber || 'WALK-IN' : undefined,
       deliveryAddress: orderType === OrderType.SELF_DELIVERY ? deliveryAddress : undefined,
-      scheduledPickupTime: orderType === OrderType.PRE_ORDER_PICKUP ? scheduledPickupTime : undefined,
+      deliveryLat: orderType === OrderType.SELF_DELIVERY ? deliveryCoords?.lat : undefined,
+      deliveryLng: orderType === OrderType.SELF_DELIVERY ? deliveryCoords?.lng : undefined,
+      deliveryDistanceKm: orderType === OrderType.SELF_DELIVERY ? deliveryDistanceKm : undefined,
+      scheduledPickupTime:
+        orderType === OrderType.PRE_ORDER_PICKUP ? validatedScheduledPickupTime : undefined,
+      scheduledDeliveryTime:
+        orderType === OrderType.SELF_DELIVERY ? validatedScheduledDeliveryTime : undefined,
       subtotalIdr,
       deliveryFeeIdr,
       totalAmountIdr,
@@ -198,14 +259,25 @@ export async function POST(req: NextRequest) {
 
     store.orders.unshift(newOrder);
 
-    // Mark table occupied if walk-in table order in this branch
+    // Mark table occupied if walk-in table order in this branch (preserve concurrent activeOrderIds)
     if (orderType === OrderType.WALK_IN_TABLE && tableNumber) {
       const tbl = store.tableSessions.find(
         (t) => t.branchId === branch.id && t.tableNumber.toUpperCase() === tableNumber.toUpperCase()
       );
       if (tbl) {
+        const existingIds = Array.isArray(tbl.activeOrderIds)
+          ? tbl.activeOrderIds.slice()
+          : tbl.activeOrderId
+            ? [tbl.activeOrderId]
+            : [];
+        if (!existingIds.includes(newOrder.id)) {
+          existingIds.push(newOrder.id);
+        }
+        tbl.activeOrderIds = existingIds;
+        if (!tbl.activeOrderId) {
+          tbl.activeOrderId = newOrder.id;
+        }
         tbl.isOccupied = true;
-        tbl.activeOrderId = newOrder.id;
       }
     }
 
@@ -218,6 +290,33 @@ export async function POST(req: NextRequest) {
       .map((i: { quantity: number; itemTitleSnapshot: string }) => `• ${i.quantity}x ${i.itemTitleSnapshot}`)
       .join('\n');
 
+    const channelLabel = getOrderTypeLabel(orderType, 'ID');
+    const fulfillmentLines: string[] = [];
+    if (orderType === OrderType.WALK_IN_TABLE && newOrder.tableNumber) {
+      fulfillmentLines.push(`Meja: *${newOrder.tableNumber}*`);
+    }
+    if (orderType === OrderType.SELF_DELIVERY && newOrder.deliveryAddress) {
+      fulfillmentLines.push(`Alamat Antar: ${newOrder.deliveryAddress}`);
+      if (typeof newOrder.deliveryLat === 'number' && typeof newOrder.deliveryLng === 'number') {
+        const distNote =
+          typeof newOrder.deliveryDistanceKm === 'number'
+            ? ` (${newOrder.deliveryDistanceKm.toFixed(1)} km)`
+            : '';
+        fulfillmentLines.push(
+          `Pin Maps${distNote}: ${buildGoogleMapsUrl(newOrder.deliveryLat, newOrder.deliveryLng)}`
+        );
+      }
+      if (newOrder.scheduledDeliveryTime) {
+        fulfillmentLines.push(`Jadwal Antar: ${formatScheduledWib(newOrder.scheduledDeliveryTime, 'id')}`);
+      } else {
+        fulfillmentLines.push(`Jadwal Antar: Segera (ASAP)`);
+      }
+    }
+    if (orderType === OrderType.PRE_ORDER_PICKUP && newOrder.scheduledPickupTime) {
+      fulfillmentLines.push(`Jadwal Ambil: ${formatScheduledWib(newOrder.scheduledPickupTime, 'id')}`);
+    }
+    const fulfillmentBlock = fulfillmentLines.length > 0 ? `\n${fulfillmentLines.join('\n')}` : '';
+
     // Step 1 of Asynchronous 2-Step Verification Loop (via Fonnte WhatsApp API):
     // 1. Send instant alert + Magic Link to Merchant Owner / Cashier WA
     // 2. Send live order pass confirmation to Customer WA
@@ -228,7 +327,7 @@ export async function POST(req: NextRequest) {
         recipientRole: 'MERCHANT',
         eventType: 'NEW_ORDER_MAGIC_LINK',
         orderNumber,
-        messageBody: `🔔 *[${merchant.name}] Pesanan Baru #${orderNumber}*\nPelanggan: ${customerName} (${newOrder.tableNumber || newOrder.orderType})\n\n${itemsSummary}\nTotal: *${formatIdr(totalAmountIdr)}*\n\nSegera konfirmasi ketersediaan stok dapur via Magic Link di bawah ini:`,
+        messageBody: `🔔 *[${merchant.name}] Pesanan Baru #${orderNumber}*\nPelanggan: ${customerName} (${channelLabel})${fulfillmentBlock}\n\n${itemsSummary}\nTotal: *${formatIdr(totalAmountIdr)}*\n\nSegera konfirmasi ketersediaan stok dapur via Magic Link di bawah ini:`,
         magicLinkUrl: merchantMagicLink,
       }),
       dispatchWhatsAppNotification({
@@ -237,7 +336,7 @@ export async function POST(req: NextRequest) {
         recipientRole: 'CUSTOMER',
         eventType: 'NEW_ORDER_MAGIC_LINK',
         orderNumber,
-        messageBody: `👋 Halo *${customerName}*! Pesanan *#${orderNumber}* di *${merchant.name}* sudah kami terima (${formatIdr(totalAmountIdr)}).\n\nKasir sedang mengecek stok dapur sebentar. Pantau status & nota pembayaran Anda di tautan ini:`,
+        messageBody: `👋 Halo *${customerName}*! Pesanan *#${orderNumber}* (${channelLabel}) di *${merchant.name}* sudah kami terima (${formatIdr(totalAmountIdr)}).${fulfillmentBlock}\n\nKasir sedang mengecek stok dapur sebentar. Pantau status & nota pembayaran Anda di tautan ini:`,
         magicLinkUrl: customerTrackingUrl,
       }),
     ]);

@@ -22,6 +22,8 @@ import {
   resolveClientLang,
   UiLang,
 } from '@/lib/order-labels';
+import { buildGoogleMapsUrl } from '@/lib/geo';
+import { formatScheduledWib } from '@/lib/store-hours';
 
 const PROGRESS_STEPS = [
   {
@@ -347,6 +349,57 @@ export default function LiveOrderTrackingPage() {
               <strong className="text-[#1D1D1F]">{order.customerName}</strong> •{' '}
               {order.tableNumber || getOrderTypeLabel(order.orderType, lang)}
             </p>
+            {(order.deliveryAddress || order.scheduledPickupTime || order.scheduledDeliveryTime) && (
+              <div className="mt-2.5 space-y-1 rounded-2xl border border-black/[0.06] bg-[#F5F5F7] px-3.5 py-2.5 text-xs text-[#1D1D1F]">
+                {order.deliveryAddress && (
+                  <p>
+                    <span className="font-semibold text-[#515154]">
+                      {lang === 'ID' ? 'Alamat Antar:' : 'Delivery Address:'}
+                    </span>{' '}
+                    {order.deliveryAddress}
+                    {typeof order.deliveryLat === 'number' &&
+                      typeof order.deliveryLng === 'number' && (
+                        <>
+                          {' '}
+                          <a
+                            href={buildGoogleMapsUrl(order.deliveryLat, order.deliveryLng)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center font-bold text-apple-blue hover:underline"
+                          >
+                            {lang === 'ID' ? 'Buka Pin Maps ↗' : 'Open Map Pin ↗'}
+                          </a>
+                          {typeof order.deliveryDistanceKm === 'number' && (
+                            <span className="ml-1.5 font-mono text-[11px] text-[#515154]">
+                              ({order.deliveryDistanceKm.toFixed(1)} km)
+                            </span>
+                          )}
+                        </>
+                      )}
+                  </p>
+                )}
+                {order.scheduledPickupTime && (
+                  <p>
+                    <span className="font-semibold text-[#515154]">
+                      {lang === 'ID' ? 'Jadwal Ambil:' : 'Scheduled Pick-Up:'}
+                    </span>{' '}
+                    <span className="font-mono font-bold">
+                      {formatScheduledWib(order.scheduledPickupTime, lang === 'EN' ? 'en' : 'id')}
+                    </span>
+                  </p>
+                )}
+                {order.scheduledDeliveryTime && (
+                  <p>
+                    <span className="font-semibold text-[#515154]">
+                      {lang === 'ID' ? 'Jadwal Antar:' : 'Scheduled Delivery:'}
+                    </span>{' '}
+                    <span className="font-mono font-bold">
+                      {formatScheduledWib(order.scheduledDeliveryTime, lang === 'EN' ? 'en' : 'id')}
+                    </span>
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2">

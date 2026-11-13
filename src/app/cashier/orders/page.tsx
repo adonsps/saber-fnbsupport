@@ -17,6 +17,7 @@ import {
   Order,
   OrderItem,
   OrderStatus,
+  OrderType,
   PaymentStatus,
   PaymentType,
   TableSession,
@@ -26,6 +27,9 @@ import { cn, formatIdr } from '@/lib/utils';
 import { useDialogLightDismiss } from '@/lib/client-helpers';
 import { APPLE_SPRINGS, triggerCausalHaptic } from '@/lib/apple-motion';
 import { DemoModeBanner } from '@/components/DemoModeBanner';
+import { getOrderTypeLabel } from '@/lib/order-labels';
+import { buildGoogleMapsUrl } from '@/lib/geo';
+import { formatScheduledWib } from '@/lib/store-hours';
 
 type KanbanColumnId =
   | 'PENDING_STOCK'
@@ -603,7 +607,7 @@ export default function CashierKanbanPage() {
                                 </p>
                               </div>
                               <span className="rounded-full bg-[#F5F5F7] px-2.5 py-0.5 font-mono text-[11px] font-bold text-[#1D1D1F]">
-                                {order.tableNumber || order.orderType.replace('_PICKUP', '')}
+                                {order.tableNumber || getOrderTypeLabel(order.orderType, 'ID')}
                               </span>
                             </div>
 
@@ -620,6 +624,36 @@ export default function CashierKanbanPage() {
                               ))}
                             </div>
 
+                            {order.deliveryAddress && (
+                              <div className="mt-2 rounded-xl border border-blue-100 bg-blue-50/70 px-2.5 py-1.5 text-[11px] text-[#1D1D1F]">
+                                <p className="font-semibold text-apple-blue">Alamat Antar:</p>
+                                <p className="mt-0.5 leading-snug">{order.deliveryAddress}</p>
+                                {typeof order.deliveryLat === 'number' &&
+                                  typeof order.deliveryLng === 'number' && (
+                                    <a
+                                      href={buildGoogleMapsUrl(order.deliveryLat, order.deliveryLng)}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="mt-1 inline-flex items-center font-bold text-apple-blue hover:underline"
+                                    >
+                                      Buka Pin Maps
+                                      {typeof order.deliveryDistanceKm === 'number'
+                                        ? ` (${order.deliveryDistanceKm.toFixed(1)} km)`
+                                        : ''}{' '}
+                                      ↗
+                                    </a>
+                                  )}
+                              </div>
+                            )}
+
+                            {(order.scheduledPickupTime || order.scheduledDeliveryTime) && (
+                              <p className="mt-2 rounded-xl border border-indigo-100 bg-indigo-50/70 px-2.5 py-1.5 font-mono text-[11px] font-bold text-indigo-900">
+                                {order.scheduledPickupTime
+                                  ? `Ambil: ${formatScheduledWib(order.scheduledPickupTime, 'id')}`
+                                  : `Antar: ${formatScheduledWib(order.scheduledDeliveryTime, 'id')}`}
+                              </p>
+                            )}
+
                             {order.specialNotes && (
                               <p className="mt-2 rounded-xl bg-amber-50 px-2.5 py-1.5 text-[11px] font-medium text-[#B25000]">
                                 Catatan: {order.specialNotes}
@@ -629,7 +663,9 @@ export default function CashierKanbanPage() {
                             <div className="mt-2.5 flex items-center justify-between text-xs">
                               <span className="text-[11px] font-semibold text-[#515154]">
                                 {order.paymentType === PaymentType.CASH
-                                  ? 'Tunai di Kasir'
+                                  ? order.orderType === OrderType.SELF_DELIVERY
+                                    ? 'Tunai (COD Kurir)'
+                                    : 'Tunai di Kasir'
                                   : 'QRIS / Transfer'}
                               </span>
                               <span className="font-mono font-bold tabular-nums text-[#1D1D1F]">
