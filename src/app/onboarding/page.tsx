@@ -17,7 +17,14 @@ import {
 } from '@phosphor-icons/react';
 import { DEFAULT_HOURS, DEFAULT_QRIS_SVG } from '@/lib/defaults';
 import { DaySchedule } from '@/types/schema';
-import { cn, formatIdr, slugify } from '@/lib/utils';
+import {
+  cn,
+  formatIdr,
+  formatThousandsId,
+  parseDigitsToNumber,
+  sanitizeDigitsInput,
+  slugify,
+} from '@/lib/utils';
 import { APPLE_SPRINGS, triggerCausalHaptic } from '@/lib/apple-motion';
 import { buildOsmEmbedUrl, parseLatLng } from '@/lib/geo';
 
@@ -100,8 +107,8 @@ function OnboardingWizardContent() {
   const [logoProgress, setLogoProgress] = useState<number>(0);
   const [operationalHours, setOperationalHours] = useState<DaySchedule[]>(DEFAULT_HOURS);
   const [isSelfDeliveryEnabled, setIsSelfDeliveryEnabled] = useState(true);
-  const [maxDeliveryRadiusKm, setMaxDeliveryRadiusKm] = useState(5);
-  const [deliveryFeeIdr, setDeliveryFeeIdr] = useState(10000);
+  const [maxDeliveryRadiusKmInput, setMaxDeliveryRadiusKmInput] = useState('5');
+  const [deliveryFeeIdrInput, setDeliveryFeeIdrInput] = useState('10000');
 
   // Step 3: Payment Credentials
   const [qrisImageUrl, setQrisImageUrl] = useState(DEFAULT_QRIS_SVG);
@@ -197,8 +204,8 @@ function OnboardingWizardContent() {
             }
           }
           setIsSelfDeliveryEnabled(Boolean(data.branch.isSelfDeliveryEnabled));
-          setMaxDeliveryRadiusKm(Number(data.branch.maxDeliveryRadiusKm || 5));
-          setDeliveryFeeIdr(Number(data.branch.deliveryFeeIdr || 10000));
+          setMaxDeliveryRadiusKmInput(String(data.branch.maxDeliveryRadiusKm ?? 5));
+          setDeliveryFeeIdrInput(String(data.branch.deliveryFeeIdr ?? 10000));
           if (data.branch.qrisImageUrl) setQrisImageUrl(data.branch.qrisImageUrl);
           if (data.branch.bankName) setBankName(data.branch.bankName);
           if (data.branch.bankAccountNumber) setBankAccountNumber(data.branch.bankAccountNumber);
@@ -396,8 +403,11 @@ function OnboardingWizardContent() {
           logoUrl,
           operationalHours,
           isSelfDeliveryEnabled,
-          maxDeliveryRadiusKm,
-          deliveryFeeIdr,
+          maxDeliveryRadiusKm: Math.min(
+            50,
+            Math.max(0, parseDigitsToNumber(maxDeliveryRadiusKmInput, 0))
+          ),
+          deliveryFeeIdr: Math.max(0, parseDigitsToNumber(deliveryFeeIdrInput, 0)),
           qrisImageUrl,
           bankName,
           bankAccountNumber,
@@ -1014,11 +1024,16 @@ function OnboardingWizardContent() {
                           </label>
                           <input
                             id="maxRadius"
-                            type="number"
-                            min={1}
-                            max={50}
-                            value={maxDeliveryRadiusKm}
-                            onChange={(e) => setMaxDeliveryRadiusKm(Number(e.target.value))}
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="5"
+                            value={formatThousandsId(maxDeliveryRadiusKmInput)}
+                            onChange={(e) => {
+                              const cleaned = sanitizeDigitsInput(e.target.value);
+                              if (!cleaned || Number(cleaned) <= 50) {
+                                setMaxDeliveryRadiusKmInput(cleaned);
+                              }
+                            }}
                             className="mt-1 min-h-[44px] w-full rounded-xl border border-zinc-200 bg-white px-3 font-mono text-sm"
                           />
                         </div>
@@ -1027,15 +1042,18 @@ function OnboardingWizardContent() {
                             htmlFor="deliveryFee"
                             className="block text-xs font-semibold text-zinc-800"
                           >
-                            Ongkos Kirim Flat (IDR) — {formatIdr(deliveryFeeIdr)}
+                            Ongkos Kirim Flat (IDR) —{' '}
+                            {formatIdr(parseDigitsToNumber(deliveryFeeIdrInput, 0))}
                           </label>
                           <input
                             id="deliveryFee"
-                            type="number"
-                            min={0}
-                            step={1000}
-                            value={deliveryFeeIdr}
-                            onChange={(e) => setDeliveryFeeIdr(Number(e.target.value))}
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="10.000"
+                            value={formatThousandsId(deliveryFeeIdrInput)}
+                            onChange={(e) =>
+                              setDeliveryFeeIdrInput(sanitizeDigitsInput(e.target.value))
+                            }
                             className="mt-1 min-h-[44px] w-full rounded-xl border border-zinc-200 bg-white px-3 font-mono text-sm"
                           />
                         </div>

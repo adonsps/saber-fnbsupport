@@ -6,7 +6,13 @@ import QRCode from 'qrcode';
 import { pdf } from '@react-pdf/renderer';
 import { QrCode, Trash, WifiHigh } from '@phosphor-icons/react';
 import { Branch, Merchant, TableSession } from '@/types/schema';
-import { buildStorefrontUrl, cn, formatStorefrontDisplayUrl } from '@/lib/utils';
+import {
+  buildStorefrontUrl,
+  cn,
+  formatStorefrontDisplayUrl,
+  parseDigitsToNumber,
+  sanitizeDigitsInput,
+} from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { APPLE_SPRINGS, triggerCausalHaptic } from '@/lib/apple-motion';
 import { TableQrPdfDocument, TableWithQrDataUrl } from '@/components/TableQrPdfDocument';
@@ -20,7 +26,7 @@ export default function AdminTablesPage() {
   const [printingPdf, setPrintingPdf] = useState(false);
 
   const [singleLabel, setSingleLabel] = useState('');
-  const [bulkCount, setBulkCount] = useState(6);
+  const [bulkCountInput, setBulkCountInput] = useState('6');
   const [bulkPrefix, setBulkPrefix] = useState('TABLE');
   const [wifiName, setWifiName] = useState('KopiNusantara_5G');
   const [wifiPassword, setWifiPassword] = useState('kopi100persen');
@@ -98,7 +104,7 @@ export default function AdminTablesPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         mode: 'bulk_generate',
-        count: bulkCount,
+        count: Math.min(50, Math.max(1, parseDigitsToNumber(bulkCountInput, 1))),
         prefix: bulkPrefix,
         wifiName,
         wifiPassword,
@@ -292,11 +298,16 @@ export default function AdminTablesPage() {
               className="min-h-[44px] w-24 rounded-xl border border-zinc-200 px-3 text-xs font-semibold uppercase"
             />
             <input
-              type="number"
-              min={1}
-              max={50}
-              value={bulkCount}
-              onChange={(e) => setBulkCount(Number(e.target.value))}
+              type="text"
+              inputMode="numeric"
+              placeholder="6"
+              value={bulkCountInput}
+              onChange={(e) => {
+                const cleaned = sanitizeDigitsInput(e.target.value);
+                if (!cleaned || Number(cleaned) <= 50) {
+                  setBulkCountInput(cleaned);
+                }
+              }}
               className="min-h-[44px] w-20 rounded-xl border border-zinc-200 px-3 font-mono text-xs font-semibold"
             />
             <button
@@ -304,7 +315,7 @@ export default function AdminTablesPage() {
               onClick={handleBulkCreate}
               className="apple-interactive min-h-[44px] flex-1 rounded-xl bg-apple-blue px-4 text-xs font-bold text-white hover:bg-apple-blueHover"
             >
-              Buat 1–{bulkCount} Meja
+              Buat 1–{Math.min(50, Math.max(1, parseDigitsToNumber(bulkCountInput, 1)))} Meja
             </button>
           </div>
         </div>
