@@ -755,14 +755,14 @@ export default function CashierKanbanPage() {
                                     <button
                                       type="button"
                                       onClick={() => openTableControlsModal(order)}
-                                      className="apple-interactive inline-flex min-h-[40px] items-center rounded-lg bg-[#F5F5F7] px-2.5 py-1 text-[11px] font-semibold text-[#1D1D1F] hover:bg-zinc-200"
+                                      className="apple-interactive inline-flex min-h-[44px] items-center rounded-lg bg-[#F5F5F7] px-2.5 py-1 text-[11px] font-semibold text-[#1D1D1F] hover:bg-zinc-200"
                                     >
                                       Pindah / Gabung
                                     </button>
                                     <button
                                       type="button"
                                       onClick={() => openCancelOrderModal(order)}
-                                      className="apple-interactive inline-flex min-h-[40px] items-center rounded-lg bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-[#D70015] hover:bg-red-100"
+                                      className="apple-interactive inline-flex min-h-[44px] items-center rounded-lg bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-[#D70015] hover:bg-red-100"
                                     >
                                       Batalkan
                                     </button>
@@ -770,7 +770,7 @@ export default function CashierKanbanPage() {
                                 )}
                                 <Link
                                   href={`/order/${order.id}`}
-                                  className="inline-flex min-h-[40px] items-center rounded-lg px-2 py-1 text-[11px] font-semibold text-apple-blue hover:bg-apple-blue/10"
+                                  className="inline-flex min-h-[44px] items-center rounded-lg px-2.5 py-1 text-[11px] font-semibold text-apple-blue hover:bg-apple-blue/10"
                                 >
                                   Pass →
                                 </Link>
@@ -812,12 +812,12 @@ export default function CashierKanbanPage() {
               onChange={(e) => setTestWaPhone(e.target.value)}
               placeholder={merchant?.ownerWhatsapp || '0812xxxxxxxx'}
               aria-label="Nomor WhatsApp uji coba"
-              className="min-h-[38px] w-44 rounded-full border border-zinc-200 bg-[#F5F5F7] px-3.5 font-mono text-xs outline-none focus:border-apple-blue focus:bg-white"
+              className="min-h-[44px] w-44 rounded-full border border-zinc-200 bg-[#F5F5F7] px-3.5 font-mono text-xs outline-none focus:border-apple-blue focus:bg-white"
             />
             <button
               type="submit"
               disabled={sendingTestWa}
-              className="apple-interactive inline-flex min-h-[38px] items-center rounded-full bg-[#1D7D32] px-4 text-xs font-bold text-white hover:brightness-110 disabled:opacity-60"
+              className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-[#1D7D32] px-4 text-xs font-bold text-white hover:brightness-110 disabled:opacity-60"
             >
               {sendingTestWa ? 'Mengirim...' : 'Tes Kirim WhatsApp'}
             </button>

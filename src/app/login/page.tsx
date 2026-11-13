@@ -9,10 +9,10 @@ import { SaberLogo } from '@/components/SaberLogo';
 import { triggerCausalHaptic } from '@/lib/apple-motion';
 
 function sanitizeNextPath(raw?: string | null): string {
-  if (!raw) return '/';
+  if (!raw) return '/cashier/orders';
   const trimmed = raw.trim();
   if (!trimmed.startsWith('/') || trimmed.startsWith('//') || trimmed.startsWith('/\\')) {
-    return '/';
+    return '/cashier/orders';
   }
   return trimmed;
 }

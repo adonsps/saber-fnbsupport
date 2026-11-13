@@ -419,6 +419,22 @@ export default function LiveOrderTrackingPage() {
           </div>
         </div>
 
+        {/* Pending Stock Confirmation Guidance */}
+        {!isCancelled && order.orderStatus === OrderStatus.PENDING_STOCK_CONFIRMATION && (
+          <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50/90 p-4 text-xs text-amber-950">
+            <p className="font-bold">
+              {lang === 'ID'
+                ? 'Menunggu Konfirmasi Dapur (Estimasi 1–3 Menit)'
+                : 'Waiting for Kitchen Stock Check (Est. 1–3 Mins)'}
+            </p>
+            <p className="mt-1 leading-relaxed text-amber-900">
+              {lang === 'ID'
+                ? 'Anda belum perlu membayar sekarang. Kasir sedang memeriksa ketersediaan bahan di dapur; halaman ini akan otomatis menampilkan tagihan & instruksi bayar begitu stok dikonfirmasi.'
+                : 'You do not need to pay yet. Our cashier is confirming kitchen availability; this page refreshes automatically with payment instructions once confirmed.'}
+            </p>
+          </div>
+        )}
+
         {/* Rejected Receipt Warning (hidden when order cancelled) */}
         {!isCancelled && order.paymentStatus === PaymentStatus.REJECTED && (
           <div
