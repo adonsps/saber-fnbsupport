@@ -60,6 +60,8 @@ export interface Branch {
   id: string;
   merchantId: string;
   address: string;
+  branchLat?: number;
+  branchLng?: number;
   logoUrl?: string;
   operationalHours: string; // JSON Stringified DaySchedule[]
   isSelfDeliveryEnabled: boolean;
@@ -78,6 +80,7 @@ export interface TableSession {
   qrCodeUrl: string;
   isOccupied: boolean;
   activeOrderId?: string;
+  activeOrderIds?: string[];
   wifiName?: string;
   wifiPassword?: string;
 }
@@ -133,7 +136,11 @@ export interface Order {
   customerWhatsapp: string;
   tableNumber?: string;
   deliveryAddress?: string;
+  deliveryLat?: number;
+  deliveryLng?: number;
+  deliveryDistanceKm?: number;
   scheduledPickupTime?: string;
+  scheduledDeliveryTime?: string;
   subtotalIdr: number;
   deliveryFeeIdr: number;
   totalAmountIdr: number;

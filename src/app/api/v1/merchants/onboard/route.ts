@@ -38,6 +38,8 @@ const OnboardSchema = z.object({
   ownerName: z.string().min(2, 'Nama pemilik wajib diisi'),
   ownerWhatsapp: z.string().min(8, 'Nomor WhatsApp wajib diisi'),
   address: z.string().min(5, 'Alamat cabang wajib diisi'),
+  branchLat: z.number().min(-90).max(90).optional().nullable(),
+  branchLng: z.number().min(-180).max(180).optional().nullable(),
   logoUrl: z.string().optional(),
   operationalHours: z.any(),
   isSelfDeliveryEnabled: z.boolean().default(false),
@@ -202,6 +204,8 @@ export async function POST(req: NextRequest) {
         id: newBranchId,
         merchantId: newMerchantId,
         address: data.address,
+        branchLat: typeof data.branchLat === 'number' ? data.branchLat : undefined,
+        branchLng: typeof data.branchLng === 'number' ? data.branchLng : undefined,
         logoUrl: data.logoUrl,
         operationalHours:
           typeof data.operationalHours === 'string'
@@ -298,6 +302,13 @@ export async function POST(req: NextRequest) {
       if (branch) {
         branch.merchantId = merchant.id;
         branch.address = data.address;
+        if (typeof data.branchLat === 'number' && typeof data.branchLng === 'number') {
+          branch.branchLat = data.branchLat;
+          branch.branchLng = data.branchLng;
+        } else if (data.branchLat === null || data.branchLng === null) {
+          branch.branchLat = undefined;
+          branch.branchLng = undefined;
+        }
         if (data.logoUrl) branch.logoUrl = data.logoUrl;
         branch.operationalHours =
           typeof data.operationalHours === 'string'

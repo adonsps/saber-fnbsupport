@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
+  Crosshair,
   MagnifyingGlass,
   MapPin,
   Minus,
@@ -24,7 +25,12 @@ import {
   resolveClientLang,
   UiLang,
 } from '@/lib/order-labels';
-import { evaluateStoreHours } from '@/lib/store-hours';
+import {
+  evaluateStoreHours,
+  getNowLocalInputWib,
+  validateScheduledDateTime,
+} from '@/lib/store-hours';
+import { buildOsmEmbedUrl, haversineDistanceKm, parseLatLng } from '@/lib/geo';
 import {
   APPLE_SPRINGS,
   projectMomentum,
@@ -64,6 +70,12 @@ export function CustomerStorefrontClient({
   const [isTableLocked, setIsTableLocked] = useState(Boolean(initialTable));
   const [scheduledPickupTime, setScheduledPickupTime] = useState('');
   const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [deliveryLatInput, setDeliveryLatInput] = useState('');
+  const [deliveryLngInput, setDeliveryLngInput] = useState('');
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [geoNotice, setGeoNotice] = useState<string | null>(null);
+  const [deliveryTimingMode, setDeliveryTimingMode] = useState<'ASAP' | 'SCHEDULED'>('ASAP');
+  const [scheduledDeliveryTime, setScheduledDeliveryTime] = useState('');
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategoryId, setActiveCategoryId] = useState<string>('ALL');
@@ -72,7 +84,7 @@ export function CustomerStorefrontClient({
 
   // Checkout Modal State (Native <dialog>) + Apple 1:1 Direct Manipulation & Rubber-Banding (§2, §6, §9)
   const checkoutDialogRef = useRef<HTMLDialogElement>(null);
-  const [sheetDragY, setSheetDragY] = useState(0);
+  const [sheetDragY, setSheetDragY] = useState(false ? 0 : 0);
   const [isDraggingSheet, setIsDraggingSheet] = useState(false);
   const dragStartYRef = useRef(0);
   const pointerHistoryRef = useRef<PointerSample[]>([]);
@@ -87,12 +99,14 @@ export function CustomerStorefrontClient({
     customerName?: string;
     customerWhatsapp?: string;
     scheduledPickupTime?: string;
+    scheduledDeliveryTime?: string;
     deliveryAddress?: string;
   }>({});
 
   const custNameInputRef = useRef<HTMLInputElement>(null);
   const custWaInputRef = useRef<HTMLInputElement>(null);
   const pickupInputRef = useRef<HTMLInputElement>(null);
+  const deliveryTimeInputRef = useRef<HTMLInputElement>(null);
   const addressInputRef = useRef<HTMLTextAreaElement>(null);
 
   const cartStorageKey = `saber_fnb_cart_${slug}`;
@@ -154,6 +168,64 @@ export function CustomerStorefrontClient({
   );
 
   const isStoreOpenNow = Boolean(merchant?.isStoreOpen) && hoursEval.isWithinHours;
+
+  const parsedDeliveryCoords = useMemo(
+    () => parseLatLng(deliveryLatInput, deliveryLngInput),
+    [deliveryLatInput, deliveryLngInput]
+  );
+
+  const liveDeliveryDistanceKm = useMemo(() => {
+    if (
+      !parsedDeliveryCoords ||
+      typeof branch?.branchLat !== 'number' ||
+      typeof branch?.branchLng !== 'number'
+    ) {
+      return null;
+    }
+    return haversineDistanceKm(
+      { lat: branch.branchLat, lng: branch.branchLng },
+      parsedDeliveryCoords
+    );
+  }, [parsedDeliveryCoords, branch?.branchLat, branch?.branchLng]);
+
+  const isOutOfDeliveryRadius =
+    liveDeliveryDistanceKm !== null &&
+    (branch?.maxDeliveryRadiusKm || 0) > 0 &&
+    liveDeliveryDistanceKm > (branch?.maxDeliveryRadiusKm || 0);
+
+  const handleDetectLocation = () => {
+    setGeoNotice(null);
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setGeoNotice(
+        lang === 'ID'
+          ? 'Browser Anda tidak mendukung GPS otomatis. Masukkan koordinat secara manual.'
+          : 'Your browser does not support GPS geolocation. Please enter coordinates manually.'
+      );
+      return;
+    }
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setDeliveryLatInput(String(Math.round(pos.coords.latitude * 1_000_000) / 1_000_000));
+        setDeliveryLngInput(String(Math.round(pos.coords.longitude * 1_000_000) / 1_000_000));
+        setGeoLoading(false);
+        setGeoNotice(
+          lang === 'ID'
+            ? 'Titik lokasi GPS berhasil dikunci.'
+            : 'GPS location pinpoint locked.'
+        );
+      },
+      () => {
+        setGeoLoading(false);
+        setGeoNotice(
+          lang === 'ID'
+            ? 'Izin lokasi ditolak/tidak tersedia. Anda dapat mengisi Latitude & Longitude manual.'
+            : 'Location permission denied/unavailable. You may enter Latitude & Longitude manually.'
+        );
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   // Reset SELF_DELIVERY tab if merchant disables delivery
   useEffect(() => {
@@ -388,6 +460,7 @@ export function CustomerStorefrontClient({
       customerName?: string;
       customerWhatsapp?: string;
       scheduledPickupTime?: string;
+      scheduledDeliveryTime?: string;
       deliveryAddress?: string;
     } = {};
 
@@ -399,13 +472,28 @@ export function CustomerStorefrontClient({
       nextErrors.customerWhatsapp =
         lang === 'ID' ? 'Nomor WhatsApp aktif wajib diisi.' : 'Active WhatsApp number is required.';
     }
-    if (orderType === OrderType.PRE_ORDER_PICKUP && !scheduledPickupTime.trim()) {
-      nextErrors.scheduledPickupTime =
-        lang === 'ID' ? 'Waktu pengambilan wajib dipilih.' : 'Pick-up date & time is required.';
+    if (orderType === OrderType.PRE_ORDER_PICKUP) {
+      const check = validateScheduledDateTime(scheduledPickupTime, branch?.operationalHours);
+      if (!check.valid) {
+        nextErrors.scheduledPickupTime = lang === 'ID' ? check.errorId : check.errorEn;
+      }
     }
-    if (orderType === OrderType.SELF_DELIVERY && !deliveryAddress.trim()) {
-      nextErrors.deliveryAddress =
-        lang === 'ID' ? 'Alamat pengantaran wajib diisi.' : 'Delivery address is required.';
+    if (orderType === OrderType.SELF_DELIVERY) {
+      if (!deliveryAddress.trim()) {
+        nextErrors.deliveryAddress =
+          lang === 'ID' ? 'Alamat pengantaran wajib diisi.' : 'Delivery address is required.';
+      } else if (isOutOfDeliveryRadius && liveDeliveryDistanceKm !== null) {
+        nextErrors.deliveryAddress =
+          lang === 'ID'
+            ? `Lokasi Anda (${liveDeliveryDistanceKm.toFixed(1)} km) di luar jangkauan kurir toko (maks ${branch?.maxDeliveryRadiusKm} km).`
+            : `Your location (${liveDeliveryDistanceKm.toFixed(1)} km) exceeds the store delivery radius (max ${branch?.maxDeliveryRadiusKm} km).`;
+      }
+      if (deliveryTimingMode === 'SCHEDULED') {
+        const check = validateScheduledDateTime(scheduledDeliveryTime, branch?.operationalHours);
+        if (!check.valid) {
+          nextErrors.scheduledDeliveryTime = lang === 'ID' ? check.errorId : check.errorEn;
+        }
+      }
     }
 
     if (Object.keys(nextErrors).length > 0) {
@@ -420,6 +508,7 @@ export function CustomerStorefrontClient({
       else if (nextErrors.customerWhatsapp) custWaInputRef.current?.focus();
       else if (nextErrors.scheduledPickupTime) pickupInputRef.current?.focus();
       else if (nextErrors.deliveryAddress) addressInputRef.current?.focus();
+      else if (nextErrors.scheduledDeliveryTime) deliveryTimeInputRef.current?.focus();
       return;
     }
 
@@ -436,8 +525,16 @@ export function CustomerStorefrontClient({
           orderType,
           tableNumber: orderType === OrderType.WALK_IN_TABLE ? tableNumber || 'WALK-IN' : undefined,
           deliveryAddress: orderType === OrderType.SELF_DELIVERY ? deliveryAddress : undefined,
+          deliveryLat:
+            orderType === OrderType.SELF_DELIVERY ? parsedDeliveryCoords?.lat : undefined,
+          deliveryLng:
+            orderType === OrderType.SELF_DELIVERY ? parsedDeliveryCoords?.lng : undefined,
           scheduledPickupTime:
             orderType === OrderType.PRE_ORDER_PICKUP ? scheduledPickupTime : undefined,
+          scheduledDeliveryTime:
+            orderType === OrderType.SELF_DELIVERY && deliveryTimingMode === 'SCHEDULED'
+              ? scheduledDeliveryTime
+              : undefined,
           specialNotes,
           paymentType,
           items: cartSummary.detailed.map((d) => ({
@@ -529,7 +626,7 @@ export function CustomerStorefrontClient({
                   persistClientLang(code);
                 }}
                 className={cn(
-                  'relative min-h-[36px] min-w-[44px] rounded-full px-3.5 py-1 text-xs font-bold transition-colors',
+                  'relative min-h-[44px] min-w-[44px] rounded-full px-3.5 py-1 text-xs font-bold transition-colors',
                   isSelected ? 'text-[#1D1D1F]' : 'text-white hover:text-white/90'
                 )}
               >
@@ -1050,7 +1147,7 @@ export function CustomerStorefrontClient({
           transform: sheetDragY !== 0 ? `translateY(${sheetDragY}px)` : undefined,
           transition: isDraggingSheet ? 'none' : 'transform 280ms cubic-bezier(0.22, 1, 0.36, 1)',
         }}
-        className="w-full max-w-lg rounded-[28px] border border-black/10 bg-white p-0 shadow-apple-lg"
+        className="w-full max-w-lg rounded-[28px] border border-black/10 bg-white p-0 shadow-apple-lg backdrop:bg-black/55 backdrop:backdrop-blur-xs"
       >
         {/* Apple HIG Sheet Navigation Header (sheets.md › Platform considerations) + Emil 1:1 Drag & Rubber-Banding (§2, §6, §9) */}
         <div
@@ -1098,6 +1195,56 @@ export function CustomerStorefrontClient({
             >
               {checkoutError}
             </div>
+          )}
+
+          {/* In-Modal Channel Switcher (accessible even after scrolling straight to Checkout) */}
+          {!isTableLocked && (
+            <fieldset className="space-y-2">
+              <legend className="text-xs font-semibold text-zinc-800">
+                {lang === 'ID' ? 'Pilih Layanan Pesanan' : 'Order Service Channel'}
+              </legend>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {[
+                  {
+                    type: OrderType.WALK_IN_TABLE,
+                    label: lang === 'ID' ? 'Makan di Tempat' : 'Dine-In',
+                  },
+                  {
+                    type: OrderType.PRE_ORDER_PICKUP,
+                    label: lang === 'ID' ? 'Ambil Nanti' : 'Pick-Up Later',
+                  },
+                  ...(branch?.isSelfDeliveryEnabled
+                    ? [
+                        {
+                          type: OrderType.SELF_DELIVERY,
+                          label: lang === 'ID' ? 'Antar Kurir' : 'Store Delivery',
+                        },
+                      ]
+                    : []),
+                ].map((opt) => {
+                  const active = orderType === opt.type;
+                  return (
+                    <button
+                      key={opt.type}
+                      type="button"
+                      onClick={() => {
+                        triggerCausalHaptic(6);
+                        setOrderType(opt.type);
+                        setCheckoutError(null);
+                      }}
+                      className={cn(
+                        'min-h-[44px] rounded-2xl border px-3 py-2 text-xs font-bold transition-all',
+                        active
+                          ? 'border-apple-blue bg-apple-blue/10 text-apple-blue ring-2 ring-apple-blue/15'
+                          : 'border-zinc-200 bg-[#F5F5F7]/70 text-zinc-700 hover:bg-zinc-100'
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
           )}
 
           {/* Guest Details: ONLY Name & WhatsApp Number */}
@@ -1194,16 +1341,17 @@ export function CustomerStorefrontClient({
             {orderType === OrderType.PRE_ORDER_PICKUP && (
               <div>
                 <label htmlFor="modalPickupTime" className="block text-xs font-semibold text-zinc-800">
-                  {lang === 'ID' ? 'Waktu Pengambilan (Pick-Up)' : 'Estimated Pick-Up Time'}{' '}
+                  {lang === 'ID' ? 'Tanggal & Jam Pengambilan (WIB)' : 'Pick-Up Date & Time (WIB)'}{' '}
                   <span className="text-red-500">*</span>
                 </label>
                 <input
                   ref={pickupInputRef}
                   id="modalPickupTime"
                   type="datetime-local"
+                  min={getNowLocalInputWib()}
                   required
                   aria-invalid={Boolean(fieldErrors.scheduledPickupTime)}
-                  aria-describedby={fieldErrors.scheduledPickupTime ? 'err-pickupTime' : undefined}
+                  aria-describedby={fieldErrors.scheduledPickupTime ? 'err-pickupTime' : 'hint-pickupTime'}
                   value={scheduledPickupTime}
                   onChange={(e) => {
                     setScheduledPickupTime(e.target.value);
@@ -1213,49 +1361,209 @@ export function CustomerStorefrontClient({
                   }}
                   className="mt-1 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/60 px-4 text-xs font-medium outline-none focus:border-apple-blue focus:bg-white aria-[invalid=true]:border-[#D70015]"
                 />
-                {fieldErrors.scheduledPickupTime && (
+                {fieldErrors.scheduledPickupTime ? (
                   <p id="err-pickupTime" className="mt-1 text-[11px] font-semibold text-[#D70015]">
                     {fieldErrors.scheduledPickupTime}
+                  </p>
+                ) : (
+                  <p id="hint-pickupTime" className="mt-1 text-[11px] text-zinc-500">
+                    {lang === 'ID'
+                      ? 'Pilih tanggal & jam sesuai jam operasional toko.'
+                      : 'Choose a future date & time within store operating hours.'}
                   </p>
                 )}
               </div>
             )}
 
             {orderType === OrderType.SELF_DELIVERY && (
-              <div>
-                <label
-                  htmlFor="modalDeliveryAddress"
-                  className="block text-xs font-semibold text-zinc-800"
-                >
-                  {lang === 'ID' ? 'Alamat Pengantaran Lengkap' : 'Full Delivery Address'}{' '}
-                  <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  ref={addressInputRef}
-                  id="modalDeliveryAddress"
-                  rows={2}
-                  required
-                  aria-invalid={Boolean(fieldErrors.deliveryAddress)}
-                  aria-describedby={fieldErrors.deliveryAddress ? 'err-deliveryAddr' : undefined}
-                  value={deliveryAddress}
-                  onChange={(e) => {
-                    setDeliveryAddress(e.target.value);
-                    if (fieldErrors.deliveryAddress) {
-                      setFieldErrors((prev) => ({ ...prev, deliveryAddress: undefined }));
+              <div className="space-y-3 rounded-2xl border border-zinc-200/80 bg-[#F5F5F7]/50 p-3.5">
+                <div>
+                  <label
+                    htmlFor="modalDeliveryAddress"
+                    className="block text-xs font-semibold text-zinc-800"
+                  >
+                    {lang === 'ID' ? 'Alamat Pengantaran Lengkap' : 'Full Delivery Address'}{' '}
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    ref={addressInputRef}
+                    id="modalDeliveryAddress"
+                    rows={2}
+                    required
+                    autoComplete="street-address"
+                    aria-invalid={Boolean(fieldErrors.deliveryAddress)}
+                    aria-describedby={fieldErrors.deliveryAddress ? 'err-deliveryAddr' : undefined}
+                    value={deliveryAddress}
+                    onChange={(e) => {
+                      setDeliveryAddress(e.target.value);
+                      if (fieldErrors.deliveryAddress) {
+                        setFieldErrors((prev) => ({ ...prev, deliveryAddress: undefined }));
+                      }
+                    }}
+                    placeholder={
+                      lang === 'ID'
+                        ? 'Jl. Nama Jalan, No. Rumah, Patokan...'
+                        : 'Street address, unit number, landmark...'
                     }
-                  }}
-                  placeholder={
-                    lang === 'ID'
-                      ? 'Jl. Nama Jalan, No. Rumah, Patokan...'
-                      : 'Street address, unit number, landmark...'
-                  }
-                  className="mt-1 w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/60 p-3 text-xs outline-none focus:border-apple-blue focus:bg-white aria-[invalid=true]:border-[#D70015]"
-                />
-                {fieldErrors.deliveryAddress && (
-                  <p id="err-deliveryAddr" className="mt-1 text-[11px] font-semibold text-[#D70015]">
-                    {fieldErrors.deliveryAddress}
-                  </p>
-                )}
+                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-white p-3 text-xs outline-none focus:border-apple-blue aria-[invalid=true]:border-[#D70015]"
+                  />
+                  {fieldErrors.deliveryAddress && (
+                    <p id="err-deliveryAddr" className="mt-1 text-[11px] font-semibold text-[#D70015]">
+                      {fieldErrors.deliveryAddress}
+                    </p>
+                  )}
+                </div>
+
+                {/* Maps Pinpoint / Geolocation */}
+                <div className="space-y-2 border-t border-zinc-200/80 pt-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-[11px] font-semibold text-zinc-700">
+                      {lang === 'ID' ? 'Pin Lokasi Peta (Opsional / Akurasi Kurir)' : 'Map Pinpoint (GPS)'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleDetectLocation}
+                      disabled={geoLoading}
+                      className="apple-interactive inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-apple-blue/30 bg-white px-3.5 py-1.5 text-xs font-bold text-apple-blue hover:bg-apple-blue/5 disabled:opacity-60"
+                    >
+                      <Crosshair aria-hidden="true" weight="bold" className="h-4 w-4" />
+                      {geoLoading
+                        ? lang === 'ID'
+                          ? 'Mendeteksi...'
+                          : 'Detecting...'
+                        : lang === 'ID'
+                          ? 'Gunakan Lokasi Saya (GPS)'
+                          : 'Use My GPS Location'}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label htmlFor="deliveryLat" className="block text-[10px] font-medium text-zinc-500">
+                        Latitude
+                      </label>
+                      <input
+                        id="deliveryLat"
+                        type="text"
+                        inputMode="decimal"
+                        value={deliveryLatInput}
+                        onChange={(e) => setDeliveryLatInput(e.target.value)}
+                        placeholder="-6.200000"
+                        className="mt-0.5 min-h-[44px] w-full rounded-xl border border-zinc-200 bg-white px-3 font-mono text-xs outline-none focus:border-apple-blue"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="deliveryLng" className="block text-[10px] font-medium text-zinc-500">
+                        Longitude
+                      </label>
+                      <input
+                        id="deliveryLng"
+                        type="text"
+                        inputMode="decimal"
+                        value={deliveryLngInput}
+                        onChange={(e) => setDeliveryLngInput(e.target.value)}
+                        placeholder="106.816666"
+                        className="mt-0.5 min-h-[44px] w-full rounded-xl border border-zinc-200 bg-white px-3 font-mono text-xs outline-none focus:border-apple-blue"
+                      />
+                    </div>
+                  </div>
+
+                  {geoNotice && (
+                    <p className="text-[11px] font-medium text-zinc-600">{geoNotice}</p>
+                  )}
+
+                  {liveDeliveryDistanceKm !== null && (
+                    <div
+                      className={cn(
+                        'rounded-xl px-3 py-2 text-[11px] font-semibold',
+                        isOutOfDeliveryRadius
+                          ? 'border border-red-200 bg-red-50 text-[#D70015]'
+                          : 'border border-emerald-200 bg-emerald-50 text-[#1D7D32]'
+                      )}
+                    >
+                      {lang === 'ID'
+                        ? `Jarak ke restoran: ${liveDeliveryDistanceKm.toFixed(1)} km (maks ${branch?.maxDeliveryRadiusKm || 0} km)`
+                        : `Distance from store: ${liveDeliveryDistanceKm.toFixed(1)} km (max ${branch?.maxDeliveryRadiusKm || 0} km)`}
+                    </div>
+                  )}
+
+                  {parsedDeliveryCoords && (
+                    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+                      <iframe
+                        title={lang === 'ID' ? 'Pratinjau Pin Lokasi Antar' : 'Delivery Pin Preview'}
+                        src={buildOsmEmbedUrl(parsedDeliveryCoords.lat, parsedDeliveryCoords.lng)}
+                        className="h-36 w-full border-0"
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Delivery Timing Mode: ASAP vs Scheduled */}
+                <div className="space-y-2 border-t border-zinc-200/80 pt-3">
+                  <span className="block text-xs font-semibold text-zinc-800">
+                    {lang === 'ID' ? 'Waktu Pengantaran' : 'Delivery Timing'}
+                  </span>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { id: 'ASAP' as const, label: lang === 'ID' ? 'Antar Sekarang (ASAP)' : 'Deliver Now (ASAP)' },
+                      { id: 'SCHEDULED' as const, label: lang === 'ID' ? 'Jadwalkan Jam Antar' : 'Schedule Delivery' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => {
+                          setDeliveryTimingMode(opt.id);
+                          setFieldErrors((prev) => ({ ...prev, scheduledDeliveryTime: undefined }));
+                        }}
+                        className={cn(
+                          'min-h-[44px] rounded-xl border px-3 py-2 text-[11px] font-bold transition-all',
+                          deliveryTimingMode === opt.id
+                            ? 'border-apple-blue bg-white text-apple-blue ring-2 ring-apple-blue/15'
+                            : 'border-zinc-200 bg-zinc-100/70 text-zinc-600'
+                        )}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {deliveryTimingMode === 'SCHEDULED' && (
+                    <div>
+                      <label htmlFor="modalDeliveryTime" className="block text-[11px] font-semibold text-zinc-700">
+                        {lang === 'ID' ? 'Tanggal & Jam Antar (WIB)' : 'Scheduled Delivery Date & Time (WIB)'}{' '}
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        ref={deliveryTimeInputRef}
+                        id="modalDeliveryTime"
+                        type="datetime-local"
+                        min={getNowLocalInputWib()}
+                        required
+                        aria-invalid={Boolean(fieldErrors.scheduledDeliveryTime)}
+                        aria-describedby={
+                          fieldErrors.scheduledDeliveryTime ? 'err-deliveryTime' : undefined
+                        }
+                        value={scheduledDeliveryTime}
+                        onChange={(e) => {
+                          setScheduledDeliveryTime(e.target.value);
+                          if (fieldErrors.scheduledDeliveryTime) {
+                            setFieldErrors((prev) => ({
+                              ...prev,
+                              scheduledDeliveryTime: undefined,
+                            }));
+                          }
+                        }}
+                        className="mt-1 min-h-[48px] w-full rounded-xl border border-zinc-200 bg-white px-3 text-xs font-medium outline-none focus:border-apple-blue aria-[invalid=true]:border-[#D70015]"
+                      />
+                      {fieldErrors.scheduledDeliveryTime && (
+                        <p id="err-deliveryTime" className="mt-1 text-[11px] font-semibold text-[#D70015]">
+                          {fieldErrors.scheduledDeliveryTime}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -1328,12 +1636,22 @@ export function CustomerStorefrontClient({
                 />
                 <div>
                   <p className="text-xs font-bold text-zinc-950">
-                    {lang === 'ID' ? 'Bayar di Kasir (Tunai)' : 'Cash at Cashier'}
+                    {orderType === OrderType.SELF_DELIVERY
+                      ? lang === 'ID'
+                        ? 'Bayar Tunai saat Kurir Tiba (COD)'
+                        : 'Cash on Delivery (COD)'
+                      : lang === 'ID'
+                        ? 'Bayar di Kasir (Tunai)'
+                        : 'Cash at Cashier'}
                   </p>
                   <p className="text-[10px] text-zinc-500">
-                    {lang === 'ID'
-                      ? 'Bayar tunai langsung di kasir'
-                      : 'Pay directly in cash at cashier'}
+                    {orderType === OrderType.SELF_DELIVERY
+                      ? lang === 'ID'
+                        ? 'Siapkan uang pas untuk kurir toko'
+                        : 'Pay cash directly to the store courier'
+                      : lang === 'ID'
+                        ? 'Bayar tunai langsung di kasir'
+                        : 'Pay directly in cash at cashier'}
                   </p>
                 </div>
               </label>

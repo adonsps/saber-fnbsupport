@@ -8,6 +8,7 @@ import {
   Check,
   Clock,
   CreditCard,
+  Crosshair,
   Eye,
   EyeSlash,
   QrCode,
@@ -18,6 +19,7 @@ import { DEFAULT_HOURS, DEFAULT_QRIS_SVG } from '@/lib/defaults';
 import { DaySchedule } from '@/types/schema';
 import { cn, formatIdr, slugify } from '@/lib/utils';
 import { APPLE_SPRINGS, triggerCausalHaptic } from '@/lib/apple-motion';
+import { buildOsmEmbedUrl, parseLatLng } from '@/lib/geo';
 
 const INDONESIAN_BANKS = [
   'BCA (Bank Central Asia)',
@@ -88,6 +90,10 @@ function OnboardingWizardContent() {
 
   // Step 2: Operations & Delivery
   const [address, setAddress] = useState('');
+  const [branchLatInput, setBranchLatInput] = useState('');
+  const [branchLngInput, setBranchLngInput] = useState('');
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [geoNotice, setGeoNotice] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState(
     'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80'
   );
@@ -175,6 +181,12 @@ function OnboardingWizardContent() {
         }
         if (data.branch) {
           setAddress(data.branch.address);
+          if (typeof data.branch.branchLat === 'number') {
+            setBranchLatInput(String(data.branch.branchLat));
+          }
+          if (typeof data.branch.branchLng === 'number') {
+            setBranchLngInput(String(data.branch.branchLng));
+          }
           if (data.branch.logoUrl) setLogoUrl(data.branch.logoUrl);
           if (data.branch.operationalHours) {
             try {
@@ -325,13 +337,39 @@ function OnboardingWizardContent() {
         return;
       }
       setStep(2);
+      if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (step === 2) {
       if (!address.trim()) {
         setErrorMsg('Alamat cabang wajib diisi.');
         return;
       }
       setStep(3);
+      if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+
+  const parsedBranchCoords = parseLatLng(branchLatInput, branchLngInput);
+
+  const handleDetectBranchLocation = () => {
+    setGeoNotice(null);
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setGeoNotice('Browser tidak mendukung GPS. Masukkan koordinat manual jika diperlukan.');
+      return;
+    }
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setBranchLatInput(String(Math.round(pos.coords.latitude * 1_000_000) / 1_000_000));
+        setBranchLngInput(String(Math.round(pos.coords.longitude * 1_000_000) / 1_000_000));
+        setGeoLoading(false);
+        setGeoNotice('Titik lokasi cabang berhasil dikunci.');
+      },
+      () => {
+        setGeoLoading(false);
+        setGeoNotice('Izin GPS ditolak. Isi Latitude & Longitude cabang secara manual.');
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   const handleLaunch = async (e: React.FormEvent) => {
@@ -353,6 +391,8 @@ function OnboardingWizardContent() {
           ownerName,
           ownerWhatsapp,
           address,
+          branchLat: parsedBranchCoords?.lat ?? null,
+          branchLng: parsedBranchCoords?.lng ?? null,
           logoUrl,
           operationalHours,
           isSelfDeliveryEnabled,
@@ -386,7 +426,7 @@ function OnboardingWizardContent() {
   ];
 
   return (
-    <div className="mx-auto max-w-4xl px-4 pt-8 sm:px-6">
+    <div className="mx-auto max-w-4xl px-4 pt-14 sm:px-6 sm:pt-12">
       <div className="mb-8 text-center">
         <p className="hig-caption text-xs font-semibold uppercase tracking-[0.06em] text-[#515154]">
           {onboardingMode === 'new' ? 'Pendaftaran Restoran Baru' : 'Pengaturan Profil Restoran'}
@@ -963,40 +1003,110 @@ function OnboardingWizardContent() {
                   </div>
 
                   {isSelfDeliveryEnabled && (
-                    <div className="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
-                      <div>
-                        <label
-                          htmlFor="maxRadius"
-                          className="block text-xs font-semibold text-zinc-800"
-                        >
-                          Maksimal Radius Pengantaran (km)
-                        </label>
-                        <input
-                          id="maxRadius"
-                          type="number"
-                          min={1}
-                          max={50}
-                          value={maxDeliveryRadiusKm}
-                          onChange={(e) => setMaxDeliveryRadiusKm(Number(e.target.value))}
-                          className="mt-1 min-h-[44px] w-full rounded-xl border border-zinc-200 bg-white px-3 font-mono text-sm"
-                        />
+                    <div className="space-y-4 pt-2">
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                          <label
+                            htmlFor="maxRadius"
+                            className="block text-xs font-semibold text-zinc-800"
+                          >
+                            Maksimal Radius Pengantaran (km)
+                          </label>
+                          <input
+                            id="maxRadius"
+                            type="number"
+                            min={1}
+                            max={50}
+                            value={maxDeliveryRadiusKm}
+                            onChange={(e) => setMaxDeliveryRadiusKm(Number(e.target.value))}
+                            className="mt-1 min-h-[44px] w-full rounded-xl border border-zinc-200 bg-white px-3 font-mono text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label
+                            htmlFor="deliveryFee"
+                            className="block text-xs font-semibold text-zinc-800"
+                          >
+                            Ongkos Kirim Flat (IDR) — {formatIdr(deliveryFeeIdr)}
+                          </label>
+                          <input
+                            id="deliveryFee"
+                            type="number"
+                            min={0}
+                            step={1000}
+                            value={deliveryFeeIdr}
+                            onChange={(e) => setDeliveryFeeIdr(Number(e.target.value))}
+                            className="mt-1 min-h-[44px] w-full rounded-xl border border-zinc-200 bg-white px-3 font-mono text-sm"
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <label
-                          htmlFor="deliveryFee"
-                          className="block text-xs font-semibold text-zinc-800"
-                        >
-                          Ongkos Kirim Flat (IDR) — {formatIdr(deliveryFeeIdr)}
-                        </label>
-                        <input
-                          id="deliveryFee"
-                          type="number"
-                          min={0}
-                          step={1000}
-                          value={deliveryFeeIdr}
-                          onChange={(e) => setDeliveryFeeIdr(Number(e.target.value))}
-                          className="mt-1 min-h-[44px] w-full rounded-xl border border-zinc-200 bg-white px-3 font-mono text-sm"
-                        />
+
+                      <div className="space-y-2 rounded-xl border border-zinc-200 bg-white p-3.5">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <p className="text-xs font-bold text-zinc-900">
+                              Titik Koordinat Cabang (Validasi Radius Haversine)
+                            </p>
+                            <p className="text-[11px] text-zinc-500">
+                              Digunakan untuk menghitung jarak otomatis saat pelanggan memesan layanan antar.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleDetectBranchLocation}
+                            disabled={geoLoading}
+                            className="apple-interactive inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-apple-blue/30 bg-apple-blue/5 px-3.5 py-1.5 text-xs font-bold text-apple-blue hover:bg-apple-blue/10 disabled:opacity-60"
+                          >
+                            <Crosshair aria-hidden="true" weight="bold" className="h-4 w-4" />
+                            {geoLoading ? 'Mendeteksi...' : 'Gunakan Lokasi Cabang (GPS)'}
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          <div>
+                            <label htmlFor="branchLat" className="block text-[11px] font-medium text-zinc-600">
+                              Latitude Cabang
+                            </label>
+                            <input
+                              id="branchLat"
+                              type="text"
+                              inputMode="decimal"
+                              value={branchLatInput}
+                              onChange={(e) => setBranchLatInput(e.target.value)}
+                              placeholder="-6.200000"
+                              className="mt-1 min-h-[44px] w-full rounded-xl border border-zinc-200 bg-[#F5F5F7]/50 px-3 font-mono text-xs"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="branchLng" className="block text-[11px] font-medium text-zinc-600">
+                              Longitude Cabang
+                            </label>
+                            <input
+                              id="branchLng"
+                              type="text"
+                              inputMode="decimal"
+                              value={branchLngInput}
+                              onChange={(e) => setBranchLngInput(e.target.value)}
+                              placeholder="106.816666"
+                              className="mt-1 min-h-[44px] w-full rounded-xl border border-zinc-200 bg-[#F5F5F7]/50 px-3 font-mono text-xs"
+                            />
+                          </div>
+                        </div>
+
+                        {geoNotice && (
+                          <p className="text-[11px] font-medium text-zinc-600">{geoNotice}</p>
+                        )}
+
+                        {parsedBranchCoords && (
+                          <div className="overflow-hidden rounded-xl border border-zinc-200">
+                            <iframe
+                              title="Pratinjau Pin Lokasi Cabang"
+                              src={buildOsmEmbedUrl(parsedBranchCoords.lat, parsedBranchCoords.lng)}
+                              className="h-36 w-full border-0"
+                              loading="lazy"
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1120,7 +1230,10 @@ function OnboardingWizardContent() {
             {step > 1 ? (
               <button
                 type="button"
-                onClick={() => setStep((step - 1) as 1 | 2)}
+                onClick={() => {
+                  setStep((step - 1) as 1 | 2);
+                  if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
                 className="apple-interactive inline-flex min-h-[44px] items-center rounded-full border border-zinc-300 bg-white px-5 py-2.5 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
               >
                 Langkah Sebelumnya

@@ -13,6 +13,8 @@ import {
   UiLang,
 } from '@/lib/order-labels';
 import { cn, formatIdr } from '@/lib/utils';
+import { buildGoogleMapsUrl } from '@/lib/geo';
+import { formatScheduledWib } from '@/lib/store-hours';
 
 export default function DigitalWebReceiptPage() {
   const routeParams = useParams<{ orderId: string }>();
@@ -122,6 +124,49 @@ export default function DigitalWebReceiptPage() {
               {order.tableNumber || getOrderTypeLabel(order.orderType, lang)}
             </dd>
           </div>
+          {order.deliveryAddress && (
+            <div className="flex justify-between gap-3">
+              <dt className="shrink-0 text-zinc-500">
+                {lang === 'ID' ? 'Alamat Antar' : 'Delivery Address'}
+              </dt>
+              <dd className="text-right font-medium text-zinc-950">
+                {order.deliveryAddress}
+                {typeof order.deliveryLat === 'number' && typeof order.deliveryLng === 'number' && (
+                  <div>
+                    <a
+                      href={buildGoogleMapsUrl(order.deliveryLat, order.deliveryLng)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-bold text-apple-blue hover:underline"
+                    >
+                      {lang === 'ID' ? 'Buka Pin Maps ↗' : 'Open Map Pin ↗'}
+                    </a>
+                    {typeof order.deliveryDistanceKm === 'number' && (
+                      <span className="ml-1 font-mono text-[10px] text-zinc-500">
+                        ({order.deliveryDistanceKm.toFixed(1)} km)
+                      </span>
+                    )}
+                  </div>
+                )}
+              </dd>
+            </div>
+          )}
+          {order.scheduledPickupTime && (
+            <div className="flex justify-between gap-2">
+              <dt className="text-zinc-500">{lang === 'ID' ? 'Jadwal Ambil' : 'Scheduled Pick-Up'}</dt>
+              <dd className="text-right font-mono font-semibold text-zinc-950">
+                {formatScheduledWib(order.scheduledPickupTime, lang === 'EN' ? 'en' : 'id')}
+              </dd>
+            </div>
+          )}
+          {order.scheduledDeliveryTime && (
+            <div className="flex justify-between gap-2">
+              <dt className="text-zinc-500">{lang === 'ID' ? 'Jadwal Antar' : 'Scheduled Delivery'}</dt>
+              <dd className="text-right font-mono font-semibold text-zinc-950">
+                {formatScheduledWib(order.scheduledDeliveryTime, lang === 'EN' ? 'en' : 'id')}
+              </dd>
+            </div>
+          )}
           <div className="flex justify-between gap-2">
             <dt className="text-zinc-500">{lang === 'ID' ? 'Status Pesanan' : 'Order Status'}</dt>
             <dd
