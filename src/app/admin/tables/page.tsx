@@ -219,7 +219,7 @@ export default function AdminTablesPage() {
                     setPageSize(sz);
                   }}
                   className={cn(
-                    'relative z-10 min-h-[38px] rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors',
+                    'relative z-10 min-h-[44px] rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors',
                     active ? 'text-zinc-950' : 'text-zinc-500 hover:text-zinc-900'
                   )}
                 >
@@ -330,7 +330,7 @@ export default function AdminTablesPage() {
             <button
               type="button"
               onClick={handleUpdateWifiAll}
-              className="inline-flex min-h-[36px] items-center text-[11px] font-bold text-apple-blue hover:underline"
+              className="inline-flex min-h-[44px] items-center text-[11px] font-bold text-apple-blue hover:underline"
             >
               Terapkan ke Semua
             </button>

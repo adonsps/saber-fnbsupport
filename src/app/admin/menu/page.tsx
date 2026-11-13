@@ -395,7 +395,7 @@ export default function AdminMenuPage() {
                   setCatDisplayOrderInput(String(categories.length + 1));
                   catDialogRef.current?.showModal();
                 }}
-                className="apple-interactive inline-flex min-h-[40px] items-center rounded-full bg-[#F5F5F7] px-3.5 py-1.5 text-xs font-semibold text-apple-blue hover:bg-apple-blue hover:text-white"
+                className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-[#F5F5F7] px-3.5 py-1.5 text-xs font-semibold text-apple-blue hover:bg-apple-blue hover:text-white"
               >
                 + Kategori
               </button>
@@ -433,7 +433,7 @@ export default function AdminMenuPage() {
                     <button
                       type="button"
                       onClick={() => setActiveCatId(cat.id)}
-                      className="flex min-h-[40px] min-w-0 flex-1 items-center gap-2 text-left"
+                      className="flex min-h-[44px] min-w-0 flex-1 items-center gap-2 text-left"
                     >
                       <span className="font-mono text-[11px] font-semibold tabular-nums text-[#515154]">
                         {String(idx + 1).padStart(2, '0')}
@@ -454,7 +454,7 @@ export default function AdminMenuPage() {
                         type="button"
                         aria-label={`Ubah ${cat.nameId}`}
                         onClick={() => openEditCategoryModal(cat)}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 hover:bg-white hover:text-apple-blue"
+                        className="flex h-11 w-11 items-center justify-center rounded-lg text-zinc-500 hover:bg-white hover:text-apple-blue"
                       >
                         <PencilSimple aria-hidden="true" weight="bold" className="h-3.5 w-3.5" />
                       </button>
@@ -462,7 +462,7 @@ export default function AdminMenuPage() {
                         type="button"
                         aria-label={`Hapus ${cat.nameId}`}
                         onClick={() => handleDeleteCategory(cat)}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-red-50 hover:text-[#D70015]"
+                        className="flex h-11 w-11 items-center justify-center rounded-lg text-zinc-400 hover:bg-red-50 hover:text-[#D70015]"
                       >
                         <Trash aria-hidden="true" weight="regular" className="h-3.5 w-3.5" />
                       </button>
@@ -471,7 +471,7 @@ export default function AdminMenuPage() {
                         aria-label={`Geser ${cat.nameId} ke atas`}
                         disabled={idx === 0}
                         onClick={() => handleMoveCategory(idx, -1)}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-white hover:text-zinc-900 disabled:opacity-30"
+                        className="flex h-11 w-11 items-center justify-center rounded-lg text-zinc-400 hover:bg-white hover:text-zinc-900 disabled:opacity-30"
                       >
                         <CaretUp aria-hidden="true" weight="bold" className="h-3.5 w-3.5" />
                       </button>
@@ -480,7 +480,7 @@ export default function AdminMenuPage() {
                         aria-label={`Geser ${cat.nameId} ke bawah`}
                         disabled={idx === categories.length - 1}
                         onClick={() => handleMoveCategory(idx, 1)}
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-white hover:text-zinc-900 disabled:opacity-30"
+                        className="flex h-11 w-11 items-center justify-center rounded-lg text-zinc-400 hover:bg-white hover:text-zinc-900 disabled:opacity-30"
                       >
                         <CaretDown aria-hidden="true" weight="bold" className="h-3.5 w-3.5" />
                       </button>

@@ -264,29 +264,27 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    // Action 2: Move Table
+    // Action 2: Move Table (preserves concurrent activeOrderIds on both old and new tables)
     if (body.action === 'move_table' && body.newTableNumber) {
-      const oldTableNum = order.tableNumber;
       const newTableNum = String(body.newTableNumber).toUpperCase();
 
-      if (oldTableNum) {
-        const oldTable = store.tableSessions.find(
-          (t) =>
-            t.branchId === branch.id &&
-            t.tableNumber.toUpperCase() === oldTableNum.toUpperCase()
-        );
-        if (oldTable) {
-          oldTable.isOccupied = false;
-          oldTable.activeOrderId = undefined;
-        }
-      }
+      releaseOrderTable(store, branch.id, order);
 
       const newTable = store.tableSessions.find(
         (t) => t.branchId === branch.id && t.tableNumber.toUpperCase() === newTableNum
       );
       if (newTable) {
+        const nextIds = Array.isArray(newTable.activeOrderIds)
+          ? newTable.activeOrderIds.slice()
+          : newTable.activeOrderId
+            ? [newTable.activeOrderId]
+            : [];
+        if (!nextIds.includes(order.id)) nextIds.push(order.id);
+        newTable.activeOrderIds = nextIds;
+        if (!newTable.activeOrderId) {
+          newTable.activeOrderId = order.id;
+        }
         newTable.isOccupied = true;
-        newTable.activeOrderId = order.id;
       }
 
       order.tableNumber = newTableNum;
