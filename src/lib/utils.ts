@@ -14,6 +14,37 @@ export function formatIdr(amount: number): string {
   }).format(amount);
 }
 
+/**
+ * Strips non-digit characters and leading zeros (while preserving a single "0").
+ * Returns "" when empty so controlled inputs never force a sticky leading "0".
+ */
+export function sanitizeDigitsInput(raw: string): string {
+  const digits = String(raw || '').replace(/\D/g, '');
+  if (!digits) return '';
+  return digits.replace(/^0+(?=\d)/, '');
+}
+
+/**
+ * Formats an integer string or number using Indonesian thousands separators (e.g. 12000 -> "12.000").
+ * Preserves "" when empty so users can clear the field completely before typing.
+ */
+export function formatThousandsId(value: string | number | null | undefined): string {
+  if (value === null || value === undefined) return '';
+  const cleaned = typeof value === 'number' ? String(Math.max(0, Math.trunc(value))) : sanitizeDigitsInput(value);
+  if (!cleaned) return '';
+  return new Intl.NumberFormat('id-ID', {
+    maximumFractionDigits: 0,
+  }).format(Number(cleaned));
+}
+
+export function parseDigitsToNumber(raw: string | number | null | undefined, fallback = 0): number {
+  if (typeof raw === 'number') return Number.isFinite(raw) ? raw : fallback;
+  const cleaned = sanitizeDigitsInput(String(raw || ''));
+  if (!cleaned) return fallback;
+  const parsed = Number(cleaned);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 export const RESERVED_SLUGS = new Set([
   'www',
   'app',

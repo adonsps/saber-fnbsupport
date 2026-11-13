@@ -11,7 +11,13 @@ import {
   Trash,
 } from '@phosphor-icons/react';
 import { Category, MenuItem, Merchant } from '@/types/schema';
-import { cn, formatIdr } from '@/lib/utils';
+import {
+  cn,
+  formatIdr,
+  formatThousandsId,
+  parseDigitsToNumber,
+  sanitizeDigitsInput,
+} from '@/lib/utils';
 import { useDialogLightDismiss } from '@/lib/client-helpers';
 import { motion } from 'framer-motion';
 import { APPLE_SPRINGS, triggerCausalHaptic } from '@/lib/apple-motion';
@@ -35,7 +41,7 @@ export default function AdminMenuPage() {
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
   const [catNameId, setCatNameId] = useState('');
   const [catNameEn, setCatNameEn] = useState('');
-  const [catDisplayOrder, setCatDisplayOrder] = useState(1);
+  const [catDisplayOrderInput, setCatDisplayOrderInput] = useState('1');
   const [catError, setCatError] = useState<string | null>(null);
 
   // Menu Item modal state
@@ -45,7 +51,7 @@ export default function AdminMenuPage() {
   const [titleEn, setTitleEn] = useState('');
   const [descriptionId, setDescriptionId] = useState('');
   const [descriptionEn, setDescriptionEn] = useState('');
-  const [priceIdr, setPriceIdr] = useState(35000);
+  const [priceIdrInput, setPriceIdrInput] = useState('35000');
   const [imageUrl, setImageUrl] = useState('');
   const [itemFormError, setItemFormError] = useState<string | null>(null);
 
@@ -139,7 +145,7 @@ export default function AdminMenuPage() {
           id: editingCatId || undefined,
           nameId: catNameId,
           nameEn: catNameEn,
-          displayOrder: catDisplayOrder,
+          displayOrder: Math.max(1, parseDigitsToNumber(catDisplayOrderInput, 1)),
         }),
       });
       const data = await res.json();
@@ -163,7 +169,7 @@ export default function AdminMenuPage() {
     setEditingCatId(cat.id);
     setCatNameId(cat.nameId);
     setCatNameEn(cat.nameEn || '');
-    setCatDisplayOrder(cat.displayOrder);
+    setCatDisplayOrderInput(String(cat.displayOrder ?? 1));
     setCatError(null);
     catDialogRef.current?.showModal();
   };
@@ -195,7 +201,7 @@ export default function AdminMenuPage() {
     setTitleEn('');
     setDescriptionId('');
     setDescriptionEn('');
-    setPriceIdr(35000);
+    setPriceIdrInput('35000');
     setImageUrl('');
     setItemFormError(null);
     itemDialogRef.current?.showModal();
@@ -208,7 +214,7 @@ export default function AdminMenuPage() {
     setTitleEn(item.titleEn || '');
     setDescriptionId(item.descriptionId || '');
     setDescriptionEn(item.descriptionEn || '');
-    setPriceIdr(item.priceIdr);
+    setPriceIdrInput(String(item.priceIdr ?? 0));
     setImageUrl(item.imageUrl || '');
     setItemFormError(null);
     itemDialogRef.current?.showModal();
@@ -248,7 +254,7 @@ export default function AdminMenuPage() {
       setItemFormError('Nama menu (ID) wajib diisi.');
       return;
     }
-    const parsedPrice = Number(priceIdr);
+    const parsedPrice = parseDigitsToNumber(priceIdrInput, 0);
     if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
       setItemFormError('Harga menu harus lebih besar dari Rp 0.');
       return;
@@ -386,7 +392,7 @@ export default function AdminMenuPage() {
                   setCatNameId('');
                   setCatNameEn('');
                   setCatError(null);
-                  setCatDisplayOrder(categories.length + 1);
+                  setCatDisplayOrderInput(String(categories.length + 1));
                   catDialogRef.current?.showModal();
                 }}
                 className="apple-interactive inline-flex min-h-[40px] items-center rounded-full bg-[#F5F5F7] px-3.5 py-1.5 text-xs font-semibold text-apple-blue hover:bg-apple-blue hover:text-white"
@@ -711,10 +717,11 @@ export default function AdminMenuPage() {
             </label>
             <input
               id="catOrder"
-              type="number"
-              min={1}
-              value={catDisplayOrder}
-              onChange={(e) => setCatDisplayOrder(Number(e.target.value))}
+              type="text"
+              inputMode="numeric"
+              placeholder="1"
+              value={formatThousandsId(catDisplayOrderInput)}
+              onChange={(e) => setCatDisplayOrderInput(sanitizeDigitsInput(e.target.value))}
               className="mt-1 min-h-[44px] w-full rounded-xl border border-zinc-200 px-3.5 font-mono text-sm outline-none focus:border-apple-blue"
             />
           </div>
@@ -781,18 +788,18 @@ export default function AdminMenuPage() {
 
             <div>
               <label htmlFor="itemPrice" className="block text-xs font-semibold text-zinc-800">
-                Harga (IDR) — {formatIdr(Math.max(0, Number(priceIdr) || 0))}
+                Harga (IDR) — {formatIdr(Math.max(0, parseDigitsToNumber(priceIdrInput, 0)))}
               </label>
               <input
                 id="itemPrice"
-                type="number"
+                type="text"
+                inputMode="numeric"
                 required
-                min={1}
-                step={500}
-                aria-invalid={Number(priceIdr) <= 0}
-                value={priceIdr}
+                placeholder="35.000"
+                aria-invalid={parseDigitsToNumber(priceIdrInput, 0) <= 0}
+                value={formatThousandsId(priceIdrInput)}
                 onChange={(e) => {
-                  setPriceIdr(Number(e.target.value));
+                  setPriceIdrInput(sanitizeDigitsInput(e.target.value));
                   if (itemFormError) setItemFormError(null);
                 }}
                 className="mt-1 min-h-[44px] w-full rounded-xl border border-zinc-200 px-3.5 font-mono text-sm aria-[invalid=true]:border-[#D70015]"
