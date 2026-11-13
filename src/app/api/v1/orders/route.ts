@@ -13,7 +13,7 @@ import {
   saveStore,
 } from '@/lib/store';
 import { formatIdr, getOriginFromHeaders, normalizeBaseOrigin } from '@/lib/utils';
-import { Order, OrderStatus, PaymentStatus, PaymentType } from '@/types/schema';
+import { Order, OrderStatus, OrderType, PaymentStatus, PaymentType } from '@/types/schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -150,6 +150,31 @@ export async function PATCH(req: NextRequest) {
         );
       }
 
+      if (
+        sourceOrder.orderType !== OrderType.WALK_IN_TABLE ||
+        targetOrder.orderType !== OrderType.WALK_IN_TABLE
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              'Fitur Gabung Meja hanya berlaku untuk pesanan Makan di Meja (Walk-In Table), bukan Delivery atau Pre-Order Ambil.',
+          },
+          { status: 400 }
+        );
+      }
+
+      if (
+        sourceOrder.orderStatus === OrderStatus.CANCELLED ||
+        sourceOrder.orderStatus === OrderStatus.COMPLETED ||
+        targetOrder.orderStatus === OrderStatus.CANCELLED ||
+        targetOrder.orderStatus === OrderStatus.COMPLETED
+      ) {
+        return NextResponse.json(
+          { error: 'Hanya pesanan meja yang masih aktif yang dapat digabung.' },
+          { status: 409 }
+        );
+      }
+
       if (!canManageBranch(targetOrder.branchId)) {
         return NextResponse.json({ error: 'Akses ditolak.' }, { status: 403 });
       }
@@ -210,16 +235,36 @@ export async function PATCH(req: NextRequest) {
 
     // Action 4: Customer uploads payment receipt proof (customer action allowed via order UUID)
     if (body.action === 'upload_receipt' && body.receiptImageUrl) {
+      if (order.paymentType !== PaymentType.BANK_TRANSFER_QRIS) {
+        return NextResponse.json(
+          {
+            error:
+              'Unggah bukti transfer hanya berlaku untuk metode pembayaran QRIS / Transfer Bank.',
+          },
+          { status: 400 }
+        );
+      }
+
+      if (order.orderStatus === OrderStatus.PENDING_STOCK_CONFIRMATION) {
+        return NextResponse.json(
+          {
+            error:
+              'Mohon tunggu kasir mengonfirmasi ketersediaan stok terlebih dahulu sebelum mengunggah bukti bayar.',
+          },
+          { status: 409 }
+        );
+      }
+
       if (
-        order.orderStatus === OrderStatus.CANCELLED ||
-        order.orderStatus === OrderStatus.COMPLETED
+        order.orderStatus !== OrderStatus.AWAITING_PAYMENT &&
+        order.orderStatus !== OrderStatus.PAYMENT_PENDING_APPROVAL
       ) {
         return NextResponse.json(
           {
             error:
               order.orderStatus === OrderStatus.CANCELLED
                 ? 'Pesanan ini telah dibatalkan dan tidak dapat menerima bukti bayar baru.'
-                : 'Pesanan ini sudah selesai.',
+                : 'Bukti bayar tidak dapat diubah karena pesanan sudah diverifikasi atau selesai.',
           },
           { status: 409 }
         );
@@ -266,6 +311,15 @@ export async function PATCH(req: NextRequest) {
 
     // Action 2: Move Table (preserves concurrent activeOrderIds on both old and new tables)
     if (body.action === 'move_table' && body.newTableNumber) {
+      if (order.orderType !== OrderType.WALK_IN_TABLE) {
+        return NextResponse.json(
+          {
+            error:
+              'Fitur Pindah Meja hanya berlaku untuk pesanan Makan di Meja (Walk-In Table).',
+          },
+          { status: 400 }
+        );
+      }
       const newTableNum = String(body.newTableNumber).toUpperCase();
 
       releaseOrderTable(store, branch.id, order);
@@ -358,7 +412,9 @@ export async function PATCH(req: NextRequest) {
         messageBody:
           order.paymentType === PaymentType.BANK_TRANSFER_QRIS
             ? `✅ Halo *${order.customerName}*! Stok pesanan *#${order.orderNumber}* di *${merchant.name}* telah dikonfirmasi dapur.\n\nTotal tagihan: *${formatIdr(order.totalAmountIdr)}*\nSilakan bayar via QRIS / ${branch.bankName} ${branch.bankAccountNumber} (a.n ${branch.bankAccountHolder}) lalu unggah bukti bayar di tautan ini:`
-            : `✅ Halo *${order.customerName}*! Stok pesanan *#${order.orderNumber}* telah dikonfirmasi. Total tagihan: *${formatIdr(order.totalAmountIdr)}*. Silakan selesaikan pembayaran tunai di kasir.`,
+            : order.orderType === OrderType.SELF_DELIVERY
+              ? `✅ Halo *${order.customerName}*! Stok pesanan *#${order.orderNumber}* telah dikonfirmasi. Total tagihan: *${formatIdr(order.totalAmountIdr)}*. Silakan siapkan pembayaran tunai (COD) saat kurir toko tiba di alamat Anda.`
+              : `✅ Halo *${order.customerName}*! Stok pesanan *#${order.orderNumber}* telah dikonfirmasi. Total tagihan: *${formatIdr(order.totalAmountIdr)}*. Silakan selesaikan pembayaran tunai di kasir.`,
         magicLinkUrl: trackingUrl,
       });
 
@@ -429,6 +485,36 @@ export async function PATCH(req: NextRequest) {
     // Action 6: Generic status transition (e.g. IN_KITCHEN -> READY_FOR_DELIVERY -> COMPLETED -> CANCELLED)
     if (body.orderStatus) {
       const nextStatus = body.orderStatus as OrderStatus;
+
+      if (
+        order.orderStatus === OrderStatus.CANCELLED ||
+        order.orderStatus === OrderStatus.COMPLETED
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              'Pesanan yang sudah selesai atau dibatalkan bersifat final dan tidak dapat diubah kembali statusnya.',
+          },
+          { status: 409 }
+        );
+      }
+
+      if (
+        (nextStatus === OrderStatus.IN_KITCHEN ||
+          nextStatus === OrderStatus.READY_FOR_DELIVERY ||
+          nextStatus === OrderStatus.COMPLETED) &&
+        order.paymentType === PaymentType.BANK_TRANSFER_QRIS &&
+        order.paymentStatus !== PaymentStatus.VERIFIED
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              'Pesanan dengan pembayaran QRIS / Transfer Bank wajib diverifikasi bukti bayarnya terlebih dahulu sebelum diproses ke dapur atau diselesaikan.',
+          },
+          { status: 409 }
+        );
+      }
+
       order.orderStatus = nextStatus;
       order.updatedAt = new Date().toISOString();
 
