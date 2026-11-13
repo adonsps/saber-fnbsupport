@@ -524,9 +524,33 @@ export default function LiveOrderTrackingPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold text-zinc-950">
-                      {lang === 'ID' ? st.labelId : st.labelEn}
+                      {st.key === OrderStatus.AWAITING_PAYMENT &&
+                      order.paymentType === PaymentType.CASH
+                        ? order.orderType === 'SELF_DELIVERY'
+                          ? lang === 'ID'
+                            ? 'Stok Tersedia • Pembayaran Tunai (COD)'
+                            : 'Stock Confirmed • Cash on Delivery (COD)'
+                          : lang === 'ID'
+                            ? 'Stok Tersedia • Bayar Tunai di Kasir'
+                            : 'Stock Confirmed • Pay Cash at Cashier'
+                        : lang === 'ID'
+                          ? st.labelId
+                          : st.labelEn}
                     </p>
-                    <p className="text-xs text-zinc-500">{lang === 'ID' ? st.subId : st.subEn}</p>
+                    <p className="text-xs text-zinc-500">
+                      {st.key === OrderStatus.AWAITING_PAYMENT &&
+                      order.paymentType === PaymentType.CASH
+                        ? order.orderType === 'SELF_DELIVERY'
+                          ? lang === 'ID'
+                            ? 'Siapkan pembayaran tunai saat kurir toko tiba di lokasi Anda'
+                            : 'Prepare cash payment when our store courier arrives'
+                          : lang === 'ID'
+                            ? 'Silakan selesaikan pembayaran tunai di meja kasir'
+                            : 'Please complete your cash payment at the cashier counter'
+                        : lang === 'ID'
+                          ? st.subId
+                          : st.subEn}
+                    </p>
                   </div>
                   {isCurrent && (
                     <span className="rounded-full bg-apple-blue px-2.5 py-0.5 text-[10px] font-bold text-white">
@@ -539,6 +563,36 @@ export default function LiveOrderTrackingPage() {
           </ol>
         )}
       </div>
+
+      {/* Cash / COD Payment Guidance Panel when AWAITING_PAYMENT with CASH */}
+      {!isCancelled &&
+        order.orderStatus === OrderStatus.AWAITING_PAYMENT &&
+        order.paymentType === PaymentType.CASH && (
+          <section className="mt-6 rounded-[28px] border-2 border-emerald-500/30 bg-white p-6 shadow-apple-lg sm:p-8">
+            <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-[11px] font-bold text-[#1D7D32]">
+              {order.orderType === 'SELF_DELIVERY'
+                ? lang === 'ID'
+                  ? 'Stok Terkonfirmasi • Bayar Tunai di Tempat (COD)'
+                  : 'Stock Confirmed • Cash on Delivery (COD)'
+                : lang === 'ID'
+                  ? 'Stok Terkonfirmasi • Bayar Tunai di Kasir'
+                  : 'Stock Confirmed • Pay Cash at Cashier'}
+            </span>
+            <h2 className="mt-2 text-xl font-bold text-zinc-950">
+              {lang === 'ID' ? 'Total Tagihan Tunai:' : 'Total Cash Due:'}{' '}
+              <span className="font-mono text-[#1D7D32]">{formatIdr(order.totalAmountIdr)}</span>
+            </h2>
+            <p className="mt-2 text-xs leading-relaxed text-[#515154]">
+              {order.orderType === 'SELF_DELIVERY'
+                ? lang === 'ID'
+                  ? `Pesanan #${order.orderNumber} telah dikonfirmasi dapur. Mohon siapkan uang tunai sebesar ${formatIdr(order.totalAmountIdr)} untuk dibayarkan langsung kepada kurir toko saat pesanan tiba di alamat Anda.`
+                  : `Order #${order.orderNumber} is confirmed by the kitchen. Please prepare ${formatIdr(order.totalAmountIdr)} in cash for our store courier upon delivery.`
+                : lang === 'ID'
+                  ? `Pesanan #${order.orderNumber} telah dikonfirmasi dapur. Silakan tunjukkan kode pesanan ini dan selesaikan pembayaran tunai sebesar ${formatIdr(order.totalAmountIdr)} di kasir agar pesanan segera dimasak.`
+                  : `Order #${order.orderNumber} is confirmed. Please show this order code and pay ${formatIdr(order.totalAmountIdr)} in cash at the cashier so the kitchen can start cooking.`}
+            </p>
+          </section>
+        )}
 
       {/* Payment Panel Component (Active when Stock Confirmed & Payment Requested) */}
       {showPaymentPanel && (

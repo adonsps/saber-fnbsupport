@@ -214,6 +214,7 @@ export default function CashierKanbanPage() {
     const otherActive = orders.find(
       (o) =>
         o.id !== order.id &&
+        o.orderType === OrderType.WALK_IN_TABLE &&
         o.orderStatus !== OrderStatus.COMPLETED &&
         o.orderStatus !== OrderStatus.CANCELLED
     );
@@ -713,7 +714,9 @@ export default function CashierKanbanPage() {
                                       }
                                       className="apple-interactive flex min-h-[44px] w-full items-center justify-center rounded-xl bg-[#1D7D32] px-3 text-xs font-bold text-white hover:brightness-110"
                                     >
-                                      Terima Tunai → Masak
+                                      {order.orderType === OrderType.SELF_DELIVERY
+                                        ? 'Proses Masak (COD Kurir)'
+                                        : 'Terima Tunai → Masak'}
                                     </button>
                                   ) : (
                                     <div className="rounded-xl bg-blue-50 px-3 py-2 text-center text-[11px] font-semibold text-apple-blue">
@@ -732,7 +735,11 @@ export default function CashierKanbanPage() {
                                   }
                                   className="apple-interactive flex min-h-[44px] w-full items-center justify-center rounded-xl bg-purple-700 px-3 text-xs font-bold text-white hover:bg-purple-800"
                                 >
-                                  Tandai Siap Disajikan
+                                  {order.orderType === OrderType.SELF_DELIVERY
+                                    ? 'Tandai Siap Diantar Kurir'
+                                    : order.orderType === OrderType.PRE_ORDER_PICKUP
+                                      ? 'Tandai Siap Diambil Pelanggan'
+                                      : 'Tandai Siap Disajikan'}
                                 </button>
                               )}
 
@@ -745,20 +752,26 @@ export default function CashierKanbanPage() {
                                   }
                                   className="apple-interactive flex min-h-[44px] w-full items-center justify-center rounded-xl bg-[#1D7D32] px-3 text-xs font-bold text-white hover:brightness-110"
                                 >
-                                  Selesaikan &amp; Kosongkan Meja
+                                  {order.orderType === OrderType.SELF_DELIVERY
+                                    ? 'Selesaikan Pengantaran'
+                                    : order.orderType === OrderType.PRE_ORDER_PICKUP
+                                      ? 'Selesaikan Pengambilan'
+                                      : 'Selesaikan & Kosongkan Meja'}
                                 </button>
                               )}
 
                               <div className="flex flex-wrap items-center justify-between gap-1 pt-1">
                                 {col.id !== 'COMPLETED' && (
                                   <div className="flex items-center gap-1">
-                                    <button
-                                      type="button"
-                                      onClick={() => openTableControlsModal(order)}
-                                      className="apple-interactive inline-flex min-h-[44px] items-center rounded-lg bg-[#F5F5F7] px-2.5 py-1 text-[11px] font-semibold text-[#1D1D1F] hover:bg-zinc-200"
-                                    >
-                                      Pindah / Gabung
-                                    </button>
+                                    {order.orderType === OrderType.WALK_IN_TABLE && (
+                                      <button
+                                        type="button"
+                                        onClick={() => openTableControlsModal(order)}
+                                        className="apple-interactive inline-flex min-h-[44px] items-center rounded-lg bg-[#F5F5F7] px-2.5 py-1 text-[11px] font-semibold text-[#1D1D1F] hover:bg-zinc-200"
+                                      >
+                                        Pindah / Gabung
+                                      </button>
+                                    )}
                                     <button
                                       type="button"
                                       onClick={() => openCancelOrderModal(order)}
@@ -1137,6 +1150,7 @@ export default function CashierKanbanPage() {
                 .filter(
                   (o) =>
                     o.id !== activeOrder?.id &&
+                    o.orderType === OrderType.WALK_IN_TABLE &&
                     o.orderStatus !== OrderStatus.COMPLETED &&
                     o.orderStatus !== OrderStatus.CANCELLED
                 )

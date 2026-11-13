@@ -52,14 +52,6 @@ export async function POST(req: NextRequest) {
     }
 
     const hoursCheck = evaluateStoreHours(branch.operationalHours);
-    if (!hoursCheck.isWithinHours) {
-      return NextResponse.json(
-        {
-          error: `Maaf, toko sedang di luar jam operasional (${hoursCheck.statusLabelId}).`,
-        },
-        { status: 403 }
-      );
-    }
 
     const customerName = String(body.customerName || '').trim();
     const customerWhatsapp = normalizeWhatsapp(String(body.customerWhatsapp || ''));
@@ -74,6 +66,19 @@ export async function POST(req: NextRequest) {
       ? String(body.scheduledDeliveryTime).trim()
       : undefined;
     const specialNotes = body.specialNotes ? String(body.specialNotes).trim() : undefined;
+
+    const isFutureScheduledRequest =
+      orderType === OrderType.PRE_ORDER_PICKUP ||
+      (orderType === OrderType.SELF_DELIVERY && Boolean(rawScheduledDeliveryTime));
+
+    if (!hoursCheck.isWithinHours && !isFutureScheduledRequest) {
+      return NextResponse.json(
+        {
+          error: `Maaf, toko sedang di luar jam operasional (${hoursCheck.statusLabelId}). Pesanan langsung (Dine-In / Antar Sekarang) tidak tersedia saat toko tutup; silakan gunakan Pre-Order Ambil atau Jadwal Antar untuk jam buka berikutnya.`,
+        },
+        { status: 403 }
+      );
+    }
 
     if (!customerName || !customerWhatsapp) {
       return NextResponse.json(

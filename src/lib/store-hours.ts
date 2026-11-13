@@ -238,12 +238,20 @@ export function validateScheduledDateTime(
     };
   }
 
-  const minAllowedMs = now.getTime() - 2 * 60 * 1000;
+  // Require scheduled orders to be strictly in the future (at least 10 minutes ahead for kitchen prep)
+  const minAllowedMs = now.getTime() + 10 * 60 * 1000;
+  if (parsed.getTime() < now.getTime()) {
+    return {
+      valid: false,
+      errorId: 'Waktu jadwal tidak boleh di masa lalu (jam/tanggal sudah lewat). Pilih waktu mendatang.',
+      errorEn: 'Scheduled time cannot be in the past. Please choose a future date and time.',
+    };
+  }
   if (parsed.getTime() < minAllowedMs) {
     return {
       valid: false,
-      errorId: 'Waktu jadwal tidak boleh di masa lalu. Pilih waktu setelah sekarang.',
-      errorEn: 'Scheduled time cannot be in the past. Please choose a future time.',
+      errorId: 'Waktu ambil/antar minimal 15 menit dari sekarang agar dapur sempat menyiapkan pesanan.',
+      errorEn: 'Scheduled time must be at least 15 minutes from now for kitchen preparation.',
     };
   }
 
@@ -295,5 +303,107 @@ export function formatScheduledWib(rawValue?: string | null, lang: 'id' | 'en' =
     minute: '2-digit',
     hour12: false,
   }).format(d) + ' WIB';
+}
+
+export interface ScheduleDateOption {
+  dateYmd: string;
+  labelId: string;
+  labelEn: string;
+  slots: string[]; // HH:mm in WIB, strictly in the future and within store operating hours
+}
+
+function getWibYmdForDate(d: Date): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(d);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value || '01';
+  return `${get('year')}-${get('month')}-${get('day')}`;
+}
+
+/**
+ * Generates up to 14 upcoming dates in WIB along with valid 15-minute time slots (`HH:mm`).
+ * - Past dates and past hours on today's date are completely excluded (minimum +15 mins from `now`).
+ * - Closed hours / closed days are excluded based on `rawHours`.
+ */
+export function getScheduleDateOptionsWib(
+  rawHours?: string,
+  now: Date = new Date()
+): ScheduleDateOption[] {
+  const minFutureMs = now.getTime() + 15 * 60 * 1000;
+  const options: ScheduleDateOption[] = [];
+
+  for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
+    const refDate = new Date(now.getTime() + dayOffset * 24 * 60 * 60 * 1000);
+    const dateYmd = getWibYmdForDate(refDate);
+    if (options.some((o) => o.dateYmd === dateYmd)) continue;
+
+    const slots: string[] = [];
+    for (let h = 0; h < 24; h++) {
+      for (const m of [0, 15, 30, 45]) {
+        const hhmm = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        const candidate = new Date(`${dateYmd}T${hhmm}:00+07:00`);
+        if (candidate.getTime() < minFutureMs) continue;
+        const evalRes = evaluateStoreHours(rawHours, candidate);
+        if (evalRes.hasSchedule && !evalRes.isWithinHours) continue;
+        slots.push(hhmm);
+      }
+    }
+
+    if (slots.length === 0) continue;
+
+    const noonWib = new Date(`${dateYmd}T12:00:00+07:00`);
+    const dateFmtId = new Intl.DateTimeFormat('id-ID', {
+      timeZone: 'Asia/Jakarta',
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+    }).format(noonWib);
+    const dateFmtEn = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Jakarta',
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+    }).format(noonWib);
+
+    const prefixId =
+      dayOffset === 0 ? 'Hari Ini • ' : dayOffset === 1 ? 'Besok • ' : '';
+    const prefixEn =
+      dayOffset === 0 ? 'Today • ' : dayOffset === 1 ? 'Tomorrow • ' : '';
+
+    options.push({
+      dateYmd,
+      labelId: `${prefixId}${dateFmtId}`,
+      labelEn: `${prefixEn}${dateFmtEn}`,
+      slots,
+    });
+  }
+
+  return options;
+}
+
+/**
+ * Returns the first valid future schedule (`YYYY-MM-DDTHH:mm` in WIB), preferring >= +30 mins from `now`.
+ */
+export function getDefaultFutureScheduleWib(
+  rawHours?: string,
+  now: Date = new Date()
+): string {
+  const options = getScheduleDateOptionsWib(rawHours, now);
+  if (options.length === 0) {
+    return getNowLocalInputWib(new Date(now.getTime() + 30 * 60 * 1000));
+  }
+  const preferredMinMs = now.getTime() + 30 * 60 * 1000;
+  for (const opt of options) {
+    for (const slot of opt.slots) {
+      const candidate = new Date(`${opt.dateYmd}T${slot}:00+07:00`);
+      if (candidate.getTime() >= preferredMinMs) {
+        return `${opt.dateYmd}T${slot}`;
+      }
+    }
+  }
+  return `${options[0].dateYmd}T${options[0].slots[0]}`;
 }
 

@@ -34,7 +34,7 @@ export default function AdminAnalyticsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [resetMessage, setResetMessage] = useState<string | null>(null);
-  const [filterScope, setFilterScope] = useState<'ALL' | 'SETTLED_ONLY'>('ALL');
+  const [filterScope, setFilterScope] = useState<'ALL' | 'SETTLED_ONLY'>('SETTLED_ONLY');
 
   const loadTelemetry = async () => {
     try {

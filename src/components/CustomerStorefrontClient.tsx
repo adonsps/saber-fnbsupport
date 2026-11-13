@@ -27,7 +27,9 @@ import {
 } from '@/lib/order-labels';
 import {
   evaluateStoreHours,
-  getNowLocalInputWib,
+  formatScheduledWib,
+  getDefaultFutureScheduleWib,
+  getScheduleDateOptionsWib,
   validateScheduledDateTime,
 } from '@/lib/store-hours';
 import { buildOsmEmbedUrl, haversineDistanceKm, parseLatLng } from '@/lib/geo';
@@ -105,8 +107,8 @@ export function CustomerStorefrontClient({
 
   const custNameInputRef = useRef<HTMLInputElement>(null);
   const custWaInputRef = useRef<HTMLInputElement>(null);
-  const pickupInputRef = useRef<HTMLInputElement>(null);
-  const deliveryTimeInputRef = useRef<HTMLInputElement>(null);
+  const pickupInputRef = useRef<HTMLSelectElement>(null);
+  const deliveryTimeInputRef = useRef<HTMLSelectElement>(null);
   const addressInputRef = useRef<HTMLTextAreaElement>(null);
 
   const cartStorageKey = `saber_fnb_cart_${slug}`;
@@ -167,7 +169,38 @@ export function CustomerStorefrontClient({
     [branch?.operationalHours]
   );
 
+  const scheduleOptions = useMemo(
+    () => getScheduleDateOptionsWib(branch?.operationalHours),
+    [branch?.operationalHours]
+  );
+
+  const defaultFutureSchedule = useMemo(
+    () => getDefaultFutureScheduleWib(branch?.operationalHours),
+    [branch?.operationalHours]
+  );
+
+  useEffect(() => {
+    if (!defaultFutureSchedule) return;
+    if (
+      !scheduledPickupTime ||
+      !validateScheduledDateTime(scheduledPickupTime, branch?.operationalHours).valid
+    ) {
+      setScheduledPickupTime(defaultFutureSchedule);
+    }
+    if (
+      !scheduledDeliveryTime ||
+      !validateScheduledDateTime(scheduledDeliveryTime, branch?.operationalHours).valid
+    ) {
+      setScheduledDeliveryTime(defaultFutureSchedule);
+    }
+  }, [defaultFutureSchedule, branch?.operationalHours]);
+
+  const isStorePaused = !merchant?.isStoreOpen;
   const isStoreOpenNow = Boolean(merchant?.isStoreOpen) && hoursEval.isWithinHours;
+  const isScheduledOrderMode =
+    orderType === OrderType.PRE_ORDER_PICKUP ||
+    (orderType === OrderType.SELF_DELIVERY && deliveryTimingMode === 'SCHEDULED');
+  const canBrowseAndAddCart = Boolean(merchant?.isStoreOpen);
 
   const parsedDeliveryCoords = useMemo(
     () => parseLatLng(deliveryLatInput, deliveryLngInput),
@@ -287,19 +320,36 @@ export function CustomerStorefrontClient({
   }, [cart, cartStorageKey]);
 
   const updateCartQty = (menuItemId: string, delta: number) => {
-    if (delta > 0 && !isStoreOpenNow) {
+    if (delta > 0 && isStorePaused) {
       setStoreNotice(
-        !merchant?.isStoreOpen
-          ? lang === 'ID'
-            ? 'Maaf, toko sedang menjeda pesanan masuk sementara.'
-            : 'Sorry, the store has temporarily paused incoming orders.'
-          : lang === 'ID'
-            ? `Maaf, toko sedang tutup di luar jam operasional (${hoursEval.statusLabelId}).`
-            : `Sorry, the store is currently closed (${hoursEval.statusLabelEn}).`
+        lang === 'ID'
+          ? 'Maaf, toko sedang menjeda pesanan masuk sementara.'
+          : 'Sorry, the store has temporarily paused incoming orders.'
       );
       return;
     }
-    setStoreNotice(null);
+    if (delta > 0 && !hoursEval.isWithinHours) {
+      if (isTableLocked) {
+        setStoreNotice(
+          lang === 'ID'
+            ? `Maaf, pemesanan makan di meja tutup di luar jam operasional (${hoursEval.statusLabelId}).`
+            : `Sorry, dine-in table ordering is closed outside operating hours (${hoursEval.statusLabelEn}).`
+        );
+        return;
+      }
+      if (orderType === OrderType.WALK_IN_TABLE) {
+        setOrderType(OrderType.PRE_ORDER_PICKUP);
+      } else if (orderType === OrderType.SELF_DELIVERY && deliveryTimingMode === 'ASAP') {
+        setDeliveryTimingMode('SCHEDULED');
+      }
+      setStoreNotice(
+        lang === 'ID'
+          ? `Toko sedang di luar jam operasional (${hoursEval.statusLabelId}). Pesanan Anda dijadwalkan otomatis untuk jam buka berikutnya.`
+          : `Store is currently outside opening hours (${hoursEval.statusLabelEn}). Your order is set for the next available open slot.`
+      );
+    } else {
+      setStoreNotice(null);
+    }
     triggerCausalHaptic(8);
     setCart((prev) => {
       const current = prev[menuItemId]?.quantity || 0;
@@ -382,20 +432,190 @@ export function CustomerStorefrontClient({
     setCheckoutError(null);
     setFieldErrors({});
     setSheetDragY(0);
-    if (!isStoreOpenNow) {
+    if (isStorePaused) {
       setStoreNotice(
-        !merchant?.isStoreOpen
-          ? lang === 'ID'
-            ? 'Maaf, toko sedang menjeda pesanan masuk sementara.'
-            : 'Sorry, the store has temporarily paused incoming orders.'
-          : lang === 'ID'
-            ? `Maaf, toko sedang tutup di luar jam operasional (${hoursEval.statusLabelId}).`
-            : `Sorry, the store is currently closed (${hoursEval.statusLabelEn}).`
+        lang === 'ID'
+          ? 'Maaf, toko sedang menjeda pesanan masuk sementara.'
+          : 'Sorry, the store has temporarily paused incoming orders.'
       );
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
+    if (!hoursEval.isWithinHours) {
+      if (isTableLocked) {
+        setStoreNotice(
+          lang === 'ID'
+            ? `Maaf, toko sedang tutup di luar jam operasional (${hoursEval.statusLabelId}).`
+            : `Sorry, the store is currently closed (${hoursEval.statusLabelEn}).`
+        );
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      if (orderType === OrderType.WALK_IN_TABLE) {
+        setOrderType(OrderType.PRE_ORDER_PICKUP);
+      } else if (orderType === OrderType.SELF_DELIVERY && deliveryTimingMode === 'ASAP') {
+        setDeliveryTimingMode('SCHEDULED');
+      }
+    }
     checkoutDialogRef.current?.showModal();
+  };
+
+  const renderFutureSchedulePicker = ({
+    value,
+    onChange,
+    idPrefix,
+    selectRef,
+    errorMsg,
+  }: {
+    value: string;
+    onChange: (nextVal: string) => void;
+    idPrefix: string;
+    selectRef?: React.RefObject<HTMLSelectElement | null>;
+    errorMsg?: string;
+  }) => {
+    if (scheduleOptions.length === 0) {
+      return (
+        <div className="mt-1 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-[#D70015]">
+          {lang === 'ID'
+            ? 'Jadwal operasional toko belum tersedia untuk 14 hari ke depan.'
+            : 'No store operating slots available in the next 14 days.'}
+        </div>
+      );
+    }
+
+    const [rawDate, rawTime] = (value || '').split('T');
+    const activeDateOpt =
+      scheduleOptions.find((d) => d.dateYmd === rawDate) || scheduleOptions[0];
+    const availableSlots = activeDateOpt.slots;
+    const activeTime =
+      rawTime && availableSlots.includes(rawTime) ? rawTime : availableSlots[0] || '';
+    const effectiveValue = `${activeDateOpt.dateYmd}T${activeTime}`;
+
+    const applyQuickOffsetMinutes = (offsetMins: number) => {
+      triggerCausalHaptic(6);
+      const targetMs = Date.now() + offsetMins * 60 * 1000;
+      for (const dOpt of scheduleOptions) {
+        for (const slot of dOpt.slots) {
+          const slotMs = new Date(`${dOpt.dateYmd}T${slot}:00+07:00`).getTime();
+          if (slotMs >= targetMs) {
+            onChange(`${dOpt.dateYmd}T${slot}`);
+            return;
+          }
+        }
+      }
+      onChange(effectiveValue);
+    };
+
+    const applyTomorrowMorning = () => {
+      triggerCausalHaptic(6);
+      const tomorrowOpt = scheduleOptions.length > 1 ? scheduleOptions[1] : scheduleOptions[0];
+      if (tomorrowOpt && tomorrowOpt.slots.length > 0) {
+        onChange(`${tomorrowOpt.dateYmd}T${tomorrowOpt.slots[0]}`);
+      }
+    };
+
+    return (
+      <div className="mt-1.5 space-y-2">
+        {/* Quick Preset Chips (Impossible to pick past time) */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {[
+            { labelId: 'Tercepat (+15m)', labelEn: 'Earliest (+15m)', mins: 15 },
+            { labelId: '+30 Menit', labelEn: '+30 Mins', mins: 30 },
+            { labelId: '+1 Jam', labelEn: '+1 Hour', mins: 60 },
+            { labelId: '+2 Jam', labelEn: '+2 Hours', mins: 120 },
+          ].map((preset) => (
+            <button
+              key={preset.mins}
+              type="button"
+              onClick={() => applyQuickOffsetMinutes(preset.mins)}
+              className="min-h-[32px] rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-zinc-700 transition-colors hover:border-apple-blue hover:text-apple-blue"
+            >
+              {lang === 'ID' ? preset.labelId : preset.labelEn}
+            </button>
+          ))}
+          {scheduleOptions.length > 1 && (
+            <button
+              type="button"
+              onClick={applyTomorrowMorning}
+              className="min-h-[32px] rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-zinc-700 transition-colors hover:border-apple-blue hover:text-apple-blue"
+            >
+              {lang === 'ID' ? 'Besok Pagi' : 'Tomorrow'}
+            </button>
+          )}
+        </div>
+
+        {/* Date + Time Slot Selectors (Strictly Future Dates & Strictly Future Valid Hours) */}
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-12">
+          <div className="sm:col-span-7">
+            <label htmlFor={idPrefix} className="sr-only">
+              {lang === 'ID' ? 'Pilih Tanggal (WIB)' : 'Select Date (WIB)'}
+            </label>
+            <select
+              ref={selectRef}
+              id={idPrefix}
+              aria-invalid={Boolean(errorMsg)}
+              value={activeDateOpt.dateYmd}
+              onChange={(e) => {
+                const nextDateStr = e.target.value;
+                const nextDateOpt =
+                  scheduleOptions.find((d) => d.dateYmd === nextDateStr) || scheduleOptions[0];
+                const nextTime = nextDateOpt.slots.includes(activeTime)
+                  ? activeTime
+                  : nextDateOpt.slots[0] || '';
+                onChange(`${nextDateOpt.dateYmd}T${nextTime}`);
+              }}
+              className="min-h-[44px] w-full rounded-xl border border-zinc-200 bg-white px-3 text-xs font-semibold text-[#1D1D1F] outline-none focus:border-apple-blue aria-[invalid=true]:border-[#D70015]"
+            >
+              {scheduleOptions.map((dOpt) => (
+                <option key={dOpt.dateYmd} value={dOpt.dateYmd}>
+                  {lang === 'ID' ? dOpt.labelId : dOpt.labelEn}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="sm:col-span-5">
+            <label htmlFor={`${idPrefix}-time`} className="sr-only">
+              {lang === 'ID' ? 'Pilih Jam (WIB)' : 'Select Time (WIB)'}
+            </label>
+            <select
+              id={`${idPrefix}-time`}
+              aria-invalid={Boolean(errorMsg)}
+              value={activeTime}
+              onChange={(e) => {
+                onChange(`${activeDateOpt.dateYmd}T${e.target.value}`);
+              }}
+              className="min-h-[44px] w-full rounded-xl border border-zinc-200 bg-white px-3 font-mono text-xs font-bold text-[#1D1D1F] outline-none focus:border-apple-blue aria-[invalid=true]:border-[#D70015]"
+            >
+              {availableSlots.map((slot) => (
+                <option key={slot} value={slot}>
+                  {slot} WIB
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between rounded-xl bg-apple-blue/5 px-3 py-1.5 text-[11px] font-medium text-[#1D1D1F]">
+          <span className="text-zinc-600">
+            {lang === 'ID' ? 'Jadwal Terkunci:' : 'Locked Schedule:'}
+          </span>
+          <span className="font-semibold text-apple-blue">
+            {formatScheduledWib(effectiveValue, lang === 'EN' ? 'en' : 'id')}
+          </span>
+        </div>
+
+        {errorMsg ? (
+          <p className="text-[11px] font-semibold text-[#D70015]">{errorMsg}</p>
+        ) : (
+          <p className="text-[11px] text-zinc-500">
+            {lang === 'ID'
+              ? 'Hanya menampilkan tanggal & jam ke depan sesuai jam operasional toko (minimal +15 menit dari sekarang).'
+              : 'Only future dates & operating hours (+15 mins lead time minimum) are selectable.'}
+          </p>
+        )}
+      </div>
+    );
   };
 
   // Apple Design §2, §5, §6, §9: 1:1 Pointer Tracking + Rubber-Banding + Momentum Projection on Sheet Handle
@@ -471,6 +691,18 @@ export function CustomerStorefrontClient({
     if (!customerWhatsapp.trim()) {
       nextErrors.customerWhatsapp =
         lang === 'ID' ? 'Nomor WhatsApp aktif wajib diisi.' : 'Active WhatsApp number is required.';
+    }
+    if (
+      !hoursEval.isWithinHours &&
+      (orderType === OrderType.WALK_IN_TABLE ||
+        (orderType === OrderType.SELF_DELIVERY && deliveryTimingMode === 'ASAP'))
+    ) {
+      setCheckoutError(
+        lang === 'ID'
+          ? `Toko sedang di luar jam operasional saat ini (${hoursEval.statusLabelId}). Silakan pilih layanan Pre-Order Ambil atau Jadwalkan Jam Antar untuk memesan di jam buka berikutnya.`
+          : `Store is currently outside opening hours (${hoursEval.statusLabelEn}). Please choose Pre-Order Pick-Up or Schedule Delivery for a future open slot.`
+      );
+      return;
     }
     if (orderType === OrderType.PRE_ORDER_PICKUP) {
       const check = validateScheduledDateTime(scheduledPickupTime, branch?.operationalHours);
@@ -743,7 +975,12 @@ export function CustomerStorefrontClient({
       {!isStoreOpenNow && (
         <div
           role="status"
-          className="mx-4 mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-xs text-[#D70015] sm:mx-0"
+          className={cn(
+            'mx-4 mt-4 rounded-2xl border p-4 text-xs sm:mx-0',
+            !merchant?.isStoreOpen
+              ? 'border-red-200 bg-red-50 text-[#D70015]'
+              : 'border-amber-200 bg-amber-50 text-amber-950'
+          )}
         >
           <p className="font-bold">
             {!merchant?.isStoreOpen
@@ -751,8 +988,8 @@ export function CustomerStorefrontClient({
                 ? 'Toko Sedang Menjeda Pesanan Masuk'
                 : 'Store Temporarily Paused'
               : lang === 'ID'
-                ? 'Toko Sedang Tutup (Di Luar Jam Operasional)'
-                : 'Store Currently Closed'}
+                ? 'Di Luar Jam Operasional — Tersedia Pre-Order & Jadwal Antar'
+                : 'Outside Opening Hours — Pre-Order & Scheduled Delivery Available'}
           </p>
           <p className="mt-0.5">
             {!merchant?.isStoreOpen
@@ -760,8 +997,8 @@ export function CustomerStorefrontClient({
                 ? 'Dapur sedang penuh atau toko tutup sementara. Anda tetap dapat melihat menu.'
                 : 'Kitchen is currently paused. You can browse the menu and check back shortly.'
               : lang === 'ID'
-                ? `${hoursEval.statusLabelId}. Pemesanan dibuka kembali sesuai jadwal operasional.`
-                : `${hoursEval.statusLabelEn}. Ordering will reopen during scheduled hours.`}
+                ? `${hoursEval.statusLabelId}. Makan di tempat (Dine-In) tutup saat ini, namun Anda tetap dapat memesan Pre-Order Ambil atau Jadwal Antar untuk jam buka berikutnya.`
+                : `${hoursEval.statusLabelEn}. Dine-in is currently closed, but you can place a Pre-Order Pick-Up or Scheduled Delivery for the next open slot.`}
           </p>
         </div>
       )}
@@ -867,17 +1104,15 @@ export function CustomerStorefrontClient({
           )}
 
           {orderType === OrderType.PRE_ORDER_PICKUP && (
-            <div className="flex flex-col gap-2 rounded-2xl bg-[#F5F5F7]/70 p-3.5 sm:flex-row sm:items-center sm:justify-between">
-              <label htmlFor="pickupTime" className="text-xs font-semibold text-zinc-700">
+            <div className="rounded-2xl bg-[#F5F5F7]/70 p-3.5">
+              <label htmlFor="pickupTime" className="block text-xs font-semibold text-zinc-700">
                 {lang === 'ID' ? 'Estimasi Waktu Ambil (Pick Up):' : 'Estimated Pick-Up Time:'}
               </label>
-              <input
-                id="pickupTime"
-                type="datetime-local"
-                value={scheduledPickupTime}
-                onChange={(e) => setScheduledPickupTime(e.target.value)}
-                className="min-h-[40px] rounded-xl border border-zinc-200 bg-white px-3 text-xs font-medium"
-              />
+              {renderFutureSchedulePicker({
+                value: scheduledPickupTime,
+                onChange: setScheduledPickupTime,
+                idPrefix: 'pickupTime',
+              })}
             </div>
           )}
 
@@ -1043,7 +1278,7 @@ export function CustomerStorefrontClient({
                           <span className="rounded-full bg-[#F5F5F7] px-3 py-1.5 text-xs font-semibold text-[#515154]">
                             {lang === 'ID' ? 'Stok Habis' : 'Sold Out'}
                           </span>
-                        ) : !isStoreOpenNow ? (
+                        ) : isStorePaused || (!hoursEval.isWithinHours && isTableLocked) ? (
                           <span className="rounded-full bg-[#F5F5F7] px-3 py-1.5 text-xs font-semibold text-[#515154]">
                             {lang === 'ID' ? 'Toko Tutup' : 'Closed'}
                           </span>
@@ -1344,34 +1579,18 @@ export function CustomerStorefrontClient({
                   {lang === 'ID' ? 'Tanggal & Jam Pengambilan (WIB)' : 'Pick-Up Date & Time (WIB)'}{' '}
                   <span className="text-red-500">*</span>
                 </label>
-                <input
-                  ref={pickupInputRef}
-                  id="modalPickupTime"
-                  type="datetime-local"
-                  min={getNowLocalInputWib()}
-                  required
-                  aria-invalid={Boolean(fieldErrors.scheduledPickupTime)}
-                  aria-describedby={fieldErrors.scheduledPickupTime ? 'err-pickupTime' : 'hint-pickupTime'}
-                  value={scheduledPickupTime}
-                  onChange={(e) => {
-                    setScheduledPickupTime(e.target.value);
+                {renderFutureSchedulePicker({
+                  value: scheduledPickupTime,
+                  onChange: (nextVal) => {
+                    setScheduledPickupTime(nextVal);
                     if (fieldErrors.scheduledPickupTime) {
                       setFieldErrors((prev) => ({ ...prev, scheduledPickupTime: undefined }));
                     }
-                  }}
-                  className="mt-1 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/60 px-4 text-xs font-medium outline-none focus:border-apple-blue focus:bg-white aria-[invalid=true]:border-[#D70015]"
-                />
-                {fieldErrors.scheduledPickupTime ? (
-                  <p id="err-pickupTime" className="mt-1 text-[11px] font-semibold text-[#D70015]">
-                    {fieldErrors.scheduledPickupTime}
-                  </p>
-                ) : (
-                  <p id="hint-pickupTime" className="mt-1 text-[11px] text-zinc-500">
-                    {lang === 'ID'
-                      ? 'Pilih tanggal & jam sesuai jam operasional toko.'
-                      : 'Choose a future date & time within store operating hours.'}
-                  </p>
-                )}
+                  },
+                  idPrefix: 'modalPickupTime',
+                  selectRef: pickupInputRef,
+                  errorMsg: fieldErrors.scheduledPickupTime,
+                })}
               </div>
             )}
 
@@ -1534,33 +1753,21 @@ export function CustomerStorefrontClient({
                         {lang === 'ID' ? 'Tanggal & Jam Antar (WIB)' : 'Scheduled Delivery Date & Time (WIB)'}{' '}
                         <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        ref={deliveryTimeInputRef}
-                        id="modalDeliveryTime"
-                        type="datetime-local"
-                        min={getNowLocalInputWib()}
-                        required
-                        aria-invalid={Boolean(fieldErrors.scheduledDeliveryTime)}
-                        aria-describedby={
-                          fieldErrors.scheduledDeliveryTime ? 'err-deliveryTime' : undefined
-                        }
-                        value={scheduledDeliveryTime}
-                        onChange={(e) => {
-                          setScheduledDeliveryTime(e.target.value);
+                      {renderFutureSchedulePicker({
+                        value: scheduledDeliveryTime,
+                        onChange: (nextVal) => {
+                          setScheduledDeliveryTime(nextVal);
                           if (fieldErrors.scheduledDeliveryTime) {
                             setFieldErrors((prev) => ({
                               ...prev,
                               scheduledDeliveryTime: undefined,
                             }));
                           }
-                        }}
-                        className="mt-1 min-h-[48px] w-full rounded-xl border border-zinc-200 bg-white px-3 text-xs font-medium outline-none focus:border-apple-blue aria-[invalid=true]:border-[#D70015]"
-                      />
-                      {fieldErrors.scheduledDeliveryTime && (
-                        <p id="err-deliveryTime" className="mt-1 text-[11px] font-semibold text-[#D70015]">
-                          {fieldErrors.scheduledDeliveryTime}
-                        </p>
-                      )}
+                        },
+                        idPrefix: 'modalDeliveryTime',
+                        selectRef: deliveryTimeInputRef,
+                        errorMsg: fieldErrors.scheduledDeliveryTime,
+                      })}
                     </div>
                   )}
                 </div>
