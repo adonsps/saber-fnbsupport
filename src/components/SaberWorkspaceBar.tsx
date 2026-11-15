@@ -234,14 +234,14 @@ export function SaberWorkspaceBar() {
             href="/"
             onPointerDown={() => triggerCausalHaptic(6)}
             onClick={closePopoverIfCollapsed}
-            className="apple-interactive flex items-center gap-2.5 rounded-full pr-1"
+            className="apple-interactive flex items-center gap-2.5 rounded-full pr-1 active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2"
           >
             <SaberLogo size="sm" className="sm:h-9 sm:w-9 sm:rounded-[11px]" />
             <div className="leading-tight">
-              <span className="block text-sm font-bold tracking-tight text-[#1D1D1F]">
+              <span className="block text-sm font-bold tracking-tight text-ink-primary">
                 Saber Culinary
               </span>
-              <span className="hidden text-[11px] font-medium text-[#515154] sm:block">
+              <span className="hidden text-[11px] font-medium text-ink-secondary sm:block">
                 Pesan Meja QR &amp; Kasir Langsung
               </span>
             </div>
@@ -253,12 +253,12 @@ export function SaberWorkspaceBar() {
               onPointerDown={() => triggerCausalHaptic(6)}
               onClick={closePopoverIfCollapsed}
               title={`Toko aktif: ${activeMerchant.name}`}
-              className="hidden items-center gap-1.5 rounded-full border border-black/[0.08] bg-[#F5F5F7] px-2.5 py-1 text-[11px] font-semibold text-[#515154] lg:inline-flex"
+              className="hidden items-center gap-1.5 rounded-full border border-sky-200/80 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-ink-secondary active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 lg:inline-flex"
             >
-              <span className="font-mono text-[10px] font-bold uppercase text-[#1D7D32]">
-                {activeMerchant.isDemo ? 'Demo' : 'Aktif'}
+              <span className="text-[10px] font-bold text-emerald-700">
+                {activeMerchant.isDemo ? 'demo' : 'aktif'}
               </span>
-              <span className="max-w-[120px] truncate text-[#1D1D1F]">{activeMerchant.name}</span>
+              <span className="max-w-[120px] truncate text-ink-primary">{activeMerchant.name}</span>
             </Link>
           )}
         </div>
@@ -272,7 +272,7 @@ export function SaberWorkspaceBar() {
             aria-controls="saber-merchant-menu"
             aria-expanded={menuOpen}
             onPointerDown={() => triggerCausalHaptic(6)}
-            className="saber-menu-button apple-interactive inline-flex min-h-[40px] items-center gap-1.5 rounded-full border border-black/[0.12] bg-white px-3.5 py-1.5 text-xs font-semibold text-[#1D1D1F] shadow-apple-sm"
+            className="saber-menu-button apple-interactive inline-flex min-h-[40px] items-center gap-1.5 rounded-full border border-sky-200/80 bg-cloud px-3.5 py-1.5 text-xs font-semibold text-ink-primary shadow-apple-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2"
           >
             {menuOpen ? (
               <X aria-hidden="true" weight="bold" className="h-4 w-4" />
@@ -284,14 +284,14 @@ export function SaberWorkspaceBar() {
 
           <ul id="saber-merchant-menu" ref={menuRef} className="saber-site-menu">
             {authenticatedMerchant && activeMerchant && (
-              <li className="saber-mobile-context mb-2 rounded-xl border border-black/[0.06] bg-[#F5F5F7] p-3">
-                <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-[#515154]">
+              <li className="saber-mobile-context mb-2 rounded-xl border border-sky-100 bg-sky-50 p-3">
+                <p className="text-[10px] font-semibold text-ink-secondary">
                   {activeMerchant.isDemo ? 'Mode Simulasi' : 'Restoran Terhubung'}
                 </p>
-                <p className="mt-0.5 truncate text-xs font-bold text-[#1D1D1F]">
+                <p className="mt-0.5 truncate text-xs font-bold text-ink-primary">
                   {activeMerchant.name}
                 </p>
-                <p className="font-mono text-[11px] text-apple-blue">/{activeMerchant.slug}</p>
+                <p className="font-mono text-[11px] text-sky-700">/{activeMerchant.slug}</p>
               </li>
             )}
 
@@ -305,19 +305,19 @@ export function SaberWorkspaceBar() {
                     onPointerDown={() => triggerCausalHaptic(6)}
                     onClick={closePopoverIfCollapsed}
                     className={cn(
-                      'apple-interactive relative flex min-h-[42px] items-center justify-between rounded-xl px-3.5 py-2 text-xs font-semibold transition-colors lg:min-h-[38px] lg:rounded-full lg:px-3.5',
+                      'apple-interactive relative flex min-h-[42px] items-center justify-between rounded-xl px-3.5 py-2 text-xs font-semibold transition-colors active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 lg:min-h-[38px] lg:rounded-full lg:px-3.5',
                       active
                         ? isWide
                           ? 'text-white'
-                          : 'border-l-4 border-apple-blue bg-[#1D1D1F] text-white shadow-apple-sm'
-                        : 'text-[#515154] hover:bg-black/[0.05] hover:text-[#1D1D1F]'
+                          : 'border-l-4 border-scarlet-600 bg-ink-primary text-white shadow-apple-sm'
+                        : 'text-ink-secondary hover:bg-sky-100/60 hover:text-ink-primary'
                     )}
                   >
                     {active && isWide && (
                       <motion.span
                         layoutId="saber-workspace-active-pill"
                         transition={APPLE_SPRINGS.default}
-                        className="absolute inset-0 -z-10 rounded-full bg-[#1D1D1F] shadow-sm"
+                        className="absolute inset-0 -z-10 rounded-full bg-ink-primary shadow-sm"
                       />
                     )}
                     <span>{item.label}</span>
@@ -326,13 +326,13 @@ export function SaberWorkspaceBar() {
               );
             })}
 
-            <li className="mt-2 border-t border-black/[0.06] pt-2 lg:ml-1 lg:mt-0 lg:border-l lg:border-t-0 lg:pl-2 lg:pt-0">
+            <li className="mt-2 border-t border-sky-100 pt-2 lg:ml-1 lg:mt-0 lg:border-l lg:border-t-0 lg:pl-2 lg:pt-0">
               {authenticatedMerchant ? (
                 <button
                   type="button"
                   onPointerDown={() => triggerCausalHaptic(6)}
                   onClick={handleLogout}
-                  className="apple-interactive flex min-h-[42px] w-full items-center justify-center gap-1.5 rounded-xl border border-black/[0.12] bg-[#F5F5F7] px-3.5 text-xs font-semibold text-[#1D1D1F] hover:bg-[#EFEFF4] lg:min-h-[38px] lg:rounded-full"
+                  className="apple-interactive flex min-h-[42px] w-full items-center justify-center gap-1.5 rounded-xl border border-sky-200/80 bg-sky-50 px-3.5 text-xs font-semibold text-scarlet-600 hover:bg-scarlet-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-scarlet-600 focus-visible:ring-offset-2 lg:min-h-[38px] lg:rounded-full"
                 >
                   <SignOut aria-hidden="true" weight="regular" className="h-3.5 w-3.5" />
                   <span>Keluar</span>
@@ -344,10 +344,10 @@ export function SaberWorkspaceBar() {
                   onPointerDown={() => triggerCausalHaptic(6)}
                   onClick={closePopoverIfCollapsed}
                   className={cn(
-                    'apple-interactive relative flex min-h-[42px] items-center justify-center gap-1.5 rounded-xl px-4 text-xs font-semibold transition-colors lg:min-h-[38px] lg:rounded-full',
+                    'apple-interactive relative flex min-h-[42px] items-center justify-center gap-1.5 rounded-xl px-4 text-xs font-semibold transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 lg:min-h-[38px] lg:rounded-full',
                     pathname.startsWith('/login')
-                      ? 'text-white bg-apple-blue'
-                      : 'border border-black/[0.12] bg-white text-[#1D1D1F] hover:bg-[#F5F5F7]'
+                      ? 'bg-scarlet-600 text-white shadow-apple-sm'
+                      : 'border border-sky-200/80 bg-cloud text-ink-primary hover:bg-sky-50'
                   )}
                 >
                   <SignIn aria-hidden="true" weight="regular" className="h-3.5 w-3.5" />
