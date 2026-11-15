@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { WarningCircle } from '@phosphor-icons/react';
+import { Info } from '@phosphor-icons/react';
 import { Merchant } from '@/types/schema';
 
 export function DemoModeBanner({ merchant }: { merchant: Merchant | null }) {
@@ -13,37 +13,37 @@ export function DemoModeBanner({ merchant }: { merchant: Merchant | null }) {
   return (
     <div
       role="status"
-      className="no-print mb-5 flex flex-col justify-between gap-3 rounded-[20px] border border-amber-300/80 bg-amber-50/90 px-4 py-3.5 text-xs text-amber-950 shadow-apple-sm sm:flex-row sm:items-center sm:px-5"
+      className="no-print mb-6 flex flex-col justify-between gap-4 rounded-2xl border border-sky-200 bg-cloud px-5 py-4 text-sm text-ink-primary sm:flex-row sm:items-center"
     >
-      <div className="flex items-start gap-2.5">
-        <WarningCircle
+      <div className="flex items-start gap-3">
+        <Info
           aria-hidden="true"
           weight="fill"
-          className="mt-0.5 h-4 w-4 shrink-0 text-[#B25000]"
+          className="mt-0.5 h-5 w-5 shrink-0 text-sky-600"
         />
         <div>
-          <p className="font-bold">
-            Mode Sandbox Demo Publik ({merchant.name})
+          <p className="font-semibold text-ink-primary">
+            Menampilkan Toko Contoh ({merchant.name})
           </p>
-          <p className="mt-0.5 text-[11px] leading-relaxed text-amber-900">
-            Anda sedang melihat ruang uji coba bersama. Daftarkan toko Anda sendiri atau masuk ke
-            akun pemilik agar data menu, meja, dan pesanan tersimpan khusus untuk restoran Anda.
+          <p className="mt-0.5 text-xs leading-relaxed text-ink-secondary">
+            Anda sedang mencoba ruang contoh publik. Buat akun toko sendiri atau masuk agar menu,
+            meja, dan pesanan tersimpan khusus untuk restoran Anda.
           </p>
         </div>
       </div>
 
-      <div className="flex shrink-0 flex-wrap items-center gap-2">
+      <div className="flex shrink-0 flex-wrap items-center gap-2.5">
         <Link
           href="/login"
-          className="apple-interactive inline-flex min-h-[44px] items-center rounded-full border border-amber-400/60 bg-white px-4 text-xs font-bold text-amber-950 hover:bg-amber-100/60"
+          className="apple-interactive inline-flex min-h-[42px] items-center whitespace-nowrap rounded-lg border border-sky-200 bg-sky-50 px-4 text-xs font-semibold text-ink-primary hover:bg-sky-100 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 motion-safe:transition-colors"
         >
-          Masuk Pemilik
+          Masuk
         </Link>
         <Link
-          href="/onboarding"
-          className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-[#1D1D1F] px-4 text-xs font-bold text-white hover:bg-zinc-800"
+          href="/onboarding?mode=new"
+          className="apple-interactive inline-flex min-h-[42px] items-center whitespace-nowrap rounded-lg bg-scarlet-600 px-4 text-xs font-semibold text-cloud hover:bg-scarlet-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-scarlet-600 motion-safe:transition-colors"
         >
-          + Daftar Toko Baru
+          Buat Akun Toko
         </Link>
       </div>
     </div>

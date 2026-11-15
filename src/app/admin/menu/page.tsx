@@ -88,7 +88,7 @@ export default function AdminMenuPage() {
     });
   };
 
-  // Optimistic 1-Click Sold Out Toggle
+  // Optimistic 1-Click Habis Toggle
   const handleToggleSoldOut = async (item: MenuItem) => {
     const nextSoldOut = !item.isSoldOut;
     setMenuItems((prev) =>
@@ -298,7 +298,7 @@ export default function AdminMenuPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <p className="font-mono text-xs font-medium text-[#515154]">Loading menu engine...</p>
+        <p className="text-sm font-medium text-ink-secondary">Loading menu engine...</p>
       </div>
     );
   }
@@ -324,8 +324,8 @@ export default function AdminMenuPage() {
             className={cn(
               'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl',
               merchant?.isStoreOpen
-                ? 'bg-emerald-500/12 text-[#1D7D32]'
-                : 'bg-red-500/15 text-[#D70015]'
+                ? 'bg-emerald-500/12 text-signal-green'
+                : 'bg-red-500/15 text-scarlet-600'
             )}
           >
             <Power aria-hidden="true" weight="bold" className="h-5 w-5" />
@@ -334,11 +334,11 @@ export default function AdminMenuPage() {
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-lg font-bold tracking-tight text-zinc-950">
                 Status Toko:{' '}
-                <span className={merchant?.isStoreOpen ? 'text-[#1D7D32]' : 'text-[#D70015]'}>
+                <span className={merchant?.isStoreOpen ? 'text-signal-green' : 'text-scarlet-600'}>
                   {merchant?.isStoreOpen ? 'BUKA' : 'DIJEDA'}
                 </span>
               </h1>
-              <span className="rounded-full bg-[#F5F5F7] px-2.5 py-0.5 text-[11px] font-semibold text-[#515154]">
+              <span className="rounded-full bg-sky-50/60 px-2.5 py-0.5 text-[11px] font-semibold text-ink-secondary">
                 {merchant?.name}
               </span>
             </div>
@@ -356,10 +356,10 @@ export default function AdminMenuPage() {
             type="button"
             onClick={handleToggleStoreOpen}
             className={cn(
-              'apple-interactive inline-flex min-h-[44px] items-center rounded-full border px-5 py-2.5 text-xs font-bold transition-all',
+              'apple-interactive inline-flex min-h-[44px] items-center rounded-full border px-5 py-2.5 text-xs font-bold motion-safe:transition-colors',
               merchant?.isStoreOpen
-                ? 'border-[#D70015]/30 bg-red-50 text-[#D70015] hover:bg-red-100'
-                : 'border-[#1D7D32]/30 bg-emerald-50 text-[#1D7D32] hover:bg-emerald-100'
+                ? 'border-scarlet-200 bg-red-50 text-scarlet-600 hover:bg-red-100'
+                : 'border-signal-green/30 bg-emerald-50 text-signal-green hover:bg-emerald-100'
             )}
           >
             {merchant?.isStoreOpen ? 'Jeda Pesanan Masuk' : 'Buka Kembali Toko'}
@@ -368,7 +368,7 @@ export default function AdminMenuPage() {
           <button
             type="button"
             onClick={openNewItemModal}
-            className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-5 py-2.5 text-xs font-bold text-white shadow-apple-sm hover:bg-apple-blueHover"
+            className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-sky-600 px-5 py-2.5 text-xs font-bold text-white shadow-apple-sm hover:bg-sky-700"
           >
             + Tambah Menu
           </button>
@@ -395,7 +395,7 @@ export default function AdminMenuPage() {
                   setCatDisplayOrderInput(String(categories.length + 1));
                   catDialogRef.current?.showModal();
                 }}
-                className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-[#F5F5F7] px-3.5 py-1.5 text-xs font-semibold text-apple-blue hover:bg-apple-blue hover:text-white"
+                className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-sky-50/60 px-3.5 py-1.5 text-xs font-semibold text-sky-700 hover:bg-sky-600 hover:text-white"
               >
                 + Kategori
               </button>
@@ -406,10 +406,10 @@ export default function AdminMenuPage() {
                 type="button"
                 onClick={() => setActiveCatId('ALL')}
                 className={cn(
-                  'flex min-h-[44px] w-full items-center justify-between rounded-2xl px-3.5 py-2.5 text-left text-xs font-semibold transition-all',
+                  'flex min-h-[44px] w-full items-center justify-between rounded-2xl px-3.5 py-2.5 text-left text-xs font-semibold motion-safe:transition-colors',
                   activeCatId === 'ALL'
                     ? 'bg-zinc-950 text-white shadow-sm'
-                    : 'text-zinc-700 hover:bg-[#F5F5F7]'
+                    : 'text-zinc-700 hover:bg-sky-50/60'
                 )}
               >
                 <span>Semua Kategori</span>
@@ -426,8 +426,8 @@ export default function AdminMenuPage() {
                   <div
                     key={cat.id}
                     className={cn(
-                      'flex items-center justify-between gap-1.5 rounded-2xl p-2 transition-all',
-                      isSelected ? 'bg-apple-blue/10 ring-1 ring-apple-blue/30' : 'hover:bg-[#F5F5F7]'
+                      'flex items-center justify-between gap-1.5 rounded-2xl p-2 motion-safe:transition-colors',
+                      isSelected ? 'bg-sky-600/10 ring-1 ring-apple-blue/30' : 'hover:bg-sky-50/60'
                     )}
                   >
                     <button
@@ -435,7 +435,7 @@ export default function AdminMenuPage() {
                       onClick={() => setActiveCatId(cat.id)}
                       className="flex min-h-[44px] min-w-0 flex-1 items-center gap-2 text-left"
                     >
-                      <span className="font-mono text-[11px] font-semibold tabular-nums text-[#515154]">
+                      <span className="font-mono text-[11px] font-semibold tabular-nums text-ink-secondary">
                         {String(idx + 1).padStart(2, '0')}
                       </span>
                       <div className="min-w-0">
@@ -454,7 +454,7 @@ export default function AdminMenuPage() {
                         type="button"
                         aria-label={`Ubah ${cat.nameId}`}
                         onClick={() => openEditCategoryModal(cat)}
-                        className="flex h-11 w-11 items-center justify-center rounded-lg text-zinc-500 hover:bg-white hover:text-apple-blue"
+                        className="flex h-11 w-11 items-center justify-center rounded-lg text-zinc-500 hover:bg-white hover:text-sky-700"
                       >
                         <PencilSimple aria-hidden="true" weight="bold" className="h-3.5 w-3.5" />
                       </button>
@@ -462,7 +462,7 @@ export default function AdminMenuPage() {
                         type="button"
                         aria-label={`Hapus ${cat.nameId}`}
                         onClick={() => handleDeleteCategory(cat)}
-                        className="flex h-11 w-11 items-center justify-center rounded-lg text-zinc-400 hover:bg-red-50 hover:text-[#D70015]"
+                        className="flex h-11 w-11 items-center justify-center rounded-lg text-zinc-400 hover:bg-red-50 hover:text-scarlet-600"
                       >
                         <Trash aria-hidden="true" weight="regular" className="h-3.5 w-3.5" />
                       </button>
@@ -517,7 +517,7 @@ export default function AdminMenuPage() {
 
                 {catItems.length === 0 ? (
                   <div className="rounded-[22px] border border-dashed border-zinc-300 bg-white p-8 text-center">
-                    <p className="text-xs font-medium text-[#515154]">
+                    <p className="text-xs font-medium text-ink-secondary">
                       Belum ada menu di kategori ini.
                     </p>
                     <button
@@ -526,7 +526,7 @@ export default function AdminMenuPage() {
                         setActiveCatId(category.id);
                         openNewItemModal();
                       }}
-                      className="apple-interactive mt-3 inline-flex min-h-[44px] items-center rounded-full bg-apple-blue/10 px-4 py-2 text-xs font-bold text-apple-blue hover:bg-apple-blue hover:text-white"
+                      className="apple-interactive mt-3 inline-flex min-h-[44px] items-center rounded-full bg-sky-600/10 px-4 py-2 text-xs font-bold text-sky-700 hover:bg-sky-600 hover:text-white"
                     >
                       + Tambah Menu ke {category.nameId}
                     </button>
@@ -537,7 +537,7 @@ export default function AdminMenuPage() {
                       <article
                         key={item.id}
                         className={cn(
-                          'flex flex-col justify-between rounded-[22px] border bg-white p-4 shadow-apple-sm transition-all',
+                          'flex flex-col justify-between rounded-[22px] border bg-white p-4 shadow-apple-sm motion-safe:transition-colors',
                           item.isSoldOut
                             ? 'border-red-200 bg-zinc-50/80'
                             : 'border-black/[0.06] hover:shadow-apple-md'
@@ -550,7 +550,7 @@ export default function AdminMenuPage() {
                                 src={item.imageUrl}
                                 alt={item.titleId}
                                 className={cn(
-                                  'h-full w-full object-cover transition-all',
+                                  'h-full w-full object-cover motion-safe:transition-colors',
                                   item.isSoldOut && 'grayscale opacity-60'
                                 )}
                               />
@@ -560,8 +560,8 @@ export default function AdminMenuPage() {
                               </div>
                             )}
                             {item.isSoldOut && (
-                              <span className="absolute inset-x-1 bottom-1 rounded-full bg-red-600/95 py-0.5 text-center text-[10px] font-bold uppercase tracking-wider text-white">
-                                Sold Out
+                              <span className="absolute inset-x-1 bottom-1 rounded-full bg-red-600/95 py-0.5 text-center text-[10px] font-bold font-medium text-white">
+                                Habis
                               </span>
                             )}
                           </div>
@@ -573,7 +573,7 @@ export default function AdminMenuPage() {
                                   {item.titleId}
                                 </h4>
                                 {item.titleEn && (
-                                  <p className="mt-0.5 text-[11px] font-medium text-apple-blue">
+                                  <p className="mt-0.5 text-[11px] font-medium text-sky-700">
                                     EN · {item.titleEn}
                                   </p>
                                 )}
@@ -590,7 +590,7 @@ export default function AdminMenuPage() {
                           </div>
                         </div>
 
-                        {/* Card Controls: Instant 1-Click Sold Out Switch + Edit/Delete */}
+                        {/* Card Controls: Instant 1-Click Habis Switch + Edit/Delete */}
                         <div className="mt-4 flex items-center justify-between border-t border-black/[0.05] pt-3">
                           <div className="flex items-center gap-2.5">
                             <button
@@ -626,7 +626,7 @@ export default function AdminMenuPage() {
                             <button
                               type="button"
                               onClick={() => openEditItemModal(item)}
-                              className="apple-interactive inline-flex min-h-[40px] items-center rounded-full bg-[#F5F5F7] px-3.5 py-1.5 text-xs font-semibold text-zinc-800 hover:bg-zinc-200"
+                              className="apple-interactive inline-flex min-h-[40px] items-center rounded-full bg-sky-50/60 px-3.5 py-1.5 text-xs font-semibold text-zinc-800 hover:bg-zinc-200"
                             >
                               Ubah
                             </button>
@@ -661,11 +661,11 @@ export default function AdminMenuPage() {
           <button
             type="button"
             onClick={() => catDialogRef.current?.close()}
-            className="apple-interactive inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-apple-blue hover:underline"
+            className="apple-interactive inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-sky-700 hover:underline"
           >
             Batal
           </button>
-          <h2 id="cat-modal-title" className="text-sm font-bold text-[#1D1D1F]">
+          <h2 id="cat-modal-title" className="text-sm font-bold text-ink-primary">
             {editingCatId ? 'Ubah Kategori Menu' : 'Tambah Kategori Menu'}
           </h2>
           <span className="min-w-[44px]" />
@@ -675,15 +675,15 @@ export default function AdminMenuPage() {
           {catError && (
             <div
               role="alert"
-              className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-[#D70015]"
+              className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-scarlet-600"
             >
               {catError}
             </div>
           )}
 
           <div>
-            <label htmlFor="catNameId" className="block text-xs font-semibold text-[#1D1D1F]">
-              Nama Kategori (Bahasa Indonesia) <span className="text-[#D70015]">*</span>
+            <label htmlFor="catNameId" className="block text-xs font-semibold text-ink-primary">
+              Nama Kategori (Bahasa Indonesia) <span className="text-scarlet-600">*</span>
             </label>
             <input
               id="catNameId"
@@ -698,8 +698,8 @@ export default function AdminMenuPage() {
           </div>
 
           <div>
-            <label htmlFor="catNameEn" className="block text-xs font-semibold text-[#1D1D1F]">
-              Nama Kategori (English — Opsional)
+            <label htmlFor="catNameEn" className="block text-xs font-semibold text-ink-primary">
+              Nama Kategori (English: Opsional)
             </label>
             <input
               id="catNameEn"
@@ -712,7 +712,7 @@ export default function AdminMenuPage() {
           </div>
 
           <div>
-            <label htmlFor="catOrder" className="block text-xs font-semibold text-[#1D1D1F]">
+            <label htmlFor="catOrder" className="block text-xs font-semibold text-ink-primary">
               Urutan Tampil
             </label>
             <input
@@ -729,7 +729,7 @@ export default function AdminMenuPage() {
           <button
             type="submit"
             disabled={saving}
-            className="apple-interactive flex min-h-[44px] w-full items-center justify-center rounded-full bg-apple-blue px-5 py-2.5 text-xs font-bold text-white hover:bg-apple-blueHover"
+            className="apple-interactive flex min-h-[44px] w-full items-center justify-center rounded-full bg-sky-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-sky-700"
           >
             {editingCatId ? 'Simpan Perubahan' : 'Simpan Kategori'}
           </button>
@@ -747,11 +747,11 @@ export default function AdminMenuPage() {
           <button
             type="button"
             onClick={() => itemDialogRef.current?.close()}
-            className="apple-interactive inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-apple-blue hover:underline"
+            className="apple-interactive inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-sky-700 hover:underline"
           >
             Batal
           </button>
-          <h2 id="item-modal-title" className="text-sm font-bold text-[#1D1D1F]">
+          <h2 id="item-modal-title" className="text-sm font-bold text-ink-primary">
             {editingItemId ? 'Ubah Item Menu (ID | EN)' : 'Tambah Item Menu (ID | EN)'}
           </h2>
           <span className="min-w-[44px]" />
@@ -761,7 +761,7 @@ export default function AdminMenuPage() {
           {itemFormError && (
             <div
               role="alert"
-              className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-2 text-xs font-semibold text-[#D70015]"
+              className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-2 text-xs font-semibold text-scarlet-600"
             >
               {itemFormError}
             </div>
@@ -788,7 +788,7 @@ export default function AdminMenuPage() {
 
             <div>
               <label htmlFor="itemPrice" className="block text-xs font-semibold text-zinc-800">
-                Harga (IDR) — {formatIdr(Math.max(0, parseDigitsToNumber(priceIdrInput, 0)))}
+                Harga (IDR): {formatIdr(Math.max(0, parseDigitsToNumber(priceIdrInput, 0)))}
               </label>
               <input
                 id="itemPrice"
@@ -802,7 +802,7 @@ export default function AdminMenuPage() {
                   setPriceIdrInput(sanitizeDigitsInput(e.target.value));
                   if (itemFormError) setItemFormError(null);
                 }}
-                className="mt-1 min-h-[44px] w-full rounded-xl border border-zinc-200 px-3.5 font-mono text-sm aria-[invalid=true]:border-[#D70015]"
+                className="mt-1 min-h-[44px] w-full rounded-xl border border-zinc-200 px-3.5 font-mono text-sm aria-[invalid=true]:border-scarlet-600"
               />
             </div>
 
@@ -862,7 +862,7 @@ export default function AdminMenuPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-black/[0.06] bg-[#F5F5F7] p-3.5">
+          <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-black/[0.06] bg-sky-50/60 p-3.5">
             {imageUrl ? (
               <img
                 src={imageUrl}
@@ -876,7 +876,7 @@ export default function AdminMenuPage() {
             )}
             <div className="flex-1">
               <p className="text-xs font-bold text-zinc-900">Foto Produk (Optimized WebP, max 2MB)</p>
-              <label className="apple-interactive mt-1.5 inline-flex cursor-pointer items-center rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold text-apple-blue shadow-sm hover:bg-zinc-50">
+              <label className="apple-interactive mt-1.5 inline-flex cursor-pointer items-center rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold text-sky-700 shadow-sm hover:bg-zinc-50">
                 <span>Pilih & Kompres Otomatis ke WebP</span>
                 <input
                   type="file"
@@ -899,7 +899,7 @@ export default function AdminMenuPage() {
             <button
               type="submit"
               disabled={saving}
-              className="rounded-full bg-apple-blue px-6 py-2 text-xs font-semibold text-white hover:bg-apple-blueHover"
+              className="rounded-full bg-sky-600 px-6 py-2 text-xs font-semibold text-white hover:bg-sky-700"
             >
               {saving ? 'Menyimpan...' : 'Simpan Menu'}
             </button>

@@ -45,7 +45,7 @@ export default function OnboardingPage() {
     <Suspense
       fallback={
         <div className="flex min-h-[60vh] items-center justify-center">
-          <p className="font-mono text-xs font-medium text-[#515154]">Loading onboarding...</p>
+          <p className="text-sm font-medium text-ink-secondary">Memuat pengaturan toko…</p>
         </div>
       }
     >
@@ -101,9 +101,7 @@ function OnboardingWizardContent() {
   const [branchLngInput, setBranchLngInput] = useState('');
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoNotice, setGeoNotice] = useState<string | null>(null);
-  const [logoUrl, setLogoUrl] = useState(
-    'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80'
-  );
+  const [logoUrl, setLogoUrl] = useState('/hero-bg.webp');
   const [logoProgress, setLogoProgress] = useState<number>(0);
   const [operationalHours, setOperationalHours] = useState<DaySchedule[]>(DEFAULT_HOURS);
   const [isSelfDeliveryEnabled, setIsSelfDeliveryEnabled] = useState(true);
@@ -457,17 +455,17 @@ function OnboardingWizardContent() {
   return (
     <div className="mx-auto max-w-4xl px-4 pt-14 sm:px-6 sm:pt-12">
       <div className="mb-8 text-center">
-        <p className="hig-caption text-xs font-semibold uppercase tracking-[0.06em] text-[#515154]">
+        <p className="hig-caption text-xs font-semibold font-medium text-ink-secondary">
           {onboardingMode === 'new'
-            ? 'Mulai Cepat — Buat Akun Pemilik Gratis'
+            ? 'Buat Akun Pemilik Gratis'
             : 'Pengaturan Profil Restoran'}
         </p>
-        <h1 className="hig-culinary-serif mt-2 text-3xl text-[#1D1D1F] sm:text-4xl">
+        <h1 className="hig-culinary-serif mt-2 text-3xl text-ink-primary sm:text-4xl">
           {onboardingMode === 'new'
             ? 'Buat Akun Dulu, Lanjut Setup Restoran'
             : 'Perbarui Profil & Rekening Restoran Anda'}
         </h1>
-        <p className="mx-auto mt-2 max-w-xl text-sm text-[#515154]">
+        <p className="mx-auto mt-2 max-w-xl text-sm text-ink-secondary">
           {onboardingMode === 'new'
             ? 'Langkah 1 selesai dalam 30 detik. Buat akun pemilik terlebih dahulu, lalu atur nama restoran, alamat /[slug], dan QRIS 0% komisi.'
             : 'Perbarui identitas usaha, jam operasional harian, rekening bank / QRIS Statis, serta nomor WhatsApp penerima pesanan.'}
@@ -482,8 +480,8 @@ function OnboardingWizardContent() {
               className={cn(
                 'min-h-[38px] rounded-full px-4 py-1.5 text-xs font-bold transition-colors',
                 onboardingMode === 'edit'
-                  ? 'bg-[#1D1D1F] text-white shadow-sm'
-                  : 'text-[#515154] hover:text-[#1D1D1F]'
+                  ? 'bg-ink-primary text-cloud text-white shadow-sm'
+                  : 'text-ink-secondary hover:text-ink-primary'
               )}
             >
               Edit Profil Toko Saya
@@ -494,18 +492,18 @@ function OnboardingWizardContent() {
               className={cn(
                 'min-h-[38px] rounded-full px-4 py-1.5 text-xs font-bold transition-colors',
                 onboardingMode === 'new'
-                  ? 'bg-[#1D1D1F] text-white shadow-sm'
-                  : 'text-[#515154] hover:text-[#1D1D1F]'
+                  ? 'bg-ink-primary text-cloud text-white shadow-sm'
+                  : 'text-ink-secondary hover:text-ink-primary'
               )}
             >
               + Daftarkan Toko Baru
             </button>
           </div>
         ) : (
-          <p className="mt-4 text-xs text-[#515154]">
+          <p className="mt-4 text-xs text-ink-secondary">
             Sudah pernah mendaftarkan restoran?{' '}
-            <Link href="/login" className="font-semibold text-apple-blue hover:underline">
-              Masuk untuk mengedit toko Anda →
+            <Link href="/login" className="font-semibold text-sky-700 hover:underline">
+              Masuk ke Akun Toko
             </Link>
           </p>
         )}
@@ -524,9 +522,9 @@ function OnboardingWizardContent() {
                 key={s.num}
                 aria-current={isCurrent ? 'step' : undefined}
                 className={cn(
-                  'flex items-center gap-3 rounded-2xl border p-3.5 transition-all',
+                  'flex items-center gap-3 rounded-2xl border p-3.5 motion-safe:transition-colors',
                   isCurrent
-                    ? 'border-apple-blue bg-white shadow-apple-md ring-2 ring-apple-blue/15'
+                    ? 'border-sky-600 bg-white shadow-apple-md ring-2 ring-sky-600/15'
                     : isDone
                     ? 'border-emerald-500/30 bg-emerald-50/60'
                     : 'border-black/[0.06] bg-white/70 opacity-75'
@@ -536,9 +534,9 @@ function OnboardingWizardContent() {
                   className={cn(
                     'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold',
                     isDone
-                      ? 'bg-apple-green text-white'
+                      ? 'bg-signal-green text-white'
                       : isCurrent
-                      ? 'bg-apple-blue text-white'
+                      ? 'bg-scarlet-600 text-cloud text-white'
                       : 'bg-zinc-200 text-zinc-600'
                   )}
                 >
@@ -561,7 +559,7 @@ function OnboardingWizardContent() {
       {errorMsg && (
         <div
           role="alert"
-          className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-[#D70015]"
+          className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-scarlet-600"
         >
           {errorMsg}
         </div>
@@ -573,7 +571,7 @@ function OnboardingWizardContent() {
           animate={{ opacity: 1, scale: 1 }}
           className="rounded-[28px] border border-emerald-500/30 bg-white p-8 text-center shadow-apple-lg sm:p-12"
         >
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/12 text-[#1D7D32]">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/12 text-signal-green">
             <Storefront aria-hidden="true" weight="duotone" className="h-8 w-8" />
           </div>
           <h2 className="mt-5 text-2xl font-bold tracking-tight text-zinc-950">
@@ -584,21 +582,21 @@ function OnboardingWizardContent() {
             serta menerima pembayaran QRIS 0% komisi tanpa konfigurasi DNS.
           </p>
 
-            <div className="mx-auto mt-6 max-w-md space-y-3 rounded-2xl border border-black/[0.06] bg-[#F5F5F7] p-4">
+            <div className="mx-auto mt-6 max-w-md space-y-3 rounded-2xl border border-black/[0.06] bg-sky-50/60 p-4">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
-                  Live Storefront URL
+                <p className="text-[11px] font-semibold font-medium text-zinc-500">
+                  Alamat Menu Tamu Langsung
                 </p>
-                <p className="mt-1 break-all font-mono text-sm font-bold text-apple-blue">
+                <p className="mt-1 break-all font-mono text-sm font-bold text-sky-700">
                   {launchSuccess.subdomainUrl}
                 </p>
               </div>
               {accountEmail && !isEditingDemo && (
                 <div className="border-t border-black/[0.08] pt-3">
-                  <p className="text-[11px] text-[#515154]">
+                  <p className="text-[11px] text-ink-secondary">
                     Akun dilindungi login:{' '}
-                    <strong className="font-mono text-[#1D1D1F]">{accountEmail}</strong> ·{' '}
-                    <Link href="/login" className="font-semibold text-apple-blue hover:underline">
+                    <strong className="font-mono text-ink-primary">{accountEmail}</strong> ·{' '}
+                    <Link href="/login" className="font-semibold text-sky-700 hover:underline">
                       Halaman Login
                     </Link>
                   </p>
@@ -617,16 +615,16 @@ function OnboardingWizardContent() {
             <button
               type="button"
               onClick={() => router.push('/admin/tables')}
-              className="apple-interactive inline-flex min-h-[44px] items-center rounded-full border border-black/15 bg-white px-6 py-3 text-sm font-semibold text-[#1D1D1F] hover:bg-zinc-50"
+              className="apple-interactive inline-flex min-h-[44px] items-center rounded-full border border-black/15 bg-white px-6 py-3 text-sm font-semibold text-ink-primary hover:bg-zinc-50"
             >
               Cetak QR Meja PDF
             </button>
             <button
               type="button"
               onClick={() => router.push(`/${launchSuccess.slug}`)}
-              className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-6 py-3 text-sm font-semibold text-white hover:bg-apple-blueHover"
+              className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-scarlet-600 text-cloud px-6 py-3 text-sm font-semibold text-white hover:bg-scarlet-600 text-cloudHover"
             >
-              Lihat Menu Pelanggan (QR View)
+              Menu Pelanggan
             </button>
           </div>
         </motion.div>
@@ -657,8 +655,8 @@ function OnboardingWizardContent() {
                         : 'Perbarui informasi pemilik, nomor WhatsApp penerima pesanan, dan kredensial login.'}
                     </p>
                   </div>
-                  <span className="inline-flex items-center rounded-full bg-emerald-500/12 px-3 py-1 text-[11px] font-semibold text-[#1D7D32]">
-                    ⚡ Selesai dalam 30 Detik
+                  <span className="inline-flex items-center rounded-full bg-emerald-500/12 px-3 py-1 text-[11px] font-semibold text-signal-green">
+                    Selesai dalam 30 detik
                   </span>
                 </div>
 
@@ -676,7 +674,7 @@ function OnboardingWizardContent() {
                       value={ownerName}
                       onChange={(e) => setOwnerName(e.target.value)}
                       placeholder="Contoh: Budi Santoso"
-                      className="mt-1.5 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 px-4 text-sm text-zinc-950 outline-none transition-all focus:border-apple-blue focus:bg-white focus:ring-4 focus:ring-apple-blue/10"
+                      className="mt-1.5 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-sky-50/60 px-4 text-sm text-zinc-950 outline-none motion-safe:transition-colors focus:border-sky-600 focus:bg-white focus:ring-4 focus:ring-sky-600/10"
                     />
                   </div>
 
@@ -697,7 +695,7 @@ function OnboardingWizardContent() {
                       value={ownerWhatsapp}
                       onChange={(e) => setOwnerWhatsapp(e.target.value)}
                       placeholder="+62812..."
-                      className="mt-1.5 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 px-4 font-mono text-sm text-zinc-950 outline-none transition-all focus:border-apple-blue focus:bg-white focus:ring-4 focus:ring-apple-blue/10"
+                      className="mt-1.5 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-sky-50/60 px-4 font-mono text-sm text-zinc-950 outline-none motion-safe:transition-colors focus:border-sky-600 focus:bg-white focus:ring-4 focus:ring-sky-600/10"
                     />
                     <p className="mt-1 text-[11px] text-zinc-500">
                       Saber Central WA Bot akan mengirim Magic Link pesanan baru ke nomor ini.
@@ -726,7 +724,7 @@ function OnboardingWizardContent() {
                           value={accountEmail}
                           onChange={(e) => setAccountEmail(e.target.value)}
                           placeholder="pemilik@restorananda.com"
-                          className="mt-1.5 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 px-4 text-sm text-zinc-950 outline-none transition-all focus:border-apple-blue focus:bg-white focus:ring-4 focus:ring-apple-blue/10"
+                          className="mt-1.5 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-sky-50/60 px-4 text-sm text-zinc-950 outline-none motion-safe:transition-colors focus:border-sky-600 focus:bg-white focus:ring-4 focus:ring-sky-600/10"
                         />
                         <p className="mt-1 text-[11px] text-zinc-500">
                           Digunakan untuk masuk secara privat ke dasbor restoran Anda.
@@ -759,7 +757,7 @@ function OnboardingWizardContent() {
                                 ? 'Minimal 8 karakter'
                                 : 'Kosongkan jika tidak diubah'
                             }
-                            className="min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 pl-4 pr-12 text-sm text-zinc-950 outline-none transition-all focus:border-apple-blue focus:bg-white focus:ring-4 focus:ring-apple-blue/10"
+                            className="min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-sky-50/60 pl-4 pr-12 text-sm text-zinc-950 outline-none motion-safe:transition-colors focus:border-sky-600 focus:bg-white focus:ring-4 focus:ring-sky-600/10"
                           />
                           <button
                             type="button"
@@ -768,7 +766,7 @@ function OnboardingWizardContent() {
                               showAccountPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'
                             }
                             onClick={() => setShowAccountPassword((prev) => !prev)}
-                            className="absolute right-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl text-[#515154] hover:bg-black/[0.05]"
+                            className="absolute right-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl text-ink-secondary hover:bg-black/[0.05]"
                           >
                             {showAccountPassword ? (
                               <EyeSlash aria-hidden="true" className="h-4 w-4" />
@@ -821,16 +819,16 @@ function OnboardingWizardContent() {
                       value={businessName}
                       onChange={(e) => handleBusinessNameChange(e.target.value)}
                       placeholder="Contoh: Warung Kopi Nusantara"
-                      className="mt-1.5 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 px-4 text-sm text-zinc-950 outline-none transition-all focus:border-apple-blue focus:bg-white focus:ring-4 focus:ring-apple-blue/10"
+                      className="mt-1.5 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-sky-50/60 px-4 text-sm text-zinc-950 outline-none motion-safe:transition-colors focus:border-sky-600 focus:bg-white focus:ring-4 focus:ring-sky-600/10"
                     />
                   </div>
 
                   <div className="sm:col-span-2">
                     <label htmlFor="slug" className="block text-xs font-semibold text-zinc-800">
-                      Storefront URL Slug (<code className="text-apple-blue">^[a-z0-9-]+$</code>){' '}
+                      Storefront URL Slug (<code className="text-sky-700">^[a-z0-9-]+$</code>){' '}
                       <span className="text-red-500">*</span>
                     </label>
-                    <div className="mt-1.5 flex overflow-hidden rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 focus-within:border-apple-blue focus-within:bg-white focus-within:ring-4 focus-within:ring-apple-blue/10">
+                    <div className="mt-1.5 flex overflow-hidden rounded-2xl border border-zinc-200 bg-sky-50/60 focus-within:border-sky-600 focus-within:bg-white focus-within:ring-4 focus-within:ring-sky-600/10">
                       <span className="flex shrink-0 items-center border-r border-zinc-200 bg-zinc-100/80 px-3.5 font-mono text-xs font-medium text-zinc-600">
                         {appDisplayOrigin}/
                       </span>
@@ -857,8 +855,8 @@ function OnboardingWizardContent() {
                         slugStatus.checking
                           ? 'bg-zinc-100 text-zinc-600'
                           : slugStatus.valid && slugStatus.available
-                            ? 'bg-emerald-50 text-[#1D7D32]'
-                            : 'bg-red-50 text-[#D70015]'
+                            ? 'bg-emerald-50 text-signal-green'
+                            : 'bg-red-50 text-scarlet-600'
                       )}
                     >
                       {slugStatus.checking
@@ -899,7 +897,7 @@ function OnboardingWizardContent() {
                 </div>
 
                 {/* Store Logo Upload with 1:1 Auto-Crop */}
-                <div className="flex flex-col gap-5 rounded-2xl border border-black/[0.06] bg-[#F5F5F7]/60 p-4 sm:flex-row sm:items-center">
+                <div className="flex flex-col gap-5 rounded-2xl border border-black/[0.06] bg-sky-50/60 p-4 sm:flex-row sm:items-center">
                   <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-[20px] border border-black/10 bg-white shadow-sm">
                     <img
                       src={logoUrl}
@@ -926,7 +924,7 @@ function OnboardingWizardContent() {
                     {logoProgress > 0 && (
                       <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-zinc-200">
                         <div
-                          className="h-full bg-apple-blue transition-all duration-300"
+                          className="h-full bg-scarlet-600 text-cloud transition-transform duration-300"
                           style={{ width: `${logoProgress}%` }}
                         />
                       </div>
@@ -946,14 +944,14 @@ function OnboardingWizardContent() {
                     autoComplete="street-address"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 px-4 py-3 text-sm text-zinc-950 outline-none transition-all focus:border-apple-blue focus:bg-white focus:ring-4 focus:ring-apple-blue/10"
+                    className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-sky-50/60 px-4 py-3 text-sm text-zinc-950 outline-none motion-safe:transition-colors focus:border-sky-600 focus:bg-white focus:ring-4 focus:ring-sky-600/10"
                   />
                 </div>
 
                 {/* Operational Hours Array */}
                 <div>
                   <p className="mb-2 text-xs font-semibold text-zinc-800">Jam Operasional Harian</p>
-                  <div className="divide-y divide-black/[0.05] overflow-hidden rounded-2xl border border-black/[0.06] bg-[#F5F5F7]/40">
+                  <div className="divide-y divide-black/[0.05] overflow-hidden rounded-2xl border border-black/[0.06] bg-sky-50/40">
                     {operationalHours.map((item, idx) => (
                       <div
                         key={item.day}
@@ -968,7 +966,7 @@ function OnboardingWizardContent() {
                               next[idx] = { ...item, isOpen: e.target.checked };
                               setOperationalHours(next);
                             }}
-                            className="h-4 w-4 rounded accent-apple-blue"
+                            className="h-4 w-4 rounded accent-sky-600"
                           />
                           <span>{item.day}</span>
                         </label>
@@ -984,7 +982,7 @@ function OnboardingWizardContent() {
                               }}
                               className="rounded-lg border border-zinc-200 bg-white px-2 py-1 font-mono text-xs"
                             />
-                            <span className="text-zinc-400">—</span>
+                            <span className="text-zinc-400 text-xs">sampai</span>
                             <input
                               type="time"
                               value={item.closeTime}
@@ -1007,10 +1005,10 @@ function OnboardingWizardContent() {
                 </div>
 
                 {/* Self-Delivery Settings */}
-                <div className="rounded-2xl border border-black/[0.06] bg-[#F5F5F7]/60 p-4 space-y-4">
+                <div className="rounded-2xl border border-black/[0.06] bg-sky-50/60 p-4 space-y-4">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 text-[#B25000]">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 text-signal-amber">
                         <Truck aria-hidden="true" weight="duotone" className="h-5 w-5" />
                       </div>
                       <div>
@@ -1033,7 +1031,7 @@ function OnboardingWizardContent() {
                       className={cn(
                         'relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full p-1 transition-colors',
                         isSelfDeliveryEnabled
-                          ? 'justify-end bg-apple-green'
+                          ? 'justify-end bg-signal-green'
                           : 'justify-start bg-zinc-300'
                       )}
                     >
@@ -1106,7 +1104,7 @@ function OnboardingWizardContent() {
                             type="button"
                             onClick={handleDetectBranchLocation}
                             disabled={geoLoading}
-                            className="apple-interactive inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-apple-blue/30 bg-apple-blue/5 px-3.5 py-1.5 text-xs font-bold text-apple-blue hover:bg-apple-blue/10 disabled:opacity-60"
+                            className="apple-interactive inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-sky-600/30 bg-scarlet-600 text-cloud/5 px-3.5 py-1.5 text-xs font-bold text-sky-700 hover:bg-scarlet-600 text-cloud/10 disabled:opacity-60"
                           >
                             <Crosshair aria-hidden="true" weight="bold" className="h-4 w-4" />
                             {geoLoading ? 'Mendeteksi...' : 'Gunakan Lokasi Cabang (GPS)'}
@@ -1125,7 +1123,7 @@ function OnboardingWizardContent() {
                               value={branchLatInput}
                               onChange={(e) => setBranchLatInput(e.target.value)}
                               placeholder="-6.200000"
-                              className="mt-1 min-h-[44px] w-full rounded-xl border border-zinc-200 bg-[#F5F5F7]/50 px-3 font-mono text-xs"
+                              className="mt-1 min-h-[44px] w-full rounded-xl border border-zinc-200 bg-sky-50/60 px-3 font-mono text-xs"
                             />
                           </div>
                           <div>
@@ -1139,7 +1137,7 @@ function OnboardingWizardContent() {
                               value={branchLngInput}
                               onChange={(e) => setBranchLngInput(e.target.value)}
                               placeholder="106.816666"
-                              className="mt-1 min-h-[44px] w-full rounded-xl border border-zinc-200 bg-[#F5F5F7]/50 px-3 font-mono text-xs"
+                              className="mt-1 min-h-[44px] w-full rounded-xl border border-zinc-200 bg-sky-50/60 px-3 font-mono text-xs"
                             />
                           </div>
                         </div>
@@ -1185,7 +1183,7 @@ function OnboardingWizardContent() {
 
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   {/* Static QRIS Upload */}
-                  <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-300 bg-[#F5F5F7]/60 p-5 text-center">
+                  <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-300 bg-sky-50/60 p-5 text-center">
                     <div className="mb-3 h-52 w-44 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-apple-sm">
                       <img
                         src={qrisImageUrl}
@@ -1206,7 +1204,7 @@ function OnboardingWizardContent() {
                     {qrisProgress > 0 && (
                       <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-zinc-200">
                         <div
-                          className="h-full bg-apple-green transition-all duration-300"
+                          className="h-full bg-signal-green transition-transform duration-300"
                           style={{ width: `${qrisProgress}%` }}
                         />
                       </div>
@@ -1226,7 +1224,7 @@ function OnboardingWizardContent() {
                         id="bankName"
                         value={bankName}
                         onChange={(e) => setBankName(e.target.value)}
-                        className="mt-1.5 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 px-3.5 text-sm text-zinc-950 outline-none focus:border-apple-blue focus:bg-white"
+                        className="mt-1.5 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-sky-50/60 px-3.5 text-sm text-zinc-950 outline-none focus:border-sky-600 focus:bg-white"
                       >
                         {INDONESIAN_BANKS.map((bank) => (
                           <option key={bank} value={bank}>
@@ -1250,7 +1248,7 @@ function OnboardingWizardContent() {
                         required
                         value={bankAccountNumber}
                         onChange={(e) => setBankAccountNumber(e.target.value)}
-                        className="mt-1.5 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 px-4 font-mono text-sm text-zinc-950 outline-none focus:border-apple-blue focus:bg-white"
+                        className="mt-1.5 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-sky-50/60 px-4 font-mono text-sm text-zinc-950 outline-none focus:border-sky-600 focus:bg-white"
                       />
                     </div>
 
@@ -1267,7 +1265,7 @@ function OnboardingWizardContent() {
                         required
                         value={bankAccountHolder}
                         onChange={(e) => setBankAccountHolder(e.target.value)}
-                        className="mt-1.5 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 px-4 text-sm text-zinc-950 outline-none focus:border-apple-blue focus:bg-white"
+                        className="mt-1.5 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-sky-50/60 px-4 text-sm text-zinc-950 outline-none focus:border-sky-600 focus:bg-white"
                       />
                     </div>
                   </div>
@@ -1297,19 +1295,19 @@ function OnboardingWizardContent() {
               <button
                 type="button"
                 onClick={handleNextStep}
-                className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-6 py-2.5 text-sm font-semibold text-white shadow-apple-sm hover:bg-apple-blueHover"
+                className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-scarlet-600 text-cloud px-6 py-2.5 text-sm font-semibold text-white shadow-apple-sm hover:bg-scarlet-600 text-cloudHover"
               >
                 {step === 1
                   ? onboardingMode === 'new'
-                    ? 'Buat Akun & Lanjut Setup Restoran →'
-                    : 'Lanjut ke Setup Restoran →'
-                  : 'Lanjut ke Pembayaran QRIS →'}
+                    ? 'Buat Akun dan Lanjut Setup'
+                    : 'Lanjut ke Setup Restoran'
+                  : 'Lanjut ke Pembayaran QRIS'}
               </button>
             ) : (
               <button
                 type="submit"
                 disabled={submitting}
-                className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-7 py-2.5 text-sm font-semibold text-white shadow-apple-sm hover:bg-apple-blueHover disabled:opacity-60"
+                className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-scarlet-600 text-cloud px-7 py-2.5 text-sm font-semibold text-white shadow-apple-sm hover:bg-scarlet-600 text-cloudHover disabled:opacity-60"
               >
                 {submitting ? 'Menyimpan...' : 'Selesaikan & Aktifkan Toko'}
               </button>

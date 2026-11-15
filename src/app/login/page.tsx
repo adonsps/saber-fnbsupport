@@ -22,7 +22,7 @@ export default function LoginPage() {
     <Suspense
       fallback={
         <div className="flex min-h-[60vh] items-center justify-center">
-          <p className="font-mono text-xs font-medium text-[#515154]">Loading sign-in...</p>
+          <p className="text-sm font-medium text-ink-secondary">Memuat halaman masuk…</p>
         </div>
       }
     >
@@ -143,24 +143,20 @@ function LoginContent() {
   };
 
   return (
-    <div className="mx-auto max-w-md px-4 pt-8 sm:px-6 sm:pt-12">
-      <div className="mb-6 text-center">
+    <div className="mx-auto max-w-md px-4 pt-10 sm:px-6 sm:pt-14">
+      <div className="mb-7 text-center">
         <div className="mx-auto mb-4 flex justify-center">
           <SaberLogo size="lg" />
         </div>
-        <p className="hig-caption text-xs font-semibold uppercase tracking-[0.06em] text-[#515154]">
-          Portal Pemilik Restoran
-        </p>
-        <h1 id="login-heading" className="hig-culinary-serif mt-1.5 text-[#1D1D1F]">
-          Masuk ke Akun Restoran
+        <h1 id="login-heading" className="hig-culinary-serif text-ink-primary">
+          Masuk ke Akun Toko
         </h1>
-        <p className="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-[#515154]">
-          Akses privat ke dasbor usaha Anda: Menu &amp; Stok, QR Meja, Kasir Kanban, dan Laporan
-          Penjualan.
+        <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-ink-secondary">
+          Kelola daftar menu, stiker QR meja, antrean kasir dapur, dan laporan penjualan harian.
         </p>
       </div>
 
-      <section className="hig-grouped-card rounded-[28px] p-6 sm:p-8">
+      <section className="rounded-2xl border border-sky-200 bg-cloud p-6 sm:p-8">
         {!showForgotPanel ? (
           <form
             action="/api/v1/auth/login"
@@ -173,15 +169,15 @@ function LoginContent() {
               <div
                 role="alert"
                 aria-live="polite"
-                className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-medium text-[#D70015]"
+                className="rounded-xl border border-scarlet-200 bg-scarlet-50 px-4 py-3 text-xs font-medium text-scarlet-600"
               >
                 {errorMsg}
               </div>
             )}
 
             <div>
-              <label htmlFor="login-email" className="block text-xs font-semibold text-[#1D1D1F]">
-                Email Pemilik Restoran <span aria-hidden="true" className="text-[#D70015]">*</span>
+              <label htmlFor="login-email" className="block text-sm font-semibold text-ink-primary">
+                Email Pemilik <span aria-hidden="true" className="text-scarlet-600">*</span>
               </label>
               <input
                 ref={emailInputRef}
@@ -201,7 +197,7 @@ function LoginContent() {
                   if (errorMsg) setErrorMsg(null);
                 }}
                 placeholder="pemilik@restorananda.com"
-                className="mt-1.5 min-h-[48px] w-full rounded-2xl border border-zinc-300 bg-[#F5F5F7]/60 px-4 text-sm text-[#1D1D1F] outline-none transition-all focus:border-apple-blue focus:bg-white focus:ring-4 focus:ring-apple-blue/10"
+                className="mt-1.5 min-h-[48px] w-full rounded-xl border border-sky-200 bg-sky-50/70 px-4 text-base text-ink-primary motion-safe:transition-colors focus:border-sky-600 focus:bg-cloud focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
               />
             </div>
 
@@ -209,9 +205,9 @@ function LoginContent() {
               <div className="flex items-center justify-between gap-2">
                 <label
                   htmlFor="login-password"
-                  className="block text-xs font-semibold text-[#1D1D1F]"
+                  className="block text-sm font-semibold text-ink-primary"
                 >
-                  Kata Sandi <span aria-hidden="true" className="text-[#D70015]">*</span>
+                  Kata Sandi <span aria-hidden="true" className="text-scarlet-600">*</span>
                 </label>
                 <button
                   type="button"
@@ -220,7 +216,7 @@ function LoginContent() {
                     setResetEmail(email);
                     setResetStatus(null);
                   }}
-                  className="text-xs font-semibold text-apple-blue hover:underline"
+                  className="text-xs font-semibold text-sky-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
                 >
                   Lupa kata sandi?
                 </button>
@@ -242,14 +238,14 @@ function LoginContent() {
                     if (errorMsg) setErrorMsg(null);
                   }}
                   placeholder="Minimal 8 karakter"
-                  className="min-h-[48px] w-full rounded-2xl border border-zinc-300 bg-[#F5F5F7]/60 pl-4 pr-12 text-sm text-[#1D1D1F] outline-none transition-all focus:border-apple-blue focus:bg-white focus:ring-4 focus:ring-apple-blue/10"
+                  className="min-h-[48px] w-full rounded-xl border border-sky-200 bg-sky-50/70 pl-4 pr-12 text-base text-ink-primary motion-safe:transition-colors focus:border-sky-600 focus:bg-cloud focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
                 />
                 <button
                   type="button"
                   aria-pressed={showPassword}
                   aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl text-[#515154] hover:bg-black/[0.05] hover:text-[#1D1D1F]"
+                  className="absolute right-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-ink-secondary hover:bg-sky-100/60 hover:text-ink-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
                 >
                   {showPassword ? (
                     <EyeSlash aria-hidden="true" weight="regular" className="h-4 w-4" />
@@ -266,26 +262,26 @@ function LoginContent() {
             <button
               type="submit"
               disabled={submitting}
-              className="apple-interactive flex min-h-[48px] w-full items-center justify-center rounded-full bg-apple-blue px-6 py-3 text-sm font-semibold text-white shadow-apple-sm hover:bg-apple-blueHover disabled:opacity-60"
+              className="apple-interactive flex min-h-[48px] w-full items-center justify-center rounded-xl bg-scarlet-600 px-6 py-3 text-base font-semibold text-cloud hover:bg-scarlet-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-scarlet-600 focus-visible:ring-offset-2 motion-safe:transition-colors"
             >
-              {submitting ? 'Memverifikasi Akun...' : 'Masuk ke Akun'}
+              {submitting ? 'Memverifikasi Akun…' : 'Masuk ke Akun'}
             </button>
 
-            <div className="flex items-center justify-center gap-1.5 pt-1 text-[11px] text-[#515154]">
-              <LockSimple aria-hidden="true" weight="duotone" className="h-3.5 w-3.5" />
-              <span>Terisolasi per akun — pengguna lain tidak dapat membuka toko Anda.</span>
+            <div className="flex items-center justify-center gap-1.5 pt-1 text-xs text-ink-secondary">
+              <LockSimple aria-hidden="true" weight="duotone" className="h-4 w-4 shrink-0" />
+              <span>Terisolasi per akun: pengguna lain tidak dapat membuka toko Anda.</span>
             </div>
           </form>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-black/[0.06] pb-3">
+            <div className="flex items-center justify-between border-b border-sky-100 pb-3">
               <div className="flex items-center gap-2">
                 <WhatsappLogo
                   aria-hidden="true"
                   weight="duotone"
-                  className="h-4 w-4 text-[#1D7D32]"
+                  className="h-4 w-4 text-signal-green"
                 />
-                <h2 className="text-sm font-bold text-[#1D1D1F]">Reset Kata Sandi via WhatsApp</h2>
+                <h2 className="text-sm font-bold text-ink-primary">Reset Kata Sandi via WhatsApp</h2>
               </div>
               <button
                 type="button"
@@ -294,7 +290,7 @@ function LoginContent() {
                   setResetStep('request');
                   setResetStatus(null);
                 }}
-                className="text-xs font-semibold text-apple-blue hover:underline"
+                className="text-xs font-semibold text-sky-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
               >
                 Kembali ke Login
               </button>
@@ -305,10 +301,10 @@ function LoginContent() {
                 role={resetStatus.type === 'error' ? 'alert' : 'status'}
                 aria-live="polite"
                 className={cn(
-                  'rounded-2xl border px-3.5 py-2.5 text-xs font-medium',
+                  'rounded-xl border px-3.5 py-2.5 text-xs font-medium',
                   resetStatus.type === 'error'
-                    ? 'border-red-200 bg-red-50 text-[#D70015]'
-                    : 'border-emerald-200 bg-emerald-50 text-[#1D7D32]'
+                    ? 'border-scarlet-200 bg-scarlet-50 text-scarlet-600'
+                    : 'border-sky-200 bg-sky-50 text-signal-green'
                 )}
               >
                 {resetStatus.text}
@@ -320,9 +316,9 @@ function LoginContent() {
                 <div>
                   <label
                     htmlFor="reset-email"
-                    className="block text-xs font-semibold text-[#1D1D1F]"
+                    className="block text-sm font-semibold text-ink-primary"
                   >
-                    Email Akun Terdaftar <span aria-hidden="true" className="text-[#D70015]">*</span>
+                    Email Akun Terdaftar <span aria-hidden="true" className="text-scarlet-600">*</span>
                   </label>
                   <input
                     id="reset-email"
@@ -334,28 +330,27 @@ function LoginContent() {
                     value={resetEmail}
                     onChange={(e) => setResetEmail(e.target.value)}
                     placeholder="pemilik@restorananda.com"
-                    className="mt-1.5 min-h-[48px] w-full rounded-2xl border border-zinc-300 bg-[#F5F5F7]/60 px-4 text-sm outline-none focus:border-apple-blue focus:bg-white"
+                    className="mt-1.5 min-h-[48px] w-full rounded-xl border border-sky-200 bg-sky-50/70 px-4 text-base text-ink-primary focus:border-sky-600 focus:bg-cloud focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
                   />
-                  <p className="mt-1 text-[11px] text-[#515154]">
-                    Kode OTP 6 digit akan dikirimkan melalui Bot WhatsApp Saber ke nomor pemilik
-                    restoran Anda.
+                  <p className="mt-1.5 text-xs text-ink-secondary">
+                    Kode OTP 6 digit akan dikirimkan melalui WhatsApp ke nomor pemilik toko Anda.
                   </p>
                 </div>
 
                 <button
                   type="submit"
                   disabled={resetBusy}
-                  className="apple-interactive flex min-h-[46px] w-full items-center justify-center rounded-full bg-apple-blue px-5 text-xs font-bold text-white hover:bg-apple-blueHover disabled:opacity-60"
+                  className="apple-interactive flex min-h-[46px] w-full items-center justify-center rounded-xl bg-scarlet-600 px-5 text-sm font-semibold text-cloud hover:bg-scarlet-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-scarlet-600"
                 >
-                  {resetBusy ? 'Mengirim OTP...' : 'Kirim Kode OTP ke WhatsApp'}
+                  {resetBusy ? 'Mengirim OTP…' : 'Kirim Kode OTP ke WhatsApp'}
                 </button>
               </form>
             ) : (
               <form onSubmit={handleConfirmReset} className="space-y-4">
                 <div>
-                  <label htmlFor="reset-otp" className="block text-xs font-semibold text-[#1D1D1F]">
+                  <label htmlFor="reset-otp" className="block text-sm font-semibold text-ink-primary">
                     Kode OTP (6 Digit dari WhatsApp){' '}
-                    <span aria-hidden="true" className="text-[#D70015]">
+                    <span aria-hidden="true" className="text-scarlet-600">
                       *
                     </span>
                   </label>
@@ -371,17 +366,17 @@ function LoginContent() {
                     value={resetOtp}
                     onChange={(e) => setResetOtp(e.target.value.replace(/\D/g, ''))}
                     placeholder="123456"
-                    className="mt-1.5 min-h-[48px] w-full rounded-2xl border border-zinc-300 bg-[#F5F5F7]/60 px-4 font-mono text-base font-bold tracking-widest outline-none focus:border-apple-blue focus:bg-white"
+                    className="mt-1.5 min-h-[48px] w-full rounded-xl border border-sky-200 bg-sky-50/70 px-4 font-mono text-base font-bold tracking-widest text-ink-primary focus:border-sky-600 focus:bg-cloud focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
                   />
                 </div>
 
                 <div>
                   <label
                     htmlFor="reset-new-pw"
-                    className="block text-xs font-semibold text-[#1D1D1F]"
+                    className="block text-sm font-semibold text-ink-primary"
                   >
                     Kata Sandi Baru (Minimal 8 Karakter){' '}
-                    <span aria-hidden="true" className="text-[#D70015]">
+                    <span aria-hidden="true" className="text-scarlet-600">
                       *
                     </span>
                   </label>
@@ -396,7 +391,7 @@ function LoginContent() {
                       value={resetNewPassword}
                       onChange={(e) => setResetNewPassword(e.target.value)}
                       placeholder="Minimal 8 karakter"
-                      className="min-h-[48px] w-full rounded-2xl border border-zinc-300 bg-[#F5F5F7]/60 pl-4 pr-12 text-sm outline-none focus:border-apple-blue focus:bg-white"
+                      className="min-h-[48px] w-full rounded-xl border border-sky-200 bg-sky-50/70 pl-4 pr-12 text-base text-ink-primary focus:border-sky-600 focus:bg-cloud focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
                     />
                     <button
                       type="button"
@@ -405,7 +400,7 @@ function LoginContent() {
                         showResetPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'
                       }
                       onClick={() => setShowResetPassword((prev) => !prev)}
-                      className="absolute right-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl text-[#515154]"
+                      className="absolute right-1.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-ink-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
                     >
                       {showResetPassword ? (
                         <EyeSlash aria-hidden="true" className="h-4 w-4" />
@@ -419,9 +414,9 @@ function LoginContent() {
                 <button
                   type="submit"
                   disabled={resetBusy}
-                  className="apple-interactive flex min-h-[46px] w-full items-center justify-center rounded-full bg-apple-blue px-5 text-xs font-bold text-white hover:bg-apple-blueHover disabled:opacity-60"
+                  className="apple-interactive flex min-h-[46px] w-full items-center justify-center rounded-xl bg-scarlet-600 px-5 text-sm font-semibold text-cloud hover:bg-scarlet-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-scarlet-600"
                 >
-                  {resetBusy ? 'Menyimpan Kata Sandi...' : 'Simpan & Masuk ke Akun'}
+                  {resetBusy ? 'Menyimpan Kata Sandi…' : 'Simpan & Masuk ke Akun'}
                 </button>
               </form>
             )}
@@ -429,21 +424,26 @@ function LoginContent() {
         )}
       </section>
 
-      <div className="mt-6 flex flex-col items-center gap-2 text-center text-xs text-[#515154]">
+      <div className="mt-6 flex flex-col items-center gap-2.5 text-center text-sm text-ink-secondary">
         <p>
           Pemilik restoran baru?{' '}
-          <Link href="/onboarding?mode=new" className="font-semibold text-apple-blue hover:underline">
-            Daftarkan Restoran Baru →
+          <Link
+            href="/onboarding?mode=new"
+            className="font-semibold text-scarlet-600 underline-offset-4 hover:underline"
+          >
+            Buat Akun Toko
           </Link>
         </p>
         <p>
           Ingin mencoba alur tanpa login?{' '}
-          <Link href="/" className="font-semibold text-[#1D1D1F] hover:underline">
-            Kembali ke Demo Sandbox
+          <Link
+            href="/"
+            className="font-semibold text-ink-primary underline-offset-4 hover:underline"
+          >
+            Kembali ke Beranda
           </Link>
         </p>
       </div>
     </div>
   );
 }
-
