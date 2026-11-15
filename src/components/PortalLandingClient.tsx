@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { CaretDown, SignOut } from '@phosphor-icons/react';
+import { CaretDown, CookingPot, SignIn, SignOut, User } from '@phosphor-icons/react';
 import { formatIdr } from '@/lib/utils';
 import { triggerCausalHaptic } from '@/lib/apple-motion';
 
@@ -98,7 +98,7 @@ export function PortalLandingClient({
       actions: [
         { label: 'Kelola Menu', route: '/admin/menu' },
         { label: 'Cetak QR Meja', route: '/admin/tables' },
-        { label: 'Layar Tamu', route: `/${activeMerchant.slug}?table=TABLE%2004` },
+        { label: 'Layar Tamu', route: `/${activeMerchant.slug}?table=Demo` },
       ],
     },
     {
@@ -157,208 +157,255 @@ export function PortalLandingClient({
 
   return (
     <div className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8 lg:pt-12">
-      {/* Stage Hero — 12-Column Asymmetric Split on 60% Sky Blue Ground */}
-      <section aria-labelledby="hero-heading" className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-12">
-        <div className="min-w-0 lg:col-span-6">
-          <h1 id="hero-heading" className="apple-display text-ink-primary">
-            Pesanan meja langsung masuk ke dapur.
-          </h1>
-
-          <p className="hig-body mt-5 max-w-[50ch] text-ink-secondary">
-            Tanpa potongan komisi. Tamu scan QR meja dan bayar QRIS dari browser.
-          </p>
-
-          <div className="mt-8 flex flex-wrap items-center gap-3.5">
-            {authenticatedMerchant ? (
-              <>
-                <Link
-                  href="/cashier/orders"
-                  onPointerDown={() => triggerCausalHaptic(8)}
-                  className="apple-interactive inline-flex min-h-[48px] items-center whitespace-nowrap rounded-xl bg-scarlet-600 px-6 py-3 text-base font-semibold text-cloud hover:bg-scarlet-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-scarlet-600 focus-visible:ring-offset-2 motion-safe:transition-colors"
-                >
-                  Buka Kasir &amp; Dapur
-                </Link>
-                <Link
-                  href={`/${authenticatedMerchant.slug}?table=TABLE%2004`}
-                  onPointerDown={() => triggerCausalHaptic(6)}
-                  className="apple-interactive inline-flex min-h-[48px] items-center whitespace-nowrap rounded-xl border border-sky-200 bg-cloud px-5 py-3 text-base font-semibold text-ink-primary hover:bg-sky-100/70 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 motion-safe:transition-colors"
-                >
-                  Lihat Menu Tamu
-                </Link>
-                <Link
-                  href="/onboarding?mode=edit"
-                  onPointerDown={() => triggerCausalHaptic(6)}
-                  className="apple-interactive inline-flex min-h-[48px] items-center whitespace-nowrap px-3 py-3 text-base font-medium text-ink-secondary underline-offset-4 hover:text-ink-primary hover:underline active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
-                >
-                  Atur Profil Toko
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/onboarding?mode=new"
-                  onPointerDown={() => triggerCausalHaptic(8)}
-                  className="apple-interactive inline-flex min-h-[48px] items-center whitespace-nowrap rounded-xl bg-scarlet-600 px-6 py-3 text-base font-semibold text-cloud hover:bg-scarlet-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-scarlet-600 focus-visible:ring-offset-2 motion-safe:transition-colors"
-                >
-                  Buat Akun Toko
-                </Link>
-                <Link
-                  href={`/${demoMerchant.slug}?table=TABLE%2004`}
-                  onPointerDown={() => triggerCausalHaptic(6)}
-                  className="apple-interactive inline-flex min-h-[48px] items-center whitespace-nowrap rounded-xl border border-sky-200 bg-cloud px-5 py-3 text-base font-semibold text-ink-primary hover:bg-sky-100/70 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 motion-safe:transition-colors"
-                >
-                  Coba Menu Meja 04
-                </Link>
-                <Link
-                  href="/login"
-                  onPointerDown={() => triggerCausalHaptic(6)}
-                  className="apple-interactive inline-flex min-h-[48px] items-center whitespace-nowrap px-3 py-3 text-base font-medium text-ink-secondary underline-offset-4 hover:text-ink-primary hover:underline active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
-                >
-                  Masuk Pemilik
-                </Link>
-              </>
-            )}
-          </div>
-
-          <dl className="mt-10 grid grid-cols-3 gap-6 border-t border-sky-200 pt-6">
-            <div>
-              <dt className="text-sm text-ink-secondary">Potongan komisi</dt>
-              <dd className="mt-1 font-serif text-2xl font-bold tabular-nums text-ink-primary">
-                0%
-              </dd>
-            </div>
-            <div className="border-l border-sky-200 pl-6">
-              <dt className="text-sm text-ink-secondary">Katalog aktif</dt>
-              <dd className="mt-1 font-serif text-2xl font-bold tabular-nums text-ink-primary">
-                {activeMerchant.menuCount} menu
-              </dd>
-            </div>
-            <div className="border-l border-sky-200 pl-6">
-              <dt className="text-sm text-ink-secondary">Titik meja</dt>
-              <dd className="mt-1 font-serif text-2xl font-bold tabular-nums text-ink-primary">
-                {activeMerchant.tableCount} QR
-              </dd>
-            </div>
-          </dl>
+      {/* Stage Hero — 12-Column Asymmetric Split with Ambient Culinary Backdrop */}
+      <section
+        aria-labelledby="hero-heading"
+        className="relative overflow-hidden rounded-3xl border border-sky-200/90 bg-cloud px-6 py-10 shadow-sm sm:px-10 sm:py-14 lg:p-12"
+      >
+        {/* Ambient Culinary Backdrop — Spanning entire hero section */}
+        <div className="pointer-events-none absolute inset-0 -z-10 select-none overflow-hidden">
+          <img
+            src="/hero-bg.webp"
+            alt="Suasana bistro kuliner modern dengan pencahayaan alami"
+            width={1376}
+            height={768}
+            fetchPriority="high"
+            className="h-full w-full object-cover object-center opacity-25 saturate-75 filter"
+          />
+          {/* Disciplined gradient scrim ensuring 100% WCAG AAA text contrast across both columns */}
+          <div className="absolute inset-0 bg-gradient-to-r from-cloud via-cloud/95 to-cloud/85 lg:via-cloud/90 lg:to-cloud/70" />
         </div>
 
-        {/* Signature Visual — Authentic Bistro Photography + Live Store Pass on 30% Cloud White */}
-        <div className="min-w-0 lg:col-span-6">
-          <div className="overflow-hidden rounded-2xl border border-sky-200 bg-cloud">
-            <img
-              src="/hero-bg.webp"
-              alt="Meja bistro dengan pencahayaan pagi alami dan sajian kuliner"
-              width={1200}
-              height={750}
-              fetchPriority="high"
-              className="aspect-[16/10] w-full object-cover object-center"
-            />
+        <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-12">
+          {/* Left Column: Punchline Badge, Headline, Subhead, CTA Buttons */}
+          <div className="min-w-0 lg:col-span-6">
+            {/* Scarlet Red Punchline Highlight — 0% Komisi / 100% Hasil Utuh */}
+            <div className="mb-6 inline-flex items-center gap-2.5 rounded-full border border-scarlet-200 bg-scarlet-50/90 px-4 py-2 text-xs font-semibold text-scarlet-700 shadow-sm backdrop-blur-sm sm:text-sm">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-scarlet-600 text-[10px] font-black text-cloud">
+                %
+              </span>
+              <span>0% Komisi Aplikasi · 100% Hasil Penjualan Utuh Bebas Biaya</span>
+            </div>
 
+            <h1 id="hero-heading" className="apple-display text-ink-primary">
+              Pesanan meja langsung masuk ke dapur.
+            </h1>
+
+            <p className="hig-body mt-5 max-w-[50ch] text-ink-secondary">
+              Tanpa potongan komisi. Tamu pesan dan bayar QRIS langsung dari browser.
+            </p>
+
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              {authenticatedMerchant ? (
+                <>
+                  <Link
+                    href="/cashier/orders"
+                    onPointerDown={() => triggerCausalHaptic(8)}
+                    className="apple-interactive inline-flex min-h-[48px] items-center justify-center whitespace-nowrap rounded-full bg-scarlet-600 px-6 py-3 text-base font-semibold text-cloud shadow-sm hover:bg-scarlet-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-scarlet-600 focus-visible:ring-offset-2 motion-safe:transition-colors"
+                  >
+                    Buka Kasir &amp; Dapur
+                  </Link>
+                  <Link
+                    href={`/${authenticatedMerchant.slug}?table=Demo`}
+                    onPointerDown={() => triggerCausalHaptic(6)}
+                    className="apple-interactive inline-flex min-h-[48px] items-center justify-center whitespace-nowrap rounded-full border border-sky-300 bg-cloud px-5 py-3 text-base font-semibold text-ink-primary shadow-sm hover:bg-sky-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 motion-safe:transition-colors"
+                  >
+                    Lihat Menu Tamu
+                  </Link>
+                  <Link
+                    href="/onboarding?mode=edit"
+                    onPointerDown={() => triggerCausalHaptic(6)}
+                    className="apple-interactive inline-flex min-h-[48px] items-center justify-center whitespace-nowrap rounded-full border border-sky-300 bg-cloud px-5 py-3 text-base font-semibold text-ink-primary shadow-sm hover:bg-sky-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 motion-safe:transition-colors"
+                  >
+                    Atur Profil Toko
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/onboarding?mode=new"
+                    onPointerDown={() => triggerCausalHaptic(8)}
+                    className="apple-interactive inline-flex min-h-[48px] items-center justify-center whitespace-nowrap rounded-full bg-scarlet-600 px-6 py-3 text-base font-semibold text-cloud shadow-sm hover:bg-scarlet-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-scarlet-600 focus-visible:ring-offset-2 motion-safe:transition-colors"
+                  >
+                    Daftarkan Restoran Baru
+                  </Link>
+                  <a
+                    href="#quick-show"
+                    onPointerDown={() => triggerCausalHaptic(6)}
+                    className="apple-interactive inline-flex min-h-[48px] items-center justify-center whitespace-nowrap rounded-full border border-sky-300 bg-sky-50/80 px-5 py-3 text-base font-semibold text-sky-800 shadow-sm hover:bg-sky-100 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 motion-safe:transition-colors"
+                  >
+                    Coba Simulasi Demo
+                  </a>
+                  <Link
+                    href="/login"
+                    onPointerDown={() => triggerCausalHaptic(6)}
+                    className="apple-interactive inline-flex min-h-[48px] items-center justify-center gap-2 whitespace-nowrap rounded-full border border-sky-300 bg-cloud px-5 py-3 text-base font-semibold text-ink-primary shadow-sm hover:bg-sky-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 motion-safe:transition-colors"
+                  >
+                    <SignIn aria-hidden="true" weight="bold" className="h-4 w-4 text-ink-secondary" />
+                    <span>Masuk Pemilik Resto</span>
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Right Column: Unified Quick Show 2 Sisi / Active Store Pass */}
+          <div id="quick-show" className="min-w-0 lg:col-span-6">
             {authenticatedMerchant ? (
-              <div className="border-t border-sky-100 p-6">
-                <div className="flex items-start justify-between gap-4 border-b border-sky-100 pb-4">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-ink-secondary">
-                      {activeMerchant.isDemo ? 'Menampilkan Toko Contoh' : 'Toko Terhubung'}
-                    </p>
-                    <h2 className="mt-0.5 truncate font-serif text-xl font-bold text-ink-primary">
-                      {activeMerchant.name}
-                    </h2>
+              <div className="overflow-hidden rounded-2xl border border-sky-200 bg-cloud/95 shadow-sm backdrop-blur-sm">
+                <div className="p-6">
+                  <div className="flex items-start justify-between gap-4 border-b border-sky-100 pb-4">
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-ink-secondary">
+                        {activeMerchant.isDemo ? 'Menampilkan Toko Contoh' : 'Toko Terhubung'}
+                      </p>
+                      <h2 className="mt-0.5 truncate font-serif text-xl font-bold text-ink-primary">
+                        {activeMerchant.name}
+                      </h2>
+                    </div>
+                    <span
+                      className={`shrink-0 inline-flex items-center rounded-lg px-3 py-1 text-xs font-semibold ${
+                        activeMerchant.isStoreOpen
+                          ? 'bg-sky-50 text-signal-green'
+                          : 'bg-scarlet-50 text-scarlet-600'
+                      }`}
+                    >
+                      {activeMerchant.isStoreOpen ? 'Buka' : 'Tutup'}
+                    </span>
                   </div>
-                  <span
-                    className={`shrink-0 inline-flex items-center rounded-lg px-3 py-1 text-xs font-semibold ${
-                      activeMerchant.isStoreOpen
-                        ? 'bg-sky-50 text-signal-green'
-                        : 'bg-scarlet-50 text-scarlet-600'
-                    }`}
-                  >
-                    {activeMerchant.isStoreOpen ? 'Buka' : 'Tutup'}
-                  </span>
-                </div>
 
-                <dl className="mt-4 grid grid-cols-1 gap-2.5 text-sm sm:grid-cols-2">
-                  <div>
-                    <dt className="text-ink-secondary">Tautan QR meja</dt>
-                    <dd className="mt-0.5 truncate font-mono font-semibold text-sky-700">
-                      {displayHost}/{activeMerchant.slug}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-ink-secondary">Rekening penerima</dt>
-                    <dd className="mt-0.5 truncate font-semibold text-ink-primary">
-                      {activeMerchant.bankName}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-ink-secondary">Kabar WhatsApp</dt>
-                    <dd className="mt-0.5 font-semibold text-ink-primary">
-                      {whatsappReady ? 'Aktif otomatis' : 'Tercatat di sistem'}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-ink-secondary">Antrean dapur</dt>
-                    <dd className="mt-0.5 font-bold tabular-nums text-ink-primary">
-                      {activeMerchant.activeTicketCount} pesanan aktif
-                    </dd>
-                  </div>
-                </dl>
+                  <dl className="mt-4 grid grid-cols-1 gap-2.5 text-sm sm:grid-cols-2">
+                    <div>
+                      <dt className="text-ink-secondary">Tautan QR meja</dt>
+                      <dd className="mt-0.5 truncate font-mono font-semibold text-sky-700">
+                        {displayHost}/{activeMerchant.slug}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-ink-secondary">Rekening penerima</dt>
+                      <dd className="mt-0.5 truncate font-semibold text-ink-primary">
+                        {activeMerchant.bankName}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-ink-secondary">Kabar WhatsApp</dt>
+                      <dd className="mt-0.5 font-semibold text-ink-primary">
+                        {whatsappReady ? 'Aktif otomatis' : 'Tercatat di sistem'}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-ink-secondary">Antrean dapur</dt>
+                      <dd className="mt-0.5 font-bold tabular-nums text-ink-primary">
+                        {activeMerchant.activeTicketCount} pesanan aktif
+                      </dd>
+                    </div>
+                  </dl>
 
-                <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-sky-100 pt-4 text-sm">
-                  {activeMerchant.isDemo ? (
+                  <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-sky-100 pt-4 text-sm">
+                    {activeMerchant.isDemo ? (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => handleSwitchScope(authenticatedMerchant.slug)}
+                        className="font-semibold text-sky-700 underline-offset-4 hover:underline disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
+                      >
+                        Kembali ke {authenticatedMerchant.name}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => handleSwitchScope(demoMerchant.slug)}
+                        className="font-medium text-ink-secondary underline-offset-4 hover:text-ink-primary hover:underline disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
+                      >
+                        Buka simulasi contoh
+                      </button>
+                    )}
                     <button
                       type="button"
                       disabled={busy}
-                      onClick={() => handleSwitchScope(authenticatedMerchant.slug)}
-                      className="font-semibold text-sky-700 underline-offset-4 hover:underline disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
+                      onClick={handleLogout}
+                      className="inline-flex items-center gap-1.5 font-semibold text-scarlet-600 underline-offset-4 hover:underline disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-scarlet-600"
                     >
-                      Kembali ke {authenticatedMerchant.name}
+                      <SignOut aria-hidden="true" weight="regular" className="h-4 w-4" />
+                      <span>Keluar</span>
                     </button>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => handleSwitchScope(demoMerchant.slug)}
-                      className="font-medium text-ink-secondary underline-offset-4 hover:text-ink-primary hover:underline disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
-                    >
-                      Buka toko contoh
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={handleLogout}
-                    className="inline-flex items-center gap-1.5 font-semibold text-scarlet-600 underline-offset-4 hover:underline disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-scarlet-600"
-                  >
-                    <SignOut aria-hidden="true" weight="regular" className="h-4 w-4" />
-                    <span>Keluar</span>
-                  </button>
+                  </div>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col justify-between gap-4 border-t border-sky-100 p-6 sm:flex-row sm:items-center">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-ink-secondary">
-                    Contoh toko siap dicoba
-                  </p>
-                  <p className="mt-0.5 truncate font-serif text-lg font-bold text-ink-primary">
-                    {demoMerchant.name}
+              <div className="overflow-hidden rounded-2xl border border-sky-200 bg-cloud/95 shadow-sm backdrop-blur-sm">
+                <div className="border-b border-sky-100 p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-ink-secondary">
+                        Simulasi langsung 2 sisi
+                      </p>
+                      <h2 className="mt-0.5 truncate font-serif text-xl font-bold text-ink-primary">
+                        {demoMerchant.name}
+                      </h2>
+                    </div>
+                    <span className="shrink-0 inline-flex items-center rounded-lg bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700">
+                      Toko Contoh
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs leading-relaxed text-ink-secondary">
+                    Uji coba alur Saber dari dua perspektif sekaligus tanpa perlu daftar atau pengaturan awal.
                   </p>
                 </div>
-                <div className="flex flex-wrap items-center gap-4 text-sm font-semibold">
-                  <Link
-                    href={`/${demoMerchant.slug}?table=TABLE%2004`}
-                    className="whitespace-nowrap text-sky-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
-                  >
-                    Layar Tamu Meja 04
-                  </Link>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => handleSwitchScope(demoMerchant.slug, '/cashier/orders')}
-                    className="whitespace-nowrap text-ink-primary underline-offset-4 hover:underline disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
-                  >
-                    Buka Kasir Contoh
-                  </button>
+
+                <div className="divide-y divide-sky-100">
+                  {/* Sisi 1: Pelanggan Resto */}
+                  <div className="p-6">
+                    <div className="flex items-center gap-2.5">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+                        <User aria-hidden="true" weight="bold" className="h-4 w-4" />
+                      </span>
+                      <div>
+                        <h3 className="text-sm font-bold text-ink-primary">Sisi Pelanggan Resto</h3>
+                        <p className="text-xs text-ink-secondary">Pesan menu &amp; bayar QRIS</p>
+                      </div>
+                    </div>
+                    <p className="mt-2.5 text-xs leading-relaxed text-ink-secondary">
+                      Buka buku menu digital lewat browser, pilih hidangan favorit, dan bayar instan tanpa unduh aplikasi.
+                    </p>
+                    <div className="mt-4">
+                      <Link
+                        href={`/${demoMerchant.slug}?table=Demo`}
+                        onPointerDown={() => triggerCausalHaptic(6)}
+                        className="apple-interactive inline-flex min-h-[44px] w-full items-center justify-center whitespace-nowrap rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-cloud shadow-sm hover:bg-sky-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 motion-safe:transition-colors"
+                      >
+                        Coba Pesan Sebagai Tamu
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Sisi 2: Pemilik & Pengelola Restoran */}
+                  <div className="p-6">
+                    <div className="flex items-center gap-2.5">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-scarlet-100 text-scarlet-700">
+                        <CookingPot aria-hidden="true" weight="bold" className="h-4 w-4" />
+                      </span>
+                      <div>
+                        <h3 className="text-sm font-bold text-ink-primary">Sisi Pemilik Resto</h3>
+                        <p className="text-xs text-ink-secondary">Kasir &amp; antrean dapur</p>
+                      </div>
+                    </div>
+                    <p className="mt-2.5 text-xs leading-relaxed text-ink-secondary">
+                      Pantau tiket pesanan masuk secara real-time, verifikasi bukti bayar QRIS, dan kelola antrean saji dapur.
+                    </p>
+                    <div className="mt-4">
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => handleSwitchScope(demoMerchant.slug, '/cashier/orders')}
+                        onPointerDown={() => triggerCausalHaptic(6)}
+                        className="apple-interactive inline-flex min-h-[44px] w-full items-center justify-center whitespace-nowrap rounded-xl border border-sky-300 bg-cloud px-4 py-2.5 text-sm font-semibold text-ink-primary shadow-sm hover:bg-sky-50 active:scale-[0.98] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 motion-safe:transition-colors"
+                      >
+                        Buka Kasir & Dapur Demo
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -448,7 +495,7 @@ export function PortalLandingClient({
         </p>
         <div className="flex flex-wrap items-center gap-6">
           <Link
-            href={`/${demoMerchant.slug}?table=TABLE%2004`}
+            href={`/${demoMerchant.slug}?table=Demo`}
             className="hover:text-ink-primary hover:underline"
           >
             Menu Contoh
