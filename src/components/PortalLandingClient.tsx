@@ -157,30 +157,31 @@ export function PortalLandingClient({
 
   return (
     <div className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8 lg:pt-12">
-      {/* Stage Hero — 12-Column Asymmetric Split with Ambient Culinary Backdrop */}
+      {/* Stage Hero — 12-Column Asymmetric Split with Seamless Culinary & Smartphone Background */}
       <section
         aria-labelledby="hero-heading"
         className="relative overflow-hidden rounded-3xl border border-sky-200/90 bg-cloud px-6 py-10 shadow-sm sm:px-10 sm:py-14 lg:p-12"
       >
-        {/* Ambient Culinary Backdrop — Spanning entire hero section */}
+        {/* Ambient Lifestyle Visual — Smartphone & Gourmet Plate seamless background */}
         <div className="pointer-events-none absolute inset-0 -z-10 select-none overflow-hidden">
           <img
             src="/hero-bg.webp"
-            alt="Suasana bistro kuliner modern dengan pencahayaan alami"
+            alt="Sajian kuliner di atas piring dan smartphone untuk pesan menu digital"
             width={1376}
             height={768}
             fetchPriority="high"
-            className="h-full w-full object-cover object-center opacity-25 saturate-75 filter"
+            className="h-full w-full object-cover object-right lg:object-[82%_center]"
           />
-          {/* Disciplined gradient scrim ensuring 100% WCAG AAA text contrast across both columns */}
-          <div className="absolute inset-0 bg-gradient-to-r from-cloud via-cloud/95 to-cloud/85 lg:via-cloud/90 lg:to-cloud/70" />
+          {/* Seamless scrim: pure cloud white ground for left text, smoothly revealing the physical dining scene on the right */}
+          <div className="absolute inset-0 bg-gradient-to-r from-cloud via-cloud/95 to-cloud/25 lg:from-cloud lg:via-cloud/90 lg:to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-cloud/70 via-transparent to-transparent lg:hidden" />
         </div>
 
         <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-12">
-          {/* Left Column: Punchline Badge, Headline, Subhead, CTA Buttons */}
-          <div className="min-w-0 lg:col-span-6">
+          {/* Left Column: Punchline Badge, Headline, Subhead, CTA Buttons, and 2-Sided Quick Show */}
+          <div className="min-w-0 lg:col-span-7">
             {/* Scarlet Red Punchline Highlight — 0% Komisi / 100% Hasil Utuh */}
-            <div className="mb-6 inline-flex items-center gap-2.5 rounded-full border border-scarlet-200 bg-scarlet-50/90 px-4 py-2 text-xs font-semibold text-scarlet-700 shadow-sm backdrop-blur-sm sm:text-sm">
+            <div className="mb-6 inline-flex items-center gap-2.5 rounded-full border border-scarlet-200 bg-scarlet-50/95 px-4 py-2 text-xs font-semibold text-scarlet-700 shadow-sm backdrop-blur-sm sm:text-sm">
               <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-scarlet-600 text-[10px] font-black text-cloud">
                 %
               </span>
@@ -191,7 +192,7 @@ export function PortalLandingClient({
               Pesanan meja langsung masuk ke dapur.
             </h1>
 
-            <p className="hig-body mt-5 max-w-[50ch] text-ink-secondary">
+            <p className="hig-body mt-5 max-w-[48ch] text-ink-secondary">
               Tanpa potongan komisi. Tamu pesan dan bayar QRIS langsung dari browser.
             </p>
 
@@ -229,13 +230,6 @@ export function PortalLandingClient({
                   >
                     Daftarkan Restoran Baru
                   </Link>
-                  <a
-                    href="#quick-show"
-                    onPointerDown={() => triggerCausalHaptic(6)}
-                    className="apple-interactive inline-flex min-h-[48px] items-center justify-center whitespace-nowrap rounded-full border border-sky-300 bg-sky-50/80 px-5 py-3 text-base font-semibold text-sky-800 shadow-sm hover:bg-sky-100 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 motion-safe:transition-colors"
-                  >
-                    Coba Simulasi Demo
-                  </a>
                   <Link
                     href="/login"
                     onPointerDown={() => triggerCausalHaptic(6)}
@@ -247,10 +241,51 @@ export function PortalLandingClient({
                 </>
               )}
             </div>
+
+            {/* Quick Show 2 Sisi — Integrated directly into the action flow */}
+            {!authenticatedMerchant && (
+              <div id="quick-show" className="mt-8 rounded-2xl border border-sky-200/90 bg-cloud/95 p-5 shadow-sm backdrop-blur-sm sm:p-6">
+                <div className="flex items-center justify-between gap-3 border-b border-sky-100 pb-3">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-ink-secondary">Simulasi langsung 2 sisi</p>
+                    <p className="mt-0.5 truncate font-serif text-base font-bold text-ink-primary">{demoMerchant.name}</p>
+                  </div>
+                  <span className="shrink-0 rounded-lg bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700">Toko Contoh</span>
+                </div>
+
+                <div className="mt-3.5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Link
+                    href={`/${demoMerchant.slug}?table=Demo`}
+                    onPointerDown={() => triggerCausalHaptic(6)}
+                    className="apple-interactive flex items-center justify-between gap-3 whitespace-nowrap rounded-xl bg-sky-600 px-4 py-3 text-xs font-semibold text-cloud shadow-sm hover:bg-sky-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 motion-safe:transition-colors"
+                  >
+                    <span className="flex items-center gap-2">
+                      <User aria-hidden="true" weight="bold" className="h-4 w-4" />
+                      <span>Sisi Pelanggan</span>
+                    </span>
+                    <span className="rounded bg-sky-700/60 px-1.5 py-0.5 text-[10px] font-medium text-sky-100">Pesan Menu</span>
+                  </Link>
+
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => handleSwitchScope(demoMerchant.slug, '/cashier/orders')}
+                    onPointerDown={() => triggerCausalHaptic(6)}
+                    className="apple-interactive flex items-center justify-between gap-3 whitespace-nowrap rounded-xl border border-sky-300 bg-cloud px-4 py-3 text-xs font-semibold text-ink-primary shadow-sm hover:bg-sky-50 active:scale-[0.98] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 motion-safe:transition-colors"
+                  >
+                    <span className="flex items-center gap-2">
+                      <CookingPot aria-hidden="true" weight="bold" className="h-4 w-4 text-scarlet-600" />
+                      <span>Sisi Pemilik</span>
+                    </span>
+                    <span className="rounded bg-sky-50 px-1.5 py-0.5 text-[10px] font-medium text-ink-secondary">Kasir</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Right Column: Unified Quick Show 2 Sisi / Active Store Pass */}
-          <div id="quick-show" className="min-w-0 lg:col-span-6">
+          {/* Right Column: Open dining visual with contextual annotation or Active Store Pass */}
+          <div className="min-w-0 lg:col-span-5">
             {authenticatedMerchant ? (
               <div className="overflow-hidden rounded-2xl border border-sky-200 bg-cloud/95 shadow-sm backdrop-blur-sm">
                 <div className="p-6">
@@ -334,77 +369,17 @@ export function PortalLandingClient({
                 </div>
               </div>
             ) : (
-              <div className="overflow-hidden rounded-2xl border border-sky-200 bg-cloud/95 shadow-sm backdrop-blur-sm">
-                <div className="border-b border-sky-100 p-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="text-xs font-medium text-ink-secondary">
-                        Simulasi langsung 2 sisi
-                      </p>
-                      <h2 className="mt-0.5 truncate font-serif text-xl font-bold text-ink-primary">
-                        {demoMerchant.name}
-                      </h2>
-                    </div>
-                    <span className="shrink-0 inline-flex items-center rounded-lg bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700">
-                      Toko Contoh
-                    </span>
-                  </div>
-                  <p className="mt-2 text-xs leading-relaxed text-ink-secondary">
-                    Uji coba alur Saber dari dua perspektif sekaligus tanpa perlu daftar atau pengaturan awal.
-                  </p>
-                </div>
-
-                <div className="divide-y divide-sky-100">
-                  {/* Sisi 1: Pelanggan Resto */}
-                  <div className="p-6">
-                    <div className="flex items-center gap-2.5">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
-                        <User aria-hidden="true" weight="bold" className="h-4 w-4" />
-                      </span>
-                      <div>
-                        <h3 className="text-sm font-bold text-ink-primary">Sisi Pelanggan Resto</h3>
-                        <p className="text-xs text-ink-secondary">Pesan menu &amp; bayar QRIS</p>
-                      </div>
-                    </div>
-                    <p className="mt-2.5 text-xs leading-relaxed text-ink-secondary">
-                      Buka buku menu digital lewat browser, pilih hidangan favorit, dan bayar instan tanpa unduh aplikasi.
+              /* Contextual badge directly annotating the smartphone and dining scene */
+              <div className="hidden lg:flex min-h-[360px] flex-col justify-end items-end p-2">
+                <div className="inline-flex max-w-xs items-center gap-3.5 rounded-2xl border border-sky-200/80 bg-cloud/90 p-4 shadow-lg backdrop-blur-md">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700 shadow-sm">
+                    <User aria-hidden="true" weight="bold" className="h-5 w-5" />
+                  </span>
+                  <div className="text-left">
+                    <p className="text-xs font-bold text-ink-primary">Menu Digital di Meja</p>
+                    <p className="mt-0.5 text-[11px] leading-tight text-ink-secondary">
+                      Tamu pesan dan bayar QRIS langsung dari smartphone tanpa unduh aplikasi.
                     </p>
-                    <div className="mt-4">
-                      <Link
-                        href={`/${demoMerchant.slug}?table=Demo`}
-                        onPointerDown={() => triggerCausalHaptic(6)}
-                        className="apple-interactive inline-flex min-h-[44px] w-full items-center justify-center whitespace-nowrap rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-cloud shadow-sm hover:bg-sky-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 motion-safe:transition-colors"
-                      >
-                        Coba Pesan Sebagai Tamu
-                      </Link>
-                    </div>
-                  </div>
-
-                  {/* Sisi 2: Pemilik & Pengelola Restoran */}
-                  <div className="p-6">
-                    <div className="flex items-center gap-2.5">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-scarlet-100 text-scarlet-700">
-                        <CookingPot aria-hidden="true" weight="bold" className="h-4 w-4" />
-                      </span>
-                      <div>
-                        <h3 className="text-sm font-bold text-ink-primary">Sisi Pemilik Resto</h3>
-                        <p className="text-xs text-ink-secondary">Kasir &amp; antrean dapur</p>
-                      </div>
-                    </div>
-                    <p className="mt-2.5 text-xs leading-relaxed text-ink-secondary">
-                      Pantau tiket pesanan masuk secara real-time, verifikasi bukti bayar QRIS, dan kelola antrean saji dapur.
-                    </p>
-                    <div className="mt-4">
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => handleSwitchScope(demoMerchant.slug, '/cashier/orders')}
-                        onPointerDown={() => triggerCausalHaptic(6)}
-                        className="apple-interactive inline-flex min-h-[44px] w-full items-center justify-center whitespace-nowrap rounded-xl border border-sky-300 bg-cloud px-4 py-2.5 text-sm font-semibold text-ink-primary shadow-sm hover:bg-sky-50 active:scale-[0.98] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 motion-safe:transition-colors"
-                      >
-                        Buka Kasir & Dapur Demo
-                      </button>
-                    </div>
                   </div>
                 </div>
               </div>
