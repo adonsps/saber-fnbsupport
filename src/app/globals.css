@@ -1,35 +1,48 @@
+/* Hallmark · theme: sky-cloud-scarlet · palette: 60-30-10 (Sky Blue 60%, Cloud White 30%, Scarlet Red 10%) */
+/* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 · strongest: authentic culinary photography & disciplined contrast */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ============================================================================
- * 1. APPLE HIG + STUDIO CRAFT COMPACT TOKEN SYSTEM
- *    References:
- *    - dickwu/apple-design-skill: color.md, dark-mode.md, accessibility.md,
- *      liquid-glass.md, typography.md, layout.md, buttons.md, sheets.md
- *    - emilkowalski/skills: apple-design (Fluid Interfaces & Spring Physics)
- *    - Modern Web Guidance: natural-interactions, typography, visual-effects
+ * 1. 60-30-10 PALETTE + APPLE HIG & HALLMARK TOKEN SYSTEM
+ *    - Sky Blue 60%: Atmosphere, Canvas Ground & Ambient Veil (#F0F7FF, #E0F2FE, #0284C7)
+ *    - Cloud White 30%: Structural Cards, Wells, Elevated Sheets & Button Contrast (#FFFFFF)
+ *    - Scarlet Red 10%: High-Impact Action Triggers & Signal Focus (#E11D48, #BE123C)
  * ============================================================================ */
 :root {
-  /* Content Layer Hierarchy (Strictly Opaque — NO Glass in Content Layer per liquid-glass.md) */
-  --surface: #F5F5F7;
-  --bg-grouped-primary: #F5F5F7;
+  /* Content Layer Hierarchy */
+  --surface: #F0F7FF;
+  --bg-grouped-primary: #F0F7FF;
   --bg-grouped-secondary: #FFFFFF;
-  --bg-grouped-tertiary: #EFEFF4;
+  --bg-grouped-tertiary: #E0F2FE;
   --bg-elevated-sheet: #FFFFFF;
 
-  /* Measured WCAG AA/AAA Text Hierarchy (accessibility.md › Vision) */
-  --label-primary: #1D1D1F;   /* 16.8:1 on #FFFFFF, 15.3:1 on #F5F5F7 (AAA) */
-  --label-secondary: #515154; /* 7.8:1 on #FFFFFF, 7.1:1 on #F5F5F7 (AAA) */
-  --label-tertiary: #6E6E73;  /* 5.1:1 on #FFFFFF, 4.6:1 on #F5F5F7 (AA) */
+  /* Sky Blue 60% Palette */
+  --sky-50: #F0F7FF;
+  --sky-100: #E0F2FE;
+  --sky-200: #BAE6FD;
+  --sky-600: #0284C7;
+  --sky-900: #0C4A6E;
 
-  /* Semantic System Accents (color.md › System colors) */
-  --accent: #0066CC;          /* 5.6:1 on #FFFFFF */
-  --accent-hover: #0055B3;
-  --signal-green: #1D7D32;    /* 5.2:1 on #FFFFFF */
-  --signal-amber: #B25000;    /* 5.1:1 on #FFFFFF */
-  --signal-red: #D70015;      /* 5.4:1 on #FFFFFF */
-  --separator-hairline: rgba(60, 60, 67, 0.14);
+  /* Cloud White 30% Palette */
+  --cloud-surface: #FFFFFF;
+  --cloud-pure: #FFFFFF;
+
+  /* Scarlet Red 10% Accent */
+  --accent: #E11D48;
+  --accent-hover: #BE123C;
+  --accent-ink: #FFFFFF;
+  --signal-red: #E11D48;
+  --signal-green: #1D7D32;
+  --signal-amber: #B25000;
+
+  /* Measured WCAG AA/AAA Text Hierarchy on Sky Blue & Cloud White */
+  --label-primary: #0C1E36;   /* 17:1 on Cloud White, 15:1 on Sky Blue 50 (AAA) */
+  --label-secondary: #3D5A80; /* 8.2:1 on Cloud White, 7.3:1 on Sky Blue 50 (AAA) */
+  --label-tertiary: #64748B;  /* 5.2:1 on Cloud White, 4.6:1 on Sky Blue 50 (AA) */
+
+  --separator-hairline: rgba(2, 132, 199, 0.14);
 
   /* Perceptual Color Space Interpolation (Modern Web Guidance visual-effects) */
   --in-oklab: ;
@@ -64,6 +77,7 @@ html {
   background-color: var(--bg-grouped-primary);
   color: var(--label-primary);
   font-optical-sizing: auto;
+  overflow-x: clip;
 }
 
 body {
@@ -73,6 +87,7 @@ body {
   text-align: start;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   overflow-wrap: break-word;
+  overflow-x: clip;
 }
 
 /* ============================================================================

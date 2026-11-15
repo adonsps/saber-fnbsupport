@@ -26,8 +26,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id">
-      <body className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] antialiased selection:bg-apple-blue/15 selection:text-apple-blue">
+    <html lang="id" className="overflow-x-clip">
+      <body className="min-h-screen bg-sky-50 text-ink-primary antialiased selection:bg-scarlet-600/15 selection:text-scarlet-600 overflow-x-clip">
         <MotionProvider>
           <SaberWorkspaceBar />
           <main className="pb-16">{children}</main>
