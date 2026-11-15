@@ -163,7 +163,7 @@ export function PortalLandingClient({
         className="relative overflow-hidden rounded-3xl border border-sky-200/90 bg-cloud px-6 py-10 shadow-sm sm:px-10 sm:py-14 lg:p-12"
       >
         {/* Ambient Lifestyle Visual — Smartphone & Gourmet Plate seamless background */}
-        <div className="pointer-events-none absolute inset-0 -z-10 select-none overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 z-0 select-none overflow-hidden">
           <img
             src="/hero-bg.webp"
             alt="Sajian kuliner di atas piring dan smartphone untuk pesan menu digital"
@@ -173,11 +173,11 @@ export function PortalLandingClient({
             className="h-full w-full object-cover object-right lg:object-[82%_center]"
           />
           {/* Seamless scrim: pure cloud white ground for left text, smoothly revealing the physical dining scene on the right */}
-          <div className="absolute inset-0 bg-gradient-to-r from-cloud via-cloud/95 to-cloud/25 lg:from-cloud lg:via-cloud/90 lg:to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-cloud via-cloud/90 to-transparent lg:from-cloud lg:via-cloud/80 lg:to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-t from-cloud/70 via-transparent to-transparent lg:hidden" />
         </div>
 
-        <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-12">
+        <div className="relative z-10 grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-12">
           {/* Left Column: Punchline Badge, Headline, Subhead, CTA Buttons, and 2-Sided Quick Show */}
           <div className="min-w-0 lg:col-span-7">
             {/* Scarlet Red Punchline Highlight — 0% Komisi / 100% Hasil Utuh */}
