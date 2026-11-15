@@ -178,7 +178,7 @@ export default function AdminTablesPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <p className="font-mono text-xs font-medium text-[#515154]">Loading floor tables...</p>
+        <p className="text-sm font-medium text-ink-secondary">Loading floor tables...</p>
       </div>
     );
   }
@@ -192,22 +192,19 @@ export default function AdminTablesPage() {
       {/* Header Banner */}
       <div className="mb-6 flex flex-col justify-between gap-4 rounded-[26px] border border-black/[0.06] bg-white p-6 shadow-apple-sm sm:flex-row sm:items-center">
         <div>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-apple-blue">
-            Manajemen Meja &amp; Cetak QR
-          </span>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-950">
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-950">
             Manajemen Meja &amp; Generator PDF QR
           </h1>
           <p className="mt-1 text-xs text-zinc-500">
             Setiap meja menghasilkan URL unik{' '}
-            <code className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-apple-blue">
+            <code className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-sky-700">
               https://{formatStorefrontDisplayUrl(merchant?.slug || 'warungmakan')}?table=[tableId]
             </code>
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="inline-flex rounded-full border border-zinc-200 bg-[#F5F5F7] p-1">
+          <div className="inline-flex rounded-full border border-zinc-200 bg-sky-50/60 p-1">
             {(['A4', 'A5'] as const).map((sz) => {
               const active = pageSize === sz;
               return (
@@ -240,7 +237,7 @@ export default function AdminTablesPage() {
             type="button"
             disabled={printingPdf || tables.length === 0}
             onClick={handleDownloadPdf}
-            className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-6 py-2.5 text-xs font-bold text-white shadow-apple-sm hover:bg-apple-blueHover disabled:opacity-50"
+            className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-sky-600 px-6 py-2.5 text-xs font-bold text-white shadow-apple-sm hover:bg-sky-700 disabled:opacity-50"
           >
             {printingPdf ? 'Membuat PDF...' : `Unduh PDF QR (${pageSize})`}
           </button>
@@ -272,7 +269,7 @@ export default function AdminTablesPage() {
               value={singleLabel}
               onChange={(e) => setSingleLabel(e.target.value)}
               placeholder="Contoh: TABLE 05"
-              className="min-h-[44px] flex-1 rounded-xl border border-zinc-200 px-3 text-xs font-semibold uppercase outline-none focus:border-apple-blue"
+              className="min-h-[44px] flex-1 rounded-xl border border-zinc-200 px-3 text-xs font-semibold outline-none focus:border-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
             />
             <button
               type="submit"
@@ -285,7 +282,7 @@ export default function AdminTablesPage() {
 
         {/* Bulk Table 1 to N */}
         <div className="rounded-[22px] border border-black/[0.06] bg-white p-5 shadow-apple-sm">
-          <h2 className="text-sm font-bold text-zinc-950">Generator Massal Meja (1 — N)</h2>
+          <h2 className="text-sm font-bold text-zinc-950">Generator Massal Meja (1: N)</h2>
           <p className="mt-0.5 text-[11px] text-zinc-500">
             Buat banyak nomor meja sekaligus secara otomatis.
           </p>
@@ -295,7 +292,7 @@ export default function AdminTablesPage() {
               value={bulkPrefix}
               onChange={(e) => setBulkPrefix(e.target.value)}
               placeholder="Prefix"
-              className="min-h-[44px] w-24 rounded-xl border border-zinc-200 px-3 text-xs font-semibold uppercase"
+              className="min-h-[44px] w-24 rounded-xl border border-zinc-200 px-3 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
             />
             <input
               type="text"
@@ -313,9 +310,9 @@ export default function AdminTablesPage() {
             <button
               type="button"
               onClick={handleBulkCreate}
-              className="apple-interactive min-h-[44px] flex-1 rounded-xl bg-apple-blue px-4 text-xs font-bold text-white hover:bg-apple-blueHover"
+              className="apple-interactive min-h-[44px] flex-1 rounded-xl bg-sky-600 px-4 text-xs font-bold text-white hover:bg-sky-700"
             >
-              Buat 1–{Math.min(50, Math.max(1, parseDigitsToNumber(bulkCountInput, 1)))} Meja
+              Buat 1:{Math.min(50, Math.max(1, parseDigitsToNumber(bulkCountInput, 1)))} Meja
             </button>
           </div>
         </div>
@@ -324,13 +321,13 @@ export default function AdminTablesPage() {
         <div className="rounded-[22px] border border-black/[0.06] bg-white p-5 shadow-apple-sm">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-1.5 text-sm font-bold text-zinc-950">
-              <WifiHigh aria-hidden="true" weight="duotone" className="h-4 w-4 text-apple-blue" />
+              <WifiHigh aria-hidden="true" weight="duotone" className="h-4 w-4 text-sky-700" />
               <span>Info WiFi di Kartu QR</span>
             </h2>
             <button
               type="button"
               onClick={handleUpdateWifiAll}
-              className="inline-flex min-h-[44px] items-center text-[11px] font-bold text-apple-blue hover:underline"
+              className="inline-flex min-h-[44px] items-center text-[11px] font-bold text-sky-700 hover:underline"
             >
               Terapkan ke Semua
             </button>
@@ -358,22 +355,22 @@ export default function AdminTablesPage() {
       <div className="mb-4 flex items-center justify-between text-xs font-medium text-zinc-600">
         <div className="flex items-center gap-4">
           <span>
-            Kosong: <strong className="tabular-nums text-[#1D7D32]">{tables.length - occupiedCount}</strong>
+            Kosong: <strong className="tabular-nums text-signal-green">{tables.length - occupiedCount}</strong>
           </span>
           <span>
             Terisi / Aktif:{' '}
-            <strong className="tabular-nums text-[#B25000]">{occupiedCount}</strong>
+            <strong className="tabular-nums text-signal-amber">{occupiedCount}</strong>
           </span>
         </div>
         <span>Total Meja: {tables.length}</span>
       </div>
 
-      {/* Active Table QR Grid — Signature Tactile Table Passes (.saber-ticket-pass) */}
+      {/* Active Table QR Grid: Signature Tactile Table Passes (.saber-ticket-pass) */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {tables.map((table) => (
           <div
             key={table.id}
-            className="saber-ticket-pass flex flex-col justify-between rounded-[22px] p-5 transition-all hover:shadow-apple-md"
+            className="saber-ticket-pass flex flex-col justify-between rounded-[22px] p-5 motion-safe:transition-colors hover:shadow-apple-md"
           >
             <div className="saber-ticket-divider flex items-start justify-between gap-2 pb-3.5">
               <div className="flex items-center gap-2.5">
@@ -384,15 +381,15 @@ export default function AdminTablesPage() {
                     className="h-10 w-10 rounded-xl object-cover ring-1 ring-black/10"
                   />
                 ) : (
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1D1D1F] text-white">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-ink-primary text-cloud text-white">
                     <QrCode aria-hidden="true" weight="duotone" className="h-5 w-5" />
                   </div>
                 )}
                 <div>
-                  <h3 className="font-mono text-base font-bold tracking-tight text-[#1D1D1F]">
+                  <h3 className="font-mono text-base font-bold tracking-tight text-ink-primary">
                     {table.tableNumber}
                   </h3>
-                  <p className="text-[11px] font-medium text-[#515154]">{merchant?.name}</p>
+                  <p className="text-[11px] font-medium text-ink-secondary">{merchant?.name}</p>
                 </div>
               </div>
 
@@ -400,8 +397,8 @@ export default function AdminTablesPage() {
                 className={cn(
                   'inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold',
                   table.isOccupied
-                    ? 'bg-amber-500/15 text-[#B25000]'
-                    : 'bg-emerald-500/15 text-[#1D7D32]'
+                    ? 'bg-amber-500/15 text-signal-amber'
+                    : 'bg-emerald-500/15 text-signal-green'
                 )}
               >
                 {table.isOccupied ? 'Terisi' : 'Kosong'}
@@ -409,7 +406,7 @@ export default function AdminTablesPage() {
             </div>
 
             {/* QR Preview Card (mirrors A4/A5 Print Layout) */}
-            <div className="my-4 flex flex-col items-center rounded-2xl border border-black/[0.06] bg-[#F5F5F7] p-4 text-center">
+            <div className="my-4 flex flex-col items-center rounded-2xl border border-black/[0.06] bg-sky-50/60 p-4 text-center">
               <div className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-black/5">
                 <img
                   src={table.qrPngDataUrl}
@@ -417,13 +414,13 @@ export default function AdminTablesPage() {
                   className="h-40 w-40"
                 />
               </div>
-              <p className="mt-3 text-xs font-bold text-apple-blue">Scan untuk Lihat Menu &amp; Pesan</p>
-              <p className="mt-1 max-w-full truncate font-mono text-[11px] text-[#515154]">
+              <p className="mt-3 text-xs font-bold text-sky-700">Scan untuk Lihat Menu &amp; Pesan</p>
+              <p className="mt-1 max-w-full truncate font-mono text-[11px] text-ink-secondary">
                 {table.qrCodeUrl}
               </p>
-              <div className="mt-2.5 w-full rounded-xl bg-white px-3 py-1.5 text-[11px] text-[#515154]">
-                Wi-Fi: <strong className="text-[#1D1D1F]">{table.wifiName}</strong> • Sandi:{' '}
-                <strong className="font-mono text-[#1D1D1F]">{table.wifiPassword}</strong>
+              <div className="mt-2.5 w-full rounded-xl bg-white px-3 py-1.5 text-[11px] text-ink-secondary">
+                Wi-Fi: <strong className="text-ink-primary">{table.wifiName}</strong> • Sandi:{' '}
+                <strong className="font-mono text-ink-primary">{table.wifiPassword}</strong>
               </div>
             </div>
 
@@ -432,7 +429,7 @@ export default function AdminTablesPage() {
                 href={`/${merchant?.slug || 'warungmakan'}?table=${encodeURIComponent(
                   table.tableNumber
                 )}`}
-                className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-4 py-1.5 text-xs font-semibold text-white hover:bg-apple-blueHover"
+                className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-sky-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-sky-700"
               >
                 Simulasi Scan QR
               </Link>
@@ -442,7 +439,7 @@ export default function AdminTablesPage() {
                   type="button"
                   onClick={() => handleResetOccupancy(table)}
                   title="Ubah status meja Kosong / Terisi"
-                  className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-[#F5F5F7] px-3 py-1.5 text-[11px] font-semibold text-[#1D1D1F] hover:bg-zinc-200"
+                  className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-sky-50/60 px-3 py-1.5 text-[11px] font-semibold text-ink-primary hover:bg-zinc-200"
                 >
                   {table.isOccupied ? 'Kosongkan' : 'Tandai Terisi'}
                 </button>
@@ -450,7 +447,7 @@ export default function AdminTablesPage() {
                   type="button"
                   aria-label={`Hapus ${table.tableNumber}`}
                   onClick={() => handleDeleteTable(table.id)}
-                  className="flex h-11 w-11 items-center justify-center rounded-full text-[#515154] hover:bg-red-50 hover:text-[#D70015]"
+                  className="flex h-11 w-11 items-center justify-center rounded-full text-ink-secondary hover:bg-red-50 hover:text-scarlet-600"
                 >
                   <Trash aria-hidden="true" weight="regular" className="h-4 w-4" />
                 </button>

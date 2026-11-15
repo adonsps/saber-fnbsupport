@@ -201,7 +201,7 @@ export default function AdminAnalyticsPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <p className="font-mono text-xs font-medium text-[#515154]">Loading shift summary...</p>
+        <p className="text-sm font-medium text-ink-secondary">Loading shift summary...</p>
       </div>
     );
   }
@@ -223,11 +223,8 @@ export default function AdminAnalyticsPage() {
       {/* Header & Export Capabilities */}
       <div className="mb-6 flex flex-col justify-between gap-4 rounded-[26px] border border-black/[0.06] bg-white p-6 shadow-apple-sm sm:flex-row sm:items-center">
         <div>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-apple-blue">
-            Laporan Operasional &amp; Shift
-          </span>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-950">
-            Ringkasan Shift Harian — {merchant?.name}
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-950">
+            Ringkasan Shift Harian: {merchant?.name}
           </h1>
           <p className="mt-0.5 text-xs text-zinc-500">
             0% Potongan Komisi • Laporan real-time pendapatan kotor, porsi saluran order, dan
@@ -236,7 +233,7 @@ export default function AdminAnalyticsPage() {
         </div>
 
         <div className="no-print flex flex-wrap items-center gap-2.5">
-          <div className="inline-flex rounded-full border border-zinc-200 bg-[#F5F5F7] p-1">
+          <div className="inline-flex rounded-full border border-zinc-200 bg-sky-50/60 p-1">
             {(
               [
                 { id: 'ALL', label: 'Semua Pesanan Aktif' },
@@ -273,7 +270,7 @@ export default function AdminAnalyticsPage() {
           <button
             type="button"
             onClick={handleExportCsv}
-            className="apple-interactive inline-flex min-h-[44px] items-center rounded-full border border-black/[0.12] bg-[#F5F5F7] px-4 text-xs font-bold text-[#1D1D1F] hover:bg-[#EFEFF4]"
+            className="apple-interactive inline-flex min-h-[44px] items-center rounded-full border border-black/[0.12] bg-sky-50/60 px-4 text-xs font-bold text-ink-primary hover:bg-sky-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2"
           >
             Ekspor CSV Penjualan
           </button>
@@ -281,7 +278,7 @@ export default function AdminAnalyticsPage() {
           <button
             type="button"
             onClick={() => window.print()}
-            className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-5 text-xs font-bold text-white hover:bg-apple-blueHover"
+            className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-sky-600 px-5 text-xs font-bold text-white hover:bg-sky-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2"
           >
             Cetak Laporan Shift (PDF)
           </button>
@@ -304,8 +301,8 @@ export default function AdminAnalyticsPage() {
               className={cn(
                 'flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl',
                 merchant?.isStoreOpen
-                  ? 'bg-emerald-500/12 text-[#1D7D32]'
-                  : 'bg-red-500/15 text-[#D70015]'
+                  ? 'bg-emerald-500/12 text-signal-green'
+                  : 'bg-red-500/15 text-scarlet-600'
               )}
             >
               <Power aria-hidden="true" weight="bold" className="h-5 w-5" />
@@ -327,8 +324,8 @@ export default function AdminAnalyticsPage() {
             className={cn(
               'apple-interactive inline-flex min-h-[44px] shrink-0 items-center rounded-full px-4 text-xs font-bold text-white',
               merchant?.isStoreOpen
-                ? 'bg-[#D70015] hover:brightness-110'
-                : 'bg-[#1D7D32] hover:brightness-110'
+                ? 'bg-scarlet-600 hover:brightness-110'
+                : 'bg-signal-green hover:brightness-110'
             )}
           >
             {merchant?.isStoreOpen ? 'Jeda Pesanan Masuk' : 'Buka Kembali Toko'}
@@ -338,7 +335,7 @@ export default function AdminAnalyticsPage() {
         {/* Sold-Out Reset Engine */}
         <div className="flex items-center justify-between gap-4 rounded-[22px] border border-black/[0.06] bg-white p-5 shadow-apple-sm">
           <div className="flex items-center gap-3.5">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-[#B25000]">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-signal-amber">
               <ArrowCounterClockwise aria-hidden="true" weight="bold" className="h-5 w-5" />
             </div>
             <div>
@@ -354,7 +351,7 @@ export default function AdminAnalyticsPage() {
           <button
             type="button"
             onClick={handleSoldOutResetEngine}
-            className="apple-interactive inline-flex min-h-[44px] shrink-0 items-center rounded-full bg-zinc-950 px-4 text-xs font-bold text-white hover:bg-apple-blue"
+            className="apple-interactive inline-flex min-h-[44px] shrink-0 items-center rounded-full bg-zinc-950 px-4 text-xs font-bold text-white hover:bg-sky-600"
           >
             Reset Semua Stok
           </button>
@@ -364,7 +361,7 @@ export default function AdminAnalyticsPage() {
       {resetMessage && (
         <div
           role="status"
-          className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-[#1D7D32]"
+          className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-bold text-signal-green"
         >
           {resetMessage}
         </div>
@@ -375,12 +372,12 @@ export default function AdminAnalyticsPage() {
         <div className="rounded-[24px] border border-black/[0.06] bg-white p-5 shadow-apple-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-zinc-500">Total Penjualan Kotor</span>
-            <TrendUp aria-hidden="true" weight="duotone" className="h-4 w-4 text-[#1D7D32]" />
+            <TrendUp aria-hidden="true" weight="duotone" className="h-4 w-4 text-signal-green" />
           </div>
           <p className="mt-2 font-mono text-2xl font-bold tabular-nums text-zinc-950">
             {formatIdr(metrics.grossSales)}
           </p>
-          <p className="mt-1 text-[11px] font-medium text-[#1D7D32]">
+          <p className="mt-1 text-[11px] font-medium text-signal-green">
             100% Milik Resto (Rp 0 Komisi Platform)
           </p>
         </div>
@@ -388,7 +385,7 @@ export default function AdminAnalyticsPage() {
         <div className="rounded-[24px] border border-black/[0.06] bg-white p-5 shadow-apple-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-zinc-500">Jumlah Pesanan</span>
-            <Receipt aria-hidden="true" weight="duotone" className="h-4 w-4 text-apple-blue" />
+            <Receipt aria-hidden="true" weight="duotone" className="h-4 w-4 text-sky-700" />
           </div>
           <p className="mt-2 font-mono text-2xl font-bold tabular-nums text-zinc-950">
             {metrics.totalOrders}
@@ -412,7 +409,7 @@ export default function AdminAnalyticsPage() {
         <div className="rounded-[24px] border border-black/[0.06] bg-white p-5 shadow-apple-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-zinc-500">Meja Sedang Terisi</span>
-            <UsersThree aria-hidden="true" weight="duotone" className="h-4 w-4 text-[#B25000]" />
+            <UsersThree aria-hidden="true" weight="duotone" className="h-4 w-4 text-signal-amber" />
           </div>
           <p className="mt-2 font-mono text-2xl font-bold tabular-nums text-zinc-950">
             {metrics.occupiedTables}{' '}
@@ -438,7 +435,7 @@ export default function AdminAnalyticsPage() {
               {
                 label: 'Makan di Meja (Scan QR)',
                 count: metrics.channelCounts.walkIn,
-                barClass: 'bg-apple-blue',
+                barClass: 'bg-sky-600',
               },
               {
                 label: 'Pre-Order Ambil Sendiri',
@@ -454,11 +451,11 @@ export default function AdminAnalyticsPage() {
               <div key={row.label} className="space-y-1.5">
                 <div className="flex justify-between text-xs font-semibold">
                   <span className="text-zinc-800">{row.label}</span>
-                  <span className="font-mono tabular-nums text-zinc-950">{row.count} pesanan</span>
+                  <span className="tabular-nums text-zinc-950">{row.count} pesanan</span>
                 </div>
-                <div className="h-3 w-full overflow-hidden rounded-full bg-[#F5F5F7]">
+                <div className="h-3 w-full overflow-hidden rounded-full bg-sky-50/60">
                   <div
-                    className={cn('h-full rounded-full transition-all duration-500', row.barClass)}
+                    className={cn('h-full rounded-full motion-safe:transition-colors duration-500', row.barClass)}
                     style={{ width: `${Math.round((row.count / maxChannelCount) * 100)}%` }}
                   />
                 </div>
@@ -476,26 +473,26 @@ export default function AdminAnalyticsPage() {
                 Perbandingan pembayaran Tunai di Kasir vs Transfer Bank / QRIS Statis
               </p>
             </div>
-            <CreditCard aria-hidden="true" weight="duotone" className="h-5 w-5 text-apple-blue" />
+            <CreditCard aria-hidden="true" weight="duotone" className="h-5 w-5 text-sky-700" />
           </div>
 
           <div className="mt-6">
-            <div className="flex h-5 w-full overflow-hidden rounded-full bg-[#F5F5F7]">
+            <div className="flex h-5 w-full overflow-hidden rounded-full bg-sky-50/60">
               <div
-                className="bg-apple-blue transition-all duration-500"
+                className="bg-sky-600 motion-safe:transition-colors duration-500"
                 style={{ width: `${qrisSharePct}%` }}
                 title={`QRIS / Transfer ${qrisSharePct}%`}
               />
               <div
-                className="bg-emerald-500 transition-all duration-500"
+                className="bg-emerald-500 motion-safe:transition-colors duration-500"
                 style={{ width: `${cashSharePct}%` }}
                 title={`Cash ${cashSharePct}%`}
               />
             </div>
 
             <div className="mt-6 grid grid-cols-2 gap-4">
-              <div className="rounded-2xl border border-apple-blue/20 bg-apple-blue/5 p-4">
-                <div className="text-xs font-bold text-apple-blue">
+              <div className="rounded-2xl border border-apple-blue/20 bg-sky-600/5 p-4">
+                <div className="text-xs font-bold text-sky-700">
                   QRIS / Bank Transfer ({qrisSharePct}%)
                 </div>
                 <p className="mt-2 font-mono text-lg font-bold tabular-nums text-zinc-950">
@@ -507,7 +504,7 @@ export default function AdminAnalyticsPage() {
               </div>
 
               <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-                <div className="text-xs font-bold text-[#1D7D32]">
+                <div className="text-xs font-bold text-signal-green">
                   Bayar Tunai di Kasir ({cashSharePct}%)
                 </div>
                 <p className="mt-2 font-mono text-lg font-bold tabular-nums text-zinc-950">
@@ -525,7 +522,7 @@ export default function AdminAnalyticsPage() {
       {/* Top 5 Best-Selling Dishes Table (Responsive Table Pattern) */}
       <section className="mt-6 rounded-[24px] border border-black/[0.06] bg-white p-6 shadow-apple-sm">
         <div className="mb-4 flex items-center gap-2">
-          <Trophy aria-hidden="true" weight="duotone" className="h-5 w-5 text-[#B25000]" />
+          <Trophy aria-hidden="true" weight="duotone" className="h-5 w-5 text-signal-amber" />
           <h2 className="text-base font-bold text-zinc-950">5 Menu Terlaris Hari Ini</h2>
         </div>
 
@@ -537,7 +534,7 @@ export default function AdminAnalyticsPage() {
         >
           <table className="w-full border-collapse text-left text-xs">
             <thead>
-              <tr className="border-b border-black/[0.08] text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+              <tr className="border-b border-black/[0.08] text-[11px] font-bold font-semibold text-zinc-500">
                 <th className="py-3 pr-4">Peringkat</th>
                 <th className="py-3 pr-4">Nama Hidangan</th>
                 <th className="py-3 pr-4">Kategori</th>
@@ -547,8 +544,8 @@ export default function AdminAnalyticsPage() {
             </thead>
             <tbody className="divide-y divide-black/[0.05]">
               {metrics.top5Dishes.map((dish, idx) => (
-                <tr key={dish.menuItemId} className="hover:bg-[#F5F5F7]/60">
-                  <td className="py-3.5 pr-4 font-mono font-bold text-apple-blue">#{idx + 1}</td>
+                <tr key={dish.menuItemId} className="hover:bg-sky-50/60">
+                  <td className="py-3.5 pr-4 font-mono font-bold text-sky-700">#{idx + 1}</td>
                   <th className="py-3.5 pr-4 font-bold text-zinc-950">{dish.title}</th>
                   <td className="py-3.5 pr-4 text-zinc-600">{dish.category}</td>
                   <td className="py-3.5 pr-4 text-right font-mono font-bold tabular-nums text-zinc-950">

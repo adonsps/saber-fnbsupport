@@ -407,7 +407,7 @@ export default function CashierKanbanPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <p className="font-mono text-xs font-medium text-[#515154]">Loading kitchen board...</p>
+        <p className="text-sm font-medium text-ink-secondary">Loading kitchen board...</p>
       </div>
     );
   }
@@ -428,11 +428,11 @@ export default function CashierKanbanPage() {
     <div className="mx-auto max-w-[1600px] px-4 pb-10 pt-6 sm:px-6">
       <DemoModeBanner merchant={merchant} />
 
-      {/* Top Control Header — Opaque Grouped Card (liquid-glass.md) */}
+      {/* Top Control Header: Opaque Grouped Card (liquid-glass.md) */}
       <div className="mb-5 flex flex-col justify-between gap-4 rounded-[22px] border border-black/[0.08] bg-white p-5 shadow-apple-sm sm:flex-row sm:items-center">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="hig-caption text-[11px] font-semibold uppercase tracking-[0.06em] text-[#515154]">
+            <span className="hig-caption text-[11px] font-semibold font-medium text-ink-secondary">
               Pusat Operasi Kasir &amp; Dapur
             </span>
             {merchant && (
@@ -440,8 +440,8 @@ export default function CashierKanbanPage() {
                 className={cn(
                   'rounded-full px-2.5 py-0.5 text-[10px] font-bold',
                   merchant.isDemo || merchant.slug === 'warungmakan'
-                    ? 'bg-[#0090FF]/12 text-[#0066CC]'
-                    : 'bg-emerald-500/12 text-[#1D7D32]'
+                    ? 'bg-sky-100 text-sky-700'
+                    : 'bg-emerald-500/12 text-signal-green'
                 )}
               >
                 {merchant.isDemo || merchant.slug === 'warungmakan' ? 'DEMO:' : 'RESTO:'}{' '}
@@ -449,13 +449,13 @@ export default function CashierKanbanPage() {
               </span>
             )}
             {highlightedId && (
-              <span className="rounded-full bg-amber-500/15 px-3 py-0.5 text-[11px] font-bold text-[#B25000]">
+              <span className="rounded-full bg-amber-500/15 px-3 py-0.5 text-[11px] font-bold text-signal-amber">
                 Pesanan dari Tautan WhatsApp Disorot
               </span>
             )}
           </div>
-          <h1 className="hig-title-2 mt-1 text-[#1D1D1F]">Papan Pesanan Kasir &amp; Dapur</h1>
-          <p className="text-xs text-[#515154]">
+          <h1 className="hig-title-2 mt-1 text-ink-primary">Papan Pesanan Kasir &amp; Dapur</h1>
+          <p className="text-xs text-ink-secondary">
             Konfirmasi ketersediaan stok, periksa bukti bayar QRIS, kelola pindah/gabung meja, atau
             batalkan pesanan untuk melepas meja secara otomatis.
           </p>
@@ -468,7 +468,7 @@ export default function CashierKanbanPage() {
             onChange={(e) => setOrderSearch(e.target.value)}
             placeholder="Cari #ORD, nama, meja..."
             aria-label="Cari pesanan"
-            className="min-h-[44px] w-full rounded-full border border-black/[0.1] bg-[#F5F5F7] px-4 text-xs font-medium outline-none focus:border-apple-blue focus:bg-white sm:w-56"
+            className="min-h-[44px] w-full rounded-full border border-black/[0.1] bg-sky-50/60 px-4 text-xs font-medium outline-none focus:border-apple-blue focus:bg-white sm:w-56"
           />
           <button
             type="button"
@@ -480,8 +480,8 @@ export default function CashierKanbanPage() {
             className={cn(
               'apple-interactive inline-flex min-h-[44px] items-center gap-2 rounded-full border px-4 text-xs font-bold',
               soundEnabled
-                ? 'border-emerald-200 bg-emerald-50 text-[#1D7D32]'
-                : 'border-zinc-200 bg-[#F5F5F7] text-[#515154]'
+                ? 'border-emerald-200 bg-emerald-50 text-signal-green'
+                : 'border-zinc-200 bg-sky-50/60 text-ink-secondary'
             )}
           >
             {soundEnabled ? (
@@ -498,7 +498,7 @@ export default function CashierKanbanPage() {
               triggerCausalHaptic(6);
               loadBoard();
             }}
-            className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-4 text-xs font-bold text-white hover:bg-apple-blueHover"
+            className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-sky-600 px-4 text-xs font-bold text-white hover:bg-sky-700"
           >
             Segarkan Papan
           </button>
@@ -518,15 +518,15 @@ export default function CashierKanbanPage() {
               className={cn(
                 'inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-full px-3.5 text-xs font-bold transition-colors',
                 active
-                  ? 'bg-[#1D1D1F] text-white shadow-sm'
-                  : 'border border-black/[0.08] bg-white text-[#515154]'
+                  ? 'bg-ink-primary text-cloud text-white shadow-sm'
+                  : 'border border-black/[0.08] bg-white text-ink-secondary'
               )}
             >
               <span>{col.title}</span>
               <span
                 className={cn(
                   'rounded-full px-2 py-0.5 font-mono text-[10px] font-bold',
-                  active ? 'bg-white/20 text-white' : 'bg-[#F5F5F7] text-[#1D1D1F]'
+                  active ? 'bg-white/20 text-white' : 'bg-sky-50/60 text-ink-primary'
                 )}
               >
                 {count}
@@ -536,7 +536,7 @@ export default function CashierKanbanPage() {
         })}
       </div>
 
-      {/* 5-Column Kanban Board — Opaque Grouped Tertiary Columns (NO backdrop-blur in content layer per liquid-glass.md) + Emil Reposition Springs (§3, §4) */}
+      {/* 5-Column Kanban Board: Opaque Grouped Tertiary Columns (NO backdrop-blur in content layer per liquid-glass.md) + Emil Reposition Springs (§3, §4) */}
       <LayoutGroup>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
           {KANBAN_COLUMNS.map((col) => {
@@ -546,19 +546,19 @@ export default function CashierKanbanPage() {
               <div
                 key={col.id}
                 className={cn(
-                  'flex flex-col rounded-[22px] border border-black/[0.08] bg-[#EFEFF4]/75 p-3.5 md:min-h-[520px]',
+                  'flex flex-col rounded-[22px] border border-black/[0.08] bg-sky-50/75 p-3.5 md:min-h-[520px]',
                   mobileStage !== col.id && 'hidden md:flex',
                   col.accentBar
                 )}
               >
                 <div className="mb-3 flex items-center justify-between border-b border-black/[0.08] pb-2.5">
                   <div>
-                    <h2 className="text-xs font-bold tracking-tight text-[#1D1D1F]">
+                    <h2 className="text-xs font-bold tracking-tight text-ink-primary">
                       {col.title}
                     </h2>
-                    <p className="hig-caption mt-0.5 text-[11px] text-[#515154]">{col.subtitle}</p>
+                    <p className="hig-caption mt-0.5 text-[11px] text-ink-secondary">{col.subtitle}</p>
                   </div>
-                  <span className="rounded-full bg-white px-2.5 py-0.5 font-mono text-xs font-bold tabular-nums text-[#1D1D1F] shadow-sm">
+                  <span className="rounded-full bg-white px-2.5 py-0.5 font-mono text-xs font-bold tabular-nums text-ink-primary shadow-sm">
                     {colOrders.length}
                   </span>
                 </div>
@@ -572,7 +572,7 @@ export default function CashierKanbanPage() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={APPLE_SPRINGS.default}
-                        className="flex h-32 items-center justify-center rounded-2xl border border-dashed border-black/15 bg-white/60 text-xs font-medium text-[#515154]"
+                        className="flex h-32 items-center justify-center rounded-2xl border border-dashed border-black/15 bg-white/60 text-xs font-medium text-ink-secondary"
                       >
                         Belum ada pesanan di tahap ini
                       </motion.div>
@@ -600,23 +600,23 @@ export default function CashierKanbanPage() {
                           >
                             <div className="saber-ticket-divider flex items-start justify-between gap-2 pb-2.5">
                               <div>
-                                <span className="font-mono text-xs font-bold text-[#1D1D1F]">
+                                <span className="font-mono text-xs font-bold text-ink-primary">
                                   #{order.orderNumber}
                                 </span>
-                                <p className="text-xs font-bold text-[#1D1D1F]">
+                                <p className="text-xs font-bold text-ink-primary">
                                   {order.customerName}
                                 </p>
                               </div>
-                              <span className="rounded-full bg-[#F5F5F7] px-2.5 py-0.5 font-mono text-[11px] font-bold text-[#1D1D1F]">
+                              <span className="rounded-full bg-sky-50/60 px-2.5 py-0.5 font-mono text-[11px] font-bold text-ink-primary">
                                 {order.tableNumber || getOrderTypeLabel(order.orderType, 'ID')}
                               </span>
                             </div>
 
-                            <div className="mt-2.5 space-y-1 border-b border-black/[0.06] pb-2.5 text-xs text-[#1D1D1F]">
+                            <div className="mt-2.5 space-y-1 border-b border-black/[0.06] pb-2.5 text-xs text-ink-primary">
                               {order.items.map((item) => (
                                 <div key={item.id} className="flex justify-between gap-2">
                                   <span className="truncate">
-                                    <strong className="font-mono text-apple-blue">
+                                    <strong className="font-mono text-sky-700">
                                       {item.quantity}×
                                     </strong>{' '}
                                     {item.itemTitleSnapshot}
@@ -626,8 +626,8 @@ export default function CashierKanbanPage() {
                             </div>
 
                             {order.deliveryAddress && (
-                              <div className="mt-2 rounded-xl border border-blue-100 bg-blue-50/70 px-2.5 py-1.5 text-[11px] text-[#1D1D1F]">
-                                <p className="font-semibold text-apple-blue">Alamat Antar:</p>
+                              <div className="mt-2 rounded-xl border border-blue-100 bg-blue-50/70 px-2.5 py-1.5 text-[11px] text-ink-primary">
+                                <p className="font-semibold text-sky-700">Alamat Antar:</p>
                                 <p className="mt-0.5 leading-snug">{order.deliveryAddress}</p>
                                 {typeof order.deliveryLat === 'number' &&
                                   typeof order.deliveryLng === 'number' && (
@@ -635,7 +635,7 @@ export default function CashierKanbanPage() {
                                       href={buildGoogleMapsUrl(order.deliveryLat, order.deliveryLng)}
                                       target="_blank"
                                       rel="noreferrer"
-                                      className="mt-1 inline-flex items-center font-bold text-apple-blue hover:underline"
+                                      className="mt-1 inline-flex items-center font-bold text-sky-700 hover:underline"
                                     >
                                       Buka Pin Maps
                                       {typeof order.deliveryDistanceKm === 'number'
@@ -656,20 +656,20 @@ export default function CashierKanbanPage() {
                             )}
 
                             {order.specialNotes && (
-                              <p className="mt-2 rounded-xl bg-amber-50 px-2.5 py-1.5 text-[11px] font-medium text-[#B25000]">
+                              <p className="mt-2 rounded-xl bg-amber-50 px-2.5 py-1.5 text-[11px] font-medium text-signal-amber">
                                 Catatan: {order.specialNotes}
                               </p>
                             )}
 
                             <div className="mt-2.5 flex items-center justify-between text-xs">
-                              <span className="text-[11px] font-semibold text-[#515154]">
+                              <span className="text-[11px] font-semibold text-ink-secondary">
                                 {order.paymentType === PaymentType.CASH
                                   ? order.orderType === OrderType.SELF_DELIVERY
                                     ? 'Tunai (COD Kurir)'
                                     : 'Tunai di Kasir'
                                   : 'QRIS / Transfer'}
                               </span>
-                              <span className="font-mono font-bold tabular-nums text-[#1D1D1F]">
+                              <span className="font-mono font-bold tabular-nums text-ink-primary">
                                 {formatIdr(order.totalAmountIdr)}
                               </span>
                             </div>
@@ -680,7 +680,7 @@ export default function CashierKanbanPage() {
                                 <button
                                   type="button"
                                   onClick={() => openStockAuditModal(order)}
-                                  className="apple-interactive flex min-h-[44px] w-full items-center justify-center rounded-xl bg-[#B25000] px-3 text-xs font-bold text-white hover:brightness-110"
+                                  className="apple-interactive flex min-h-[44px] w-full items-center justify-center rounded-xl bg-signal-amber px-3 text-xs font-bold text-white hover:brightness-110"
                                 >
                                   Cek Stok &amp; Kirim Tagihan
                                 </button>
@@ -690,19 +690,19 @@ export default function CashierKanbanPage() {
                                 <>
                                   {hasProofPending ? (
                                     <div className="space-y-1.5">
-                                      <div className="rounded-xl border border-emerald-500/20 bg-emerald-50 px-2.5 py-1.5 text-center text-[11px] font-bold text-[#1D7D32]">
+                                      <div className="rounded-xl border border-emerald-500/20 bg-emerald-50 px-2.5 py-1.5 text-center text-[11px] font-bold text-signal-green">
                                         Bukti Transfer Diterima • Siap Diperiksa
                                       </div>
                                       <button
                                         type="button"
                                         onClick={() => openReceiptModal(order)}
-                                        className="apple-interactive flex min-h-[44px] w-full items-center justify-center rounded-xl bg-apple-blue px-3 text-xs font-bold text-white hover:bg-apple-blueHover"
+                                        className="apple-interactive flex min-h-[44px] w-full items-center justify-center rounded-xl bg-sky-600 px-3 text-xs font-bold text-white hover:bg-sky-700"
                                       >
                                         Periksa Bukti Bayar
                                       </button>
                                     </div>
                                   ) : isProofRejected ? (
-                                    <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-center text-[11px] font-bold text-[#D70015]">
+                                    <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-center text-[11px] font-bold text-scarlet-600">
                                       Bukti Ditolak • Menunggu Unggah Ulang Pelanggan
                                     </div>
                                   ) : order.paymentType === PaymentType.CASH ? (
@@ -712,14 +712,14 @@ export default function CashierKanbanPage() {
                                       onClick={() =>
                                         handleAdvanceStatus(order.id, OrderStatus.IN_KITCHEN)
                                       }
-                                      className="apple-interactive flex min-h-[44px] w-full items-center justify-center rounded-xl bg-[#1D7D32] px-3 text-xs font-bold text-white hover:brightness-110"
+                                      className="apple-interactive flex min-h-[44px] w-full items-center justify-center rounded-xl bg-signal-green px-3 text-xs font-bold text-white hover:brightness-110"
                                     >
                                       {order.orderType === OrderType.SELF_DELIVERY
                                         ? 'Proses Masak (COD Kurir)'
-                                        : 'Terima Tunai → Masak'}
+                                        : 'Terima Tunai Masak'}
                                     </button>
                                   ) : (
-                                    <div className="rounded-xl bg-blue-50 px-3 py-2 text-center text-[11px] font-semibold text-apple-blue">
+                                    <div className="rounded-xl bg-blue-50 px-3 py-2 text-center text-[11px] font-semibold text-sky-700">
                                       Menunggu pelanggan unggah bukti QRIS...
                                     </div>
                                   )}
@@ -750,7 +750,7 @@ export default function CashierKanbanPage() {
                                   onClick={() =>
                                     handleAdvanceStatus(order.id, OrderStatus.COMPLETED)
                                   }
-                                  className="apple-interactive flex min-h-[44px] w-full items-center justify-center rounded-xl bg-[#1D7D32] px-3 text-xs font-bold text-white hover:brightness-110"
+                                  className="apple-interactive flex min-h-[44px] w-full items-center justify-center rounded-xl bg-signal-green px-3 text-xs font-bold text-white hover:brightness-110"
                                 >
                                   {order.orderType === OrderType.SELF_DELIVERY
                                     ? 'Selesaikan Pengantaran'
@@ -767,7 +767,7 @@ export default function CashierKanbanPage() {
                                       <button
                                         type="button"
                                         onClick={() => openTableControlsModal(order)}
-                                        className="apple-interactive inline-flex min-h-[44px] items-center rounded-lg bg-[#F5F5F7] px-2.5 py-1 text-[11px] font-semibold text-[#1D1D1F] hover:bg-zinc-200"
+                                        className="apple-interactive inline-flex min-h-[44px] items-center rounded-lg bg-sky-50/60 px-2.5 py-1 text-[11px] font-semibold text-ink-primary hover:bg-zinc-200"
                                       >
                                         Pindah / Gabung
                                       </button>
@@ -775,7 +775,7 @@ export default function CashierKanbanPage() {
                                     <button
                                       type="button"
                                       onClick={() => openCancelOrderModal(order)}
-                                      className="apple-interactive inline-flex min-h-[44px] items-center rounded-lg bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-[#D70015] hover:bg-red-100"
+                                      className="apple-interactive inline-flex min-h-[44px] items-center rounded-lg bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-scarlet-600 hover:bg-red-100"
                                     >
                                       Batalkan
                                     </button>
@@ -783,9 +783,9 @@ export default function CashierKanbanPage() {
                                 )}
                                 <Link
                                   href={`/order/${order.id}`}
-                                  className="inline-flex min-h-[44px] items-center rounded-lg px-2.5 py-1 text-[11px] font-semibold text-apple-blue hover:bg-apple-blue/10"
+                                  className="inline-flex min-h-[44px] items-center rounded-lg px-2.5 py-1 text-[11px] font-semibold text-sky-700 hover:bg-sky-600/10"
                                 >
-                                  Pass →
+                                  Pass
                                 </Link>
                               </div>
                             </div>
@@ -805,7 +805,7 @@ export default function CashierKanbanPage() {
       <section className="mt-8 rounded-[26px] border border-black/[0.06] bg-white p-6 shadow-apple-sm">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/12 text-[#1D7D32]">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/12 text-signal-green">
               <WhatsappLogo aria-hidden="true" weight="duotone" className="h-5 w-5" />
             </div>
             <div>
@@ -825,12 +825,12 @@ export default function CashierKanbanPage() {
               onChange={(e) => setTestWaPhone(e.target.value)}
               placeholder={merchant?.ownerWhatsapp || '0812xxxxxxxx'}
               aria-label="Nomor WhatsApp uji coba"
-              className="min-h-[44px] w-44 rounded-full border border-zinc-200 bg-[#F5F5F7] px-3.5 font-mono text-xs outline-none focus:border-apple-blue focus:bg-white"
+              className="min-h-[44px] w-44 rounded-full border border-zinc-200 bg-sky-50/60 px-3.5 font-mono text-xs outline-none focus:border-apple-blue focus:bg-white"
             />
             <button
               type="submit"
               disabled={sendingTestWa}
-              className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-[#1D7D32] px-4 text-xs font-bold text-white hover:brightness-110 disabled:opacity-60"
+              className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-signal-green px-4 text-xs font-bold text-white hover:brightness-110 disabled:opacity-60"
             >
               {sendingTestWa ? 'Mengirim...' : 'Tes Kirim WhatsApp'}
             </button>
@@ -840,7 +840,7 @@ export default function CashierKanbanPage() {
         {testWaFeedback && (
           <div
             role="status"
-            className="mb-4 rounded-xl border border-black/[0.08] bg-[#F5F5F7] px-3.5 py-2 text-xs font-medium text-[#1D1D1F]"
+            className="mb-4 rounded-xl border border-black/[0.08] bg-sky-50/60 px-3.5 py-2 text-xs font-medium text-ink-primary"
           >
             {testWaFeedback}
           </div>
@@ -859,7 +859,7 @@ export default function CashierKanbanPage() {
                       'rounded-full px-2 py-0.5 text-[10px] font-bold',
                       log.recipientRole === 'MERCHANT'
                         ? 'bg-amber-500/15 text-amber-800'
-                        : 'bg-apple-blue/10 text-apple-blue'
+                        : 'bg-sky-600/10 text-sky-700'
                     )}
                   >
                     TO {log.recipientRole}
@@ -874,8 +874,8 @@ export default function CashierKanbanPage() {
                     className={cn(
                       'rounded-full px-2 py-0.5 font-mono text-[10px] font-bold',
                       log.deliveryStatus === 'FAILED'
-                        ? 'bg-red-50 text-[#D70015]'
-                        : 'bg-emerald-50 text-[#1D7D32]'
+                        ? 'bg-red-50 text-scarlet-600'
+                        : 'bg-emerald-50 text-signal-green'
                     )}
                   >
                     {log.deliveryStatus}
@@ -883,13 +883,13 @@ export default function CashierKanbanPage() {
                 </div>
                 <p className="whitespace-pre-line text-xs text-zinc-800">{log.messageBody}</p>
                 {log.providerMessage && (
-                  <p className="text-[11px] text-[#515154]">{log.providerMessage}</p>
+                  <p className="text-[11px] text-ink-secondary">{log.providerMessage}</p>
                 )}
               </div>
               {log.magicLinkUrl && (
                 <Link
                   href={log.magicLinkUrl}
-                  className="shrink-0 rounded-full border border-zinc-200 bg-[#F5F5F7] px-3 py-1.5 text-[11px] font-bold text-apple-blue transition-colors hover:bg-apple-blue hover:text-white"
+                  className="shrink-0 rounded-full border border-zinc-200 bg-sky-50/60 px-3 py-1.5 text-[11px] font-bold text-sky-700 transition-colors hover:bg-sky-600 hover:text-white"
                 >
                   Open Link
                 </Link>
@@ -910,35 +910,35 @@ export default function CashierKanbanPage() {
           <button
             type="button"
             onClick={() => stockDialogRef.current?.close()}
-            className="apple-interactive inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-apple-blue hover:underline"
+            className="apple-interactive inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-sky-700 hover:underline"
           >
             Batal
           </button>
           <div className="text-center">
-            <h3 id="stock-modal-title" className="text-sm font-bold text-[#1D1D1F]">
+            <h3 id="stock-modal-title" className="text-sm font-bold text-ink-primary">
               Cek Stok #{currentActiveOrder?.orderNumber}
             </h3>
-            <p className="hig-caption text-[11px] font-medium text-[#515154]">
+            <p className="hig-caption text-[11px] font-medium text-ink-secondary">
               Tahap 2 • Audit Stok Dapur
             </p>
           </div>
-          <span className="min-w-[44px] text-right font-mono text-xs font-bold text-[#515154]">
+          <span className="min-w-[44px] text-right font-mono text-xs font-bold text-ink-secondary">
             {editableItems.length} item
           </span>
         </div>
 
         <div className="space-y-4 p-6">
-          <p className="text-xs text-[#515154]">
+          <p className="text-xs text-ink-secondary">
             Sesuaikan jumlah porsi atau hapus menu yang habis. Total tagihan diperbarui otomatis
             sebelum instruksi pembayaran dikirim ke pelanggan via WhatsApp.
           </p>
 
-          <div className="divide-y divide-black/[0.06] rounded-2xl border border-black/[0.08] bg-[#F5F5F7] px-4">
+          <div className="divide-y divide-black/[0.06] rounded-2xl border border-black/[0.08] bg-sky-50/60 px-4">
             {editableItems.map((item, idx) => (
               <div key={item.id} className="flex min-h-[54px] items-center justify-between gap-3 py-2.5 text-xs">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-bold text-[#1D1D1F]">{item.itemTitleSnapshot}</p>
-                  <p className="font-mono text-[11px] text-[#515154]">
+                  <p className="truncate font-bold text-ink-primary">{item.itemTitleSnapshot}</p>
+                  <p className="text-[11px] text-ink-secondary">
                     {formatIdr(item.unitPriceIdr)} / porsi
                   </p>
                 </div>
@@ -948,18 +948,18 @@ export default function CashierKanbanPage() {
                     type="button"
                     aria-label="Kurangi porsi"
                     onClick={() => updateEditableItemQty(idx, -1)}
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#1D1D1F] shadow-sm"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-ink-primary shadow-sm"
                   >
                     <Minus aria-hidden="true" weight="bold" className="h-3.5 w-3.5" />
                   </button>
-                  <span className="w-7 text-center font-mono text-xs font-bold tabular-nums text-[#1D1D1F]">
+                  <span className="w-7 text-center font-mono text-xs font-bold tabular-nums text-ink-primary">
                     {item.quantity}
                   </span>
                   <button
                     type="button"
                     aria-label="Tambah porsi"
                     onClick={() => updateEditableItemQty(idx, 1)}
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#1D1D1F] shadow-sm"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-ink-primary shadow-sm"
                   >
                     <Plus aria-hidden="true" weight="bold" className="h-3.5 w-3.5" />
                   </button>
@@ -967,7 +967,7 @@ export default function CashierKanbanPage() {
                     type="button"
                     aria-label="Hapus item"
                     onClick={() => updateEditableItemQty(idx, -item.quantity)}
-                    className="ml-1 flex h-10 w-10 items-center justify-center rounded-full text-[#D70015] hover:bg-red-50"
+                    className="ml-1 flex h-10 w-10 items-center justify-center rounded-full text-scarlet-600 hover:bg-red-50"
                   >
                     <Trash aria-hidden="true" weight="regular" className="h-4 w-4" />
                   </button>
@@ -975,13 +975,13 @@ export default function CashierKanbanPage() {
               </div>
             ))}
             {editableItems.length === 0 && (
-              <p className="py-5 text-center text-xs font-semibold text-[#D70015]">
+              <p className="py-5 text-center text-xs font-semibold text-scarlet-600">
                 Semua item habis. Gunakan tombol Batalkan Pesanan di bawah.
               </p>
             )}
           </div>
 
-          <div className="flex items-center justify-between rounded-2xl bg-[#1D1D1F] px-4 py-3.5 text-white">
+          <div className="flex items-center justify-between rounded-2xl bg-ink-primary text-cloud px-4 py-3.5 text-white">
             <span className="text-xs font-medium text-zinc-300">Total Tagihan (+Ongkir)</span>
             <span className="font-mono text-base font-bold tabular-nums">
               {formatIdr(editableSubtotal + Number(activeOrder?.deliveryFeeIdr || 0))}
@@ -993,7 +993,7 @@ export default function CashierKanbanPage() {
               type="button"
               disabled={busyId === activeOrder?.id}
               onClick={() => currentActiveOrder && openCancelOrderModal(currentActiveOrder)}
-              className="apple-interactive inline-flex min-h-[46px] items-center justify-center rounded-full border border-red-200 bg-red-50 px-5 py-2.5 text-xs font-bold text-[#D70015] hover:bg-red-100"
+              className="apple-interactive inline-flex min-h-[46px] items-center justify-center rounded-full border border-red-200 bg-red-50 px-5 py-2.5 text-xs font-bold text-scarlet-600 hover:bg-red-100"
             >
               Batalkan Pesanan
             </button>
@@ -1001,7 +1001,7 @@ export default function CashierKanbanPage() {
               type="button"
               disabled={editableItems.length === 0 || busyId === activeOrder?.id}
               onClick={handleConfirmStockAudit}
-              className="apple-interactive flex min-h-[46px] flex-1 items-center justify-center rounded-full bg-apple-blue px-5 py-2.5 text-xs font-bold text-white hover:bg-apple-blueHover disabled:opacity-50"
+              className="apple-interactive flex min-h-[46px] flex-1 items-center justify-center rounded-full bg-sky-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-sky-700 disabled:opacity-50"
             >
               Konfirmasi Stok &amp; Kirim Tagihan WA
             </button>
@@ -1020,15 +1020,15 @@ export default function CashierKanbanPage() {
           <button
             type="button"
             onClick={() => receiptDialogRef.current?.close()}
-            className="apple-interactive inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-apple-blue hover:underline"
+            className="apple-interactive inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-sky-700 hover:underline"
           >
             Batal
           </button>
           <div className="text-center">
-            <h3 id="receipt-modal-title" className="text-sm font-bold text-[#1D1D1F]">
+            <h3 id="receipt-modal-title" className="text-sm font-bold text-ink-primary">
               Periksa Bukti #{currentActiveOrder?.orderNumber}
             </h3>
-            <p className="hig-caption text-[11px] font-medium text-[#515154]">
+            <p className="hig-caption text-[11px] font-medium text-ink-secondary">
               Tahap 4 • Verifikasi Pembayaran
             </p>
           </div>
@@ -1036,9 +1036,9 @@ export default function CashierKanbanPage() {
         </div>
 
         <div className="space-y-4 p-6">
-          <div className="flex items-center justify-between rounded-2xl bg-[#F5F5F7] px-4 py-3 text-xs">
-            <span className="font-semibold text-[#515154]">Total Tagihan Diharapkan</span>
-            <span className="font-mono text-base font-bold text-apple-blue">
+          <div className="flex items-center justify-between rounded-2xl bg-sky-50/60 px-4 py-3 text-xs">
+            <span className="font-semibold text-ink-secondary">Total Tagihan Diharapkan</span>
+            <span className="font-mono text-base font-bold text-sky-700">
               {currentActiveOrder ? formatIdr(currentActiveOrder.totalAmountIdr) : '-'}
             </span>
           </div>
@@ -1052,11 +1052,11 @@ export default function CashierKanbanPage() {
               />
             </div>
           ) : (
-            <p className="text-center text-xs text-[#515154]">Belum ada foto bukti transfer.</p>
+            <p className="text-center text-xs text-ink-secondary">Belum ada foto bukti transfer.</p>
           )}
 
           <div>
-            <label htmlFor="rejectReason" className="block text-xs font-semibold text-[#1D1D1F]">
+            <label htmlFor="rejectReason" className="block text-xs font-semibold text-ink-primary">
               Catatan Penolakan (Jika Ditolak)
             </label>
             <input
@@ -1073,16 +1073,16 @@ export default function CashierKanbanPage() {
             <button
               type="button"
               onClick={() => handleVerifyReceipt(false)}
-              className="apple-interactive inline-flex min-h-[46px] items-center justify-center rounded-full border border-red-200 bg-red-50 px-4 text-xs font-bold text-[#D70015] hover:bg-red-100"
+              className="apple-interactive inline-flex min-h-[46px] items-center justify-center rounded-full border border-red-200 bg-red-50 px-4 text-xs font-bold text-scarlet-600 hover:bg-red-100"
             >
               Tolak Bukti
             </button>
             <button
               type="button"
               onClick={() => handleVerifyReceipt(true)}
-              className="apple-interactive inline-flex min-h-[46px] items-center justify-center rounded-full bg-[#1D7D32] px-4 text-xs font-bold text-white hover:brightness-110"
+              className="apple-interactive inline-flex min-h-[46px] items-center justify-center rounded-full bg-signal-green px-4 text-xs font-bold text-white hover:brightness-110"
             >
-              Setujui → Masak
+              Setujui Masak
             </button>
           </div>
         </div>
@@ -1099,11 +1099,11 @@ export default function CashierKanbanPage() {
           <button
             type="button"
             onClick={() => tableDialogRef.current?.close()}
-            className="apple-interactive inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-apple-blue hover:underline"
+            className="apple-interactive inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-sky-700 hover:underline"
           >
             Batal
           </button>
-          <h3 id="table-ctrl-title" className="text-sm font-bold text-[#1D1D1F]">
+          <h3 id="table-ctrl-title" className="text-sm font-bold text-ink-primary">
             Kelola Meja #{currentActiveOrder?.orderNumber}
           </h3>
           <span className="min-w-[44px]" />
@@ -1111,7 +1111,7 @@ export default function CashierKanbanPage() {
 
         <div className="space-y-5 p-6">
           {/* Move Table */}
-          <div className="space-y-2.5 rounded-2xl border border-black/[0.06] bg-[#F5F5F7]/70 p-4">
+          <div className="space-y-2.5 rounded-2xl border border-black/[0.06] bg-sky-50/70 p-4">
             <p className="text-xs font-bold text-zinc-950">Pindah ke Meja Kosong</p>
             <select
               value={moveTargetTable}
@@ -1139,7 +1139,7 @@ export default function CashierKanbanPage() {
           </div>
 
           {/* Merge Tables */}
-          <div className="space-y-2.5 rounded-2xl border border-black/[0.06] bg-[#F5F5F7]/70 p-4">
+          <div className="space-y-2.5 rounded-2xl border border-black/[0.06] bg-sky-50/70 p-4">
             <p className="text-xs font-bold text-zinc-950">Gabung Tagihan (Merge Tables)</p>
             <select
               value={mergeTargetOrderId}
@@ -1156,7 +1156,7 @@ export default function CashierKanbanPage() {
                 )
                 .map((o) => (
                   <option key={o.id} value={o.id}>
-                    #{o.orderNumber} — {o.tableNumber || o.orderType} ({o.customerName})
+                    #{o.orderNumber}: {o.tableNumber || o.orderType} ({o.customerName})
                   </option>
                 ))}
             </select>
@@ -1183,23 +1183,23 @@ export default function CashierKanbanPage() {
           <button
             type="button"
             onClick={() => cancelDialogRef.current?.close()}
-            className="apple-interactive inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-apple-blue hover:underline"
+            className="apple-interactive inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-sky-700 hover:underline"
           >
             Kembali
           </button>
-          <h3 id="cancel-order-title" className="text-sm font-bold text-[#D70015]">
+          <h3 id="cancel-order-title" className="text-sm font-bold text-scarlet-600">
             Batalkan #{currentActiveOrder?.orderNumber}
           </h3>
           <span className="min-w-[44px]" />
         </div>
 
         <div className="space-y-4 p-6">
-          <p className="text-xs leading-relaxed text-[#515154]">
-            Pesanan akan ditandai <strong className="text-[#D70015]">Dibatalkan</strong>, meja yang
+          <p className="text-xs leading-relaxed text-ink-secondary">
+            Pesanan akan ditandai <strong className="text-scarlet-600">Dibatalkan</strong>, meja yang
             dipakai akan langsung dikosongkan, dan pelanggan menerima notifikasi WhatsApp otomatis.
           </p>
           <div>
-            <label htmlFor="cancelReason" className="block text-xs font-semibold text-[#1D1D1F]">
+            <label htmlFor="cancelReason" className="block text-xs font-semibold text-ink-primary">
               Alasan Pembatalan (Opsional)
             </label>
             <input
@@ -1216,7 +1216,7 @@ export default function CashierKanbanPage() {
             <button
               type="button"
               onClick={() => cancelDialogRef.current?.close()}
-              className="apple-interactive inline-flex min-h-[46px] flex-1 items-center justify-center rounded-full border border-zinc-200 bg-[#F5F5F7] text-xs font-bold text-[#1D1D1F]"
+              className="apple-interactive inline-flex min-h-[46px] flex-1 items-center justify-center rounded-full border border-zinc-200 bg-sky-50/60 text-xs font-bold text-ink-primary"
             >
               Tutup
             </button>
@@ -1224,7 +1224,7 @@ export default function CashierKanbanPage() {
               type="button"
               disabled={busyId === currentActiveOrder?.id}
               onClick={handleConfirmCancelOrder}
-              className="apple-interactive inline-flex min-h-[46px] flex-1 items-center justify-center rounded-full bg-[#D70015] text-xs font-bold text-white hover:brightness-110 disabled:opacity-60"
+              className="apple-interactive inline-flex min-h-[46px] flex-1 items-center justify-center rounded-full bg-scarlet-600 text-xs font-bold text-white hover:brightness-110 disabled:opacity-60"
             >
               Ya, Batalkan Pesanan
             </button>

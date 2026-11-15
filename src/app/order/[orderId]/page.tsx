@@ -228,7 +228,7 @@ export default function LiveOrderTrackingPage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <p className="font-mono text-xs font-medium text-[#515154]">
+        <p className="text-sm font-medium text-ink-secondary">
           {lang === 'ID' ? 'Memuat status pesanan...' : 'Loading order pass...'}
         </p>
       </div>
@@ -243,7 +243,7 @@ export default function LiveOrderTrackingPage() {
         </h1>
         <Link
           href="/warungmakan"
-          className="mt-4 inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-6 py-2.5 text-xs font-bold text-white"
+          className="mt-4 inline-flex min-h-[44px] items-center rounded-full bg-sky-600 px-6 py-2.5 text-xs font-bold text-white"
         >
           {lang === 'ID' ? 'Kembali ke Menu' : 'Back to Menu'}
         </Link>
@@ -282,14 +282,14 @@ export default function LiveOrderTrackingPage() {
             />
           )}
           <div className="min-w-0">
-            <p className="truncate text-xs font-bold text-[#1D1D1F]">{merchant?.name}</p>
-            <p className="font-mono text-[10px] font-semibold text-[#515154]">
+            <p className="truncate text-xs font-bold text-ink-primary">{merchant?.name}</p>
+            <p className="font-mono text-[10px] font-semibold text-ink-secondary">
               #{order.orderNumber} {order.tableNumber ? `• ${order.tableNumber}` : ''}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="inline-flex items-center rounded-full border border-black/[0.08] bg-[#F5F5F7] p-0.5">
+          <div className="inline-flex items-center rounded-full border border-black/[0.08] bg-sky-50/60 p-0.5">
             {(['ID', 'EN'] as const).map((code) => (
               <button
                 key={code}
@@ -300,7 +300,7 @@ export default function LiveOrderTrackingPage() {
                 }}
                 className={cn(
                   'min-h-[34px] rounded-full px-2.5 text-[11px] font-bold transition-colors',
-                  lang === code ? 'bg-white text-[#1D1D1F] shadow-sm' : 'text-[#515154]'
+                  lang === code ? 'bg-white text-ink-primary shadow-sm' : 'text-ink-secondary'
                 )}
               >
                 {code}
@@ -309,7 +309,7 @@ export default function LiveOrderTrackingPage() {
           </div>
           <Link
             href={menuHref}
-            className="apple-interactive inline-flex min-h-[40px] shrink-0 items-center rounded-full border border-black/[0.1] bg-[#F5F5F7] px-3.5 py-1.5 text-xs font-semibold text-[#1D1D1F] hover:bg-[#EFEFF4]"
+            className="apple-interactive inline-flex min-h-[40px] shrink-0 items-center rounded-full border border-black/[0.1] bg-sky-50/60 px-3.5 py-1.5 text-xs font-semibold text-ink-primary hover:bg-sky-100"
           >
             ← {lang === 'ID' ? 'Menu Utama' : 'Menu'}
           </Link>
@@ -325,8 +325,8 @@ export default function LiveOrderTrackingPage() {
                 className={cn(
                   'inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold',
                   isCancelled
-                    ? 'bg-red-500/10 text-[#D70015]'
-                    : 'bg-apple-blue/10 text-apple-blue'
+                    ? 'bg-red-500/10 text-scarlet-600'
+                    : 'bg-sky-600/10 text-sky-700'
                 )}
               >
                 {isCancelled
@@ -337,23 +337,23 @@ export default function LiveOrderTrackingPage() {
                     ? 'Status Pesanan Langsung'
                     : 'Live Order Pass'}
               </span>
-              <span className="font-mono text-xs font-bold text-[#515154]">
+              <span className="font-mono text-xs font-bold text-ink-secondary">
                 #{order.orderNumber}
               </span>
             </div>
-            <h1 className="mt-2 font-serif text-2xl font-bold tracking-tight text-[#1D1D1F]">
+            <h1 className="mt-2 font-serif text-2xl font-bold tracking-tight text-ink-primary">
               {merchant?.name}
             </h1>
-            <p className="mt-0.5 text-xs text-[#515154]">
+            <p className="mt-0.5 text-xs text-ink-secondary">
               {lang === 'ID' ? 'Pelanggan' : 'Guest'}:{' '}
-              <strong className="text-[#1D1D1F]">{order.customerName}</strong> •{' '}
+              <strong className="text-ink-primary">{order.customerName}</strong> •{' '}
               {order.tableNumber || getOrderTypeLabel(order.orderType, lang)}
             </p>
             {(order.deliveryAddress || order.scheduledPickupTime || order.scheduledDeliveryTime) && (
-              <div className="mt-2.5 space-y-1 rounded-2xl border border-black/[0.06] bg-[#F5F5F7] px-3.5 py-2.5 text-xs text-[#1D1D1F]">
+              <div className="mt-2.5 space-y-1 rounded-2xl border border-black/[0.06] bg-sky-50/60 px-3.5 py-2.5 text-xs text-ink-primary">
                 {order.deliveryAddress && (
                   <p>
-                    <span className="font-semibold text-[#515154]">
+                    <span className="font-semibold text-ink-secondary">
                       {lang === 'ID' ? 'Alamat Antar:' : 'Delivery Address:'}
                     </span>{' '}
                     {order.deliveryAddress}
@@ -365,12 +365,12 @@ export default function LiveOrderTrackingPage() {
                             href={buildGoogleMapsUrl(order.deliveryLat, order.deliveryLng)}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center font-bold text-apple-blue hover:underline"
+                            className="inline-flex items-center font-bold text-sky-700 hover:underline"
                           >
                             {lang === 'ID' ? 'Buka Pin Maps ↗' : 'Open Map Pin ↗'}
                           </a>
                           {typeof order.deliveryDistanceKm === 'number' && (
-                            <span className="ml-1.5 font-mono text-[11px] text-[#515154]">
+                            <span className="ml-1.5 font-mono text-[11px] text-ink-secondary">
                               ({order.deliveryDistanceKm.toFixed(1)} km)
                             </span>
                           )}
@@ -380,7 +380,7 @@ export default function LiveOrderTrackingPage() {
                 )}
                 {order.scheduledPickupTime && (
                   <p>
-                    <span className="font-semibold text-[#515154]">
+                    <span className="font-semibold text-ink-secondary">
                       {lang === 'ID' ? 'Jadwal Ambil:' : 'Scheduled Pick-Up:'}
                     </span>{' '}
                     <span className="font-mono font-bold">
@@ -390,7 +390,7 @@ export default function LiveOrderTrackingPage() {
                 )}
                 {order.scheduledDeliveryTime && (
                   <p>
-                    <span className="font-semibold text-[#515154]">
+                    <span className="font-semibold text-ink-secondary">
                       {lang === 'ID' ? 'Jadwal Antar:' : 'Scheduled Delivery:'}
                     </span>{' '}
                     <span className="font-mono font-bold">
@@ -406,13 +406,13 @@ export default function LiveOrderTrackingPage() {
             <button
               type="button"
               onClick={fetchOrder}
-              className="apple-interactive inline-flex min-h-[44px] items-center rounded-full border border-black/[0.1] bg-[#F5F5F7] px-4 py-2 text-xs font-semibold text-[#1D1D1F] hover:bg-[#EFEFF4]"
+              className="apple-interactive inline-flex min-h-[44px] items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 rounded-full border border-black/[0.1] bg-sky-50/60 px-4 py-2 text-xs font-semibold text-ink-primary hover:bg-sky-100"
             >
               {lang === 'ID' ? 'Segarkan' : 'Sync Pass'}
             </button>
             <Link
               href={`/order/${order.id}/receipt?lang=${lang}`}
-              className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-4 py-2 text-xs font-semibold text-white hover:bg-apple-blueHover"
+              className="apple-interactive inline-flex min-h-[44px] items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 rounded-full bg-sky-600 px-4 py-2 text-xs font-semibold text-white hover:bg-sky-700"
             >
               {lang === 'ID' ? 'Lihat Struk' : 'View Invoice'}
             </Link>
@@ -439,7 +439,7 @@ export default function LiveOrderTrackingPage() {
         {!isCancelled && order.paymentStatus === PaymentStatus.REJECTED && (
           <div
             role="alert"
-            className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-xs text-[#D70015]"
+            className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-xs text-scarlet-600"
           >
             <p className="font-bold">
               {lang === 'ID'
@@ -461,10 +461,10 @@ export default function LiveOrderTrackingPage() {
             role="alert"
             className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-6 text-center"
           >
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#D70015] text-white">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-scarlet-600 text-white">
               <XCircle aria-hidden="true" weight="bold" className="h-6 w-6" />
             </div>
-            <h2 className="mt-3 text-lg font-bold text-[#D70015]">
+            <h2 className="mt-3 text-lg font-bold text-scarlet-600">
               {lang === 'ID' ? 'Pesanan Ini Telah Dibatalkan' : 'This Order Was Cancelled'}
             </h2>
             <p className="mx-auto mt-1 max-w-md text-xs text-zinc-700">
@@ -473,14 +473,14 @@ export default function LiveOrderTrackingPage() {
                 : 'This order will not be processed further and any occupied table has been released. You may place a new order anytime from the menu.'}
             </p>
             {order.specialNotes && (
-              <p className="mx-auto mt-3 inline-block rounded-xl border border-red-200 bg-white px-3 py-1.5 text-[11px] font-medium text-[#D70015]">
+              <p className="mx-auto mt-3 inline-block rounded-xl border border-red-200 bg-white px-3 py-1.5 text-[11px] font-medium text-scarlet-600">
                 {order.specialNotes}
               </p>
             )}
             <div className="mt-5 flex justify-center">
               <Link
                 href={menuHref}
-                className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-6 py-2.5 text-xs font-bold text-white shadow-apple-sm hover:bg-apple-blueHover"
+                className="apple-interactive inline-flex min-h-[44px] items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 rounded-full bg-sky-600 px-6 py-2.5 text-xs font-bold text-white shadow-apple-sm hover:bg-sky-700"
               >
                 {lang === 'ID' ? 'Pesan Ulang dari Menu' : 'Order Again from Menu'}
               </Link>
@@ -498,12 +498,12 @@ export default function LiveOrderTrackingPage() {
                 <li
                   key={st.key}
                   className={cn(
-                    'flex items-center gap-3.5 rounded-2xl border p-3.5 transition-all',
+                    'flex items-center gap-3.5 rounded-2xl border p-3.5 motion-safe:transition-colors',
                     isCurrent
-                      ? 'border-apple-blue bg-apple-blue/5 shadow-sm'
+                      ? 'border-apple-blue bg-sky-600/5 shadow-sm'
                       : isCompleted
                         ? 'border-emerald-500/20 bg-emerald-50/50'
-                        : 'border-black/[0.04] bg-[#F5F5F7]/50 opacity-60'
+                        : 'border-black/[0.04] bg-sky-50/50 opacity-60'
                   )}
                 >
                   <div
@@ -512,7 +512,7 @@ export default function LiveOrderTrackingPage() {
                       isCompleted
                         ? 'bg-apple-green text-white'
                         : isCurrent
-                          ? 'bg-apple-blue text-white'
+                          ? 'bg-sky-600 text-white'
                           : 'bg-zinc-200 text-zinc-500'
                     )}
                   >
@@ -553,7 +553,7 @@ export default function LiveOrderTrackingPage() {
                     </p>
                   </div>
                   {isCurrent && (
-                    <span className="rounded-full bg-apple-blue px-2.5 py-0.5 text-[10px] font-bold text-white">
+                    <span className="rounded-full bg-sky-600 px-2.5 py-0.5 text-[10px] font-bold text-white">
                       {lang === 'ID' ? 'AKTIF' : 'ACTIVE'}
                     </span>
                   )}
@@ -569,7 +569,7 @@ export default function LiveOrderTrackingPage() {
         order.orderStatus === OrderStatus.AWAITING_PAYMENT &&
         order.paymentType === PaymentType.CASH && (
           <section className="mt-6 rounded-[28px] border-2 border-emerald-500/30 bg-white p-6 shadow-apple-lg sm:p-8">
-            <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-[11px] font-bold text-[#1D7D32]">
+            <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-[11px] font-bold text-signal-green">
               {order.orderType === 'SELF_DELIVERY'
                 ? lang === 'ID'
                   ? 'Stok Terkonfirmasi • Bayar Tunai di Tempat (COD)'
@@ -580,9 +580,9 @@ export default function LiveOrderTrackingPage() {
             </span>
             <h2 className="mt-2 text-xl font-bold text-zinc-950">
               {lang === 'ID' ? 'Total Tagihan Tunai:' : 'Total Cash Due:'}{' '}
-              <span className="font-mono text-[#1D7D32]">{formatIdr(order.totalAmountIdr)}</span>
+              <span className="font-mono text-signal-green">{formatIdr(order.totalAmountIdr)}</span>
             </h2>
-            <p className="mt-2 text-xs leading-relaxed text-[#515154]">
+            <p className="mt-2 text-xs leading-relaxed text-ink-secondary">
               {order.orderType === 'SELF_DELIVERY'
                 ? lang === 'ID'
                   ? `Pesanan #${order.orderNumber} telah dikonfirmasi dapur. Mohon siapkan uang tunai sebesar ${formatIdr(order.totalAmountIdr)} untuk dibayarkan langsung kepada kurir toko saat pesanan tiba di alamat Anda.`
@@ -599,14 +599,9 @@ export default function LiveOrderTrackingPage() {
         <section className="mt-6 rounded-[28px] border-2 border-apple-blue/30 bg-white p-6 shadow-apple-lg sm:p-8">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-black/[0.06] pb-4">
             <div>
-              <span className="rounded-full bg-apple-blue/10 px-2.5 py-0.5 text-[11px] font-bold text-apple-blue">
-                {lang === 'ID'
-                  ? 'Stok Terkonfirmasi • Tagihan Siap Dibayar'
-                  : 'Stock Confirmed • Ready for Payment'}
-              </span>
-              <h2 className="mt-1.5 text-xl font-bold text-zinc-950">
+              <h2 className="text-xl font-bold text-zinc-950">
                 {lang === 'ID' ? 'Total Bayar:' : 'Total Due:'}{' '}
-                <span className="font-mono text-apple-blue">
+                <span className="font-mono text-sky-700">
                   {formatIdr(order.totalAmountIdr)}
                 </span>
               </h2>
@@ -615,7 +610,7 @@ export default function LiveOrderTrackingPage() {
 
           <div className="mt-5 grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Static QRIS with Zoom Preview */}
-            <div className="flex flex-col items-center rounded-2xl border border-black/[0.06] bg-[#F5F5F7] p-4">
+            <div className="flex flex-col items-center rounded-2xl border border-black/[0.06] bg-sky-50/60 p-4">
               {branch?.qrisImageUrl && (
                 <button
                   type="button"
@@ -636,7 +631,7 @@ export default function LiveOrderTrackingPage() {
 
             {/* Bank Details + Receipt Upload Widget */}
             <div className="flex flex-col justify-between space-y-4">
-              <div className="space-y-2.5 rounded-2xl border border-black/[0.06] bg-[#F5F5F7]/70 p-4 text-xs">
+              <div className="space-y-2.5 rounded-2xl border border-black/[0.06] bg-sky-50/70 p-4 text-xs">
                 <p className="font-bold text-zinc-950">
                   {lang === 'ID' ? 'Atau Transfer Manual Bank' : 'Or Manual Bank Transfer'}
                 </p>
@@ -651,10 +646,10 @@ export default function LiveOrderTrackingPage() {
                   <button
                     type="button"
                     onClick={() => handleCopy('rek', branch?.bankAccountNumber)}
-                    className="apple-interactive inline-flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1 font-mono font-bold text-apple-blue shadow-sm"
+                    className="apple-interactive inline-flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1 font-mono font-bold text-sky-700 shadow-sm"
                   >
                     <span>{branch?.bankAccountNumber}</span>
-                    <span className="text-[10px] font-semibold uppercase text-[#515154]">
+                    <span className="text-[10px] font-semibold  text-ink-secondary">
                       {copiedField === 'rek'
                         ? lang === 'ID'
                           ? 'Disalin'
@@ -681,7 +676,7 @@ export default function LiveOrderTrackingPage() {
                     className="apple-interactive inline-flex items-center gap-1.5 rounded-lg bg-white px-2.5 py-1 font-mono font-bold text-zinc-950 shadow-sm"
                   >
                     <span>{formatIdr(order.totalAmountIdr)}</span>
-                    <span className="text-[10px] font-semibold uppercase text-[#515154]">
+                    <span className="text-[10px] font-semibold  text-ink-secondary">
                       {copiedField === 'amt'
                         ? lang === 'ID'
                           ? 'Disalin'
@@ -704,7 +699,7 @@ export default function LiveOrderTrackingPage() {
                 {uploadError && (
                   <div
                     role="alert"
-                    className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-[#D70015]"
+                    className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-scarlet-600"
                   >
                     {uploadError}
                   </div>
@@ -713,14 +708,14 @@ export default function LiveOrderTrackingPage() {
                 {uploadSuccess && (
                   <div
                     role="status"
-                    className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-[#1D7D32]"
+                    className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-signal-green"
                   >
                     {uploadSuccess}
                   </div>
                 )}
 
                 {processingPhoto ? (
-                  <div className="rounded-2xl border border-black/10 bg-zinc-50 p-4 text-center text-xs font-medium text-[#515154]">
+                  <div className="rounded-2xl border border-black/10 bg-zinc-50 p-4 text-center text-xs font-medium text-ink-secondary">
                     {lang === 'ID'
                       ? 'Mengoptimalkan ukuran foto bukti pembayaran...'
                       : 'Optimizing receipt photo size...'}
@@ -757,7 +752,7 @@ export default function LiveOrderTrackingPage() {
                   <button
                     type="submit"
                     disabled={!receiptPreview || uploading || processingPhoto}
-                    className="apple-interactive inline-flex min-h-[44px] flex-1 items-center justify-center rounded-full bg-apple-blue px-5 text-xs font-bold text-white shadow-apple-sm hover:bg-apple-blueHover disabled:opacity-50"
+                    className="apple-interactive inline-flex min-h-[44px] flex-1 items-center justify-center rounded-full bg-sky-600 px-5 text-xs font-bold text-white shadow-apple-sm hover:bg-sky-700 disabled:opacity-50"
                   >
                     {uploading
                       ? lang === 'ID'
@@ -779,7 +774,7 @@ export default function LiveOrderTrackingPage() {
         <section className="mt-6 rounded-[24px] border border-emerald-500/25 bg-white p-6 shadow-apple-sm">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-[#1D7D32]">
+              <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold text-signal-green">
                 {lang === 'ID'
                   ? 'Bukti Pembayaran Terkirim • Menunggu Audit Kasir'
                   : 'Payment Proof Submitted • Awaiting Cashier Verification'}
@@ -806,7 +801,7 @@ export default function LiveOrderTrackingPage() {
             <button
               type="button"
               onClick={() => setAllowReupload(true)}
-              className="apple-interactive inline-flex min-h-[44px] items-center rounded-full border border-zinc-200 bg-[#F5F5F7] px-3.5 text-xs font-semibold text-zinc-800 hover:bg-zinc-200"
+              className="apple-interactive inline-flex min-h-[44px] items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 rounded-full border border-zinc-200 bg-sky-50/60 px-3.5 text-xs font-semibold text-zinc-800 hover:bg-zinc-200"
             >
               {lang === 'ID' ? 'Unggah Ulang Foto' : 'Re-upload Photo'}
             </button>
@@ -832,7 +827,7 @@ export default function LiveOrderTrackingPage() {
             <div key={item.id} className="flex items-center justify-between py-2.5">
               <div>
                 <p className="font-semibold text-zinc-950">
-                  <span className="font-mono text-apple-blue">{item.quantity}×</span>{' '}
+                  <span className="font-mono text-sky-700">{item.quantity}×</span>{' '}
                   {item.itemTitleSnapshot}
                 </p>
                 {item.notes && (
@@ -861,7 +856,7 @@ export default function LiveOrderTrackingPage() {
           )}
           <div className="flex justify-between pt-1 text-base font-bold text-zinc-950">
             <span>{lang === 'ID' ? 'Total Tagihan' : 'Total Due'}</span>
-            <span className="font-mono tabular-nums text-apple-blue">
+            <span className="font-mono tabular-nums text-sky-700">
               {formatIdr(order.totalAmountIdr)}
             </span>
           </div>
@@ -879,12 +874,12 @@ export default function LiveOrderTrackingPage() {
           <button
             type="button"
             onClick={() => qrisZoomDialogRef.current?.close()}
-            className="apple-interactive inline-flex min-h-[44px] items-center px-1 text-sm font-semibold text-apple-blue hover:underline"
+            className="apple-interactive inline-flex min-h-[44px] items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 px-1 text-sm font-semibold text-sky-700 hover:underline"
           >
             {lang === 'ID' ? 'Tutup' : 'Done'}
           </button>
-          <h3 id="qris-zoom-title" className="text-sm font-bold text-[#1D1D1F]">
-            Scan Static QRIS — {merchant?.name}
+          <h3 id="qris-zoom-title" className="text-sm font-bold text-ink-primary">
+            Scan Static QRIS: {merchant?.name}
           </h3>
           <span className="min-w-[44px]" />
         </div>
