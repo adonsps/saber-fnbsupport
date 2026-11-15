@@ -475,7 +475,7 @@ export function CustomerStorefrontClient({
   }) => {
     if (scheduleOptions.length === 0) {
       return (
-        <div className="mt-1 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-[#D70015]">
+        <div className="mt-1 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-scarlet-600">
           {lang === 'ID'
             ? 'Jadwal operasional toko belum tersedia untuk 14 hari ke depan.'
             : 'No store operating slots available in the next 14 days.'}
@@ -528,7 +528,7 @@ export function CustomerStorefrontClient({
               key={preset.mins}
               type="button"
               onClick={() => applyQuickOffsetMinutes(preset.mins)}
-              className="min-h-[32px] rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-zinc-700 transition-colors hover:border-apple-blue hover:text-apple-blue"
+              className="min-h-[32px] rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-zinc-700 transition-colors hover:border-apple-blue hover:text-sky-700"
             >
               {lang === 'ID' ? preset.labelId : preset.labelEn}
             </button>
@@ -537,7 +537,7 @@ export function CustomerStorefrontClient({
             <button
               type="button"
               onClick={applyTomorrowMorning}
-              className="min-h-[32px] rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-zinc-700 transition-colors hover:border-apple-blue hover:text-apple-blue"
+              className="min-h-[32px] rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-zinc-700 transition-colors hover:border-apple-blue hover:text-sky-700"
             >
               {lang === 'ID' ? 'Besok Pagi' : 'Tomorrow'}
             </button>
@@ -564,7 +564,7 @@ export function CustomerStorefrontClient({
                   : nextDateOpt.slots[0] || '';
                 onChange(`${nextDateOpt.dateYmd}T${nextTime}`);
               }}
-              className="min-h-[44px] w-full rounded-xl border border-zinc-200 bg-white px-3 text-xs font-semibold text-[#1D1D1F] outline-none focus:border-apple-blue aria-[invalid=true]:border-[#D70015]"
+              className="min-h-[44px] w-full rounded-xl border border-zinc-200 bg-white px-3 text-xs font-semibold text-ink-primary outline-none focus:border-apple-blue aria-[invalid=true]:border-scarlet-600"
             >
               {scheduleOptions.map((dOpt) => (
                 <option key={dOpt.dateYmd} value={dOpt.dateYmd}>
@@ -585,7 +585,7 @@ export function CustomerStorefrontClient({
               onChange={(e) => {
                 onChange(`${activeDateOpt.dateYmd}T${e.target.value}`);
               }}
-              className="min-h-[44px] w-full rounded-xl border border-zinc-200 bg-white px-3 font-mono text-xs font-bold text-[#1D1D1F] outline-none focus:border-apple-blue aria-[invalid=true]:border-[#D70015]"
+              className="min-h-[44px] w-full rounded-xl border border-zinc-200 bg-white px-3 font-mono text-xs font-bold text-ink-primary outline-none focus:border-apple-blue aria-[invalid=true]:border-scarlet-600"
             >
               {availableSlots.map((slot) => (
                 <option key={slot} value={slot}>
@@ -596,17 +596,17 @@ export function CustomerStorefrontClient({
           </div>
         </div>
 
-        <div className="flex items-center justify-between rounded-xl bg-apple-blue/5 px-3 py-1.5 text-[11px] font-medium text-[#1D1D1F]">
+        <div className="flex items-center justify-between rounded-xl bg-sky-600/5 px-3 py-1.5 text-[11px] font-medium text-ink-primary">
           <span className="text-zinc-600">
             {lang === 'ID' ? 'Jadwal Terkunci:' : 'Locked Schedule:'}
           </span>
-          <span className="font-semibold text-apple-blue">
+          <span className="font-semibold text-sky-700">
             {formatScheduledWib(effectiveValue, lang === 'EN' ? 'en' : 'id')}
           </span>
         </div>
 
         {errorMsg ? (
-          <p className="text-[11px] font-semibold text-[#D70015]">{errorMsg}</p>
+          <p className="text-[11px] font-semibold text-scarlet-600">{errorMsg}</p>
         ) : (
           <p className="text-[11px] text-zinc-500">
             {lang === 'ID'
@@ -807,7 +807,7 @@ export function CustomerStorefrontClient({
   if (loading) {
     return (
       <div className="flex min-h-[70vh] items-center justify-center">
-        <p className="font-mono text-xs font-medium text-[#515154]">Loading menu...</p>
+        <p className="text-sm font-medium text-ink-secondary">Loading menu...</p>
       </div>
     );
   }
@@ -816,13 +816,10 @@ export function CustomerStorefrontClient({
     return (
       <div className="mx-auto flex min-h-[70vh] max-w-md flex-col items-center justify-center px-6 text-center">
         <div className="rounded-[24px] border border-black/[0.08] bg-white p-8 shadow-apple-sm">
-          <p className="font-mono text-xs font-bold uppercase tracking-wider text-[#515154]">
-            /{slug}
-          </p>
-          <h1 className="mt-2 font-serif text-xl font-bold text-[#1D1D1F]">
-            Menu Restoran Tidak Ditemukan
+          <h1 className="font-serif text-xl font-bold text-ink-primary">
+            Menu Restoran Tidak Ditemukan (/{slug})
           </h1>
-          <p className="mt-2 text-xs leading-relaxed text-[#515154]">
+          <p className="mt-2 text-xs leading-relaxed text-ink-secondary">
             Pastikan Anda memindai ulang QR Code resmi pada meja restoran, atau hubungi kasir
             setempat untuk bantuan pemesanan.
           </p>
@@ -859,7 +856,7 @@ export function CustomerStorefrontClient({
                 }}
                 className={cn(
                   'relative min-h-[44px] min-w-[44px] rounded-full px-3.5 py-1 text-xs font-bold transition-colors',
-                  isSelected ? 'text-[#1D1D1F]' : 'text-white hover:text-white/90'
+                  isSelected ? 'text-ink-primary' : 'text-white hover:text-white/90'
                 )}
               >
                 {isSelected && (
@@ -891,7 +888,7 @@ export function CustomerStorefrontClient({
                 <span
                   className={cn(
                     'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold',
-                    isStoreOpenNow ? 'bg-[#1D7D32] text-white' : 'bg-[#D70015] text-white'
+                    isStoreOpenNow ? 'bg-signal-green text-white' : 'bg-scarlet-600 text-white'
                   )}
                 >
                   {isStoreOpenNow
@@ -900,8 +897,8 @@ export function CustomerStorefrontClient({
                       : 'Open • Accepting Orders'
                     : !merchant?.isStoreOpen
                       ? lang === 'ID'
-                        ? 'Tutup Sementara — Pesanan Dijeda'
-                        : 'Paused — Orders Closed'
+                        ? 'Tutup Sementara: Pesanan Dijeda'
+                        : 'Paused: Orders Closed'
                       : lang === 'ID'
                         ? 'Tutup • Di Luar Jam Operasional'
                         : 'Closed • Outside Opening Hours'}
@@ -912,7 +909,7 @@ export function CustomerStorefrontClient({
                   </span>
                 )}
                 {isTableLocked && tableNumber && (
-                  <span className="inline-flex items-center rounded-full bg-apple-blue px-2.5 py-0.5 font-mono text-[11px] font-bold text-white">
+                  <span className="inline-flex items-center rounded-full bg-sky-600 px-2.5 py-0.5 font-mono text-[11px] font-bold text-white">
                     {tableNumber}
                   </span>
                 )}
@@ -933,14 +930,14 @@ export function CustomerStorefrontClient({
       {/* Opening Hours Weekly Schedule Disclosure */}
       {hoursEval.schedule.length > 0 && (
         <details className="mx-4 mt-3 rounded-2xl border border-black/[0.06] bg-white px-4 py-2.5 text-xs shadow-apple-sm sm:mx-0">
-          <summary className="flex min-h-[36px] cursor-pointer list-none items-center justify-between font-semibold text-[#1D1D1F]">
+          <summary className="flex min-h-[36px] cursor-pointer list-none items-center justify-between font-semibold text-ink-primary">
             <span>
               {lang === 'ID' ? 'Jam Operasional Toko' : 'Store Opening Hours'} •{' '}
-              <span className="font-normal text-[#515154]">
+              <span className="font-normal text-ink-secondary">
                 {lang === 'ID' ? hoursEval.statusLabelId : hoursEval.statusLabelEn}
               </span>
             </span>
-            <span className="text-[11px] font-semibold text-apple-blue">
+            <span className="text-[11px] font-semibold text-sky-700">
               {lang === 'ID' ? 'Lihat Jadwal ▾' : 'View Schedule ▾'}
             </span>
           </summary>
@@ -948,15 +945,15 @@ export function CustomerStorefrontClient({
             {hoursEval.schedule.map((s) => (
               <div
                 key={s.dayIndex}
-                className="flex items-center justify-between rounded-xl bg-[#F5F5F7] px-3 py-1.5 text-[11px]"
+                className="flex items-center justify-between rounded-xl bg-sky-50/60 px-3 py-1.5 text-[11px]"
               >
-                <span className="font-semibold text-[#1D1D1F]">
+                <span className="font-semibold text-ink-primary">
                   {lang === 'ID' ? s.dayLabelId : s.dayLabelEn}
                 </span>
                 <span
                   className={cn(
                     'font-mono font-medium',
-                    s.isOpen ? 'text-[#1D7D32]' : 'text-[#D70015]'
+                    s.isOpen ? 'text-signal-green' : 'text-scarlet-600'
                   )}
                 >
                   {s.isOpen
@@ -978,7 +975,7 @@ export function CustomerStorefrontClient({
           className={cn(
             'mx-4 mt-4 rounded-2xl border p-4 text-xs sm:mx-0',
             !merchant?.isStoreOpen
-              ? 'border-red-200 bg-red-50 text-[#D70015]'
+              ? 'border-red-200 bg-red-50 text-scarlet-600'
               : 'border-amber-200 bg-amber-50 text-amber-950'
           )}
         >
@@ -988,8 +985,8 @@ export function CustomerStorefrontClient({
                 ? 'Toko Sedang Menjeda Pesanan Masuk'
                 : 'Store Temporarily Paused'
               : lang === 'ID'
-                ? 'Di Luar Jam Operasional — Tersedia Pre-Order & Jadwal Antar'
-                : 'Outside Opening Hours — Pre-Order & Scheduled Delivery Available'}
+                ? 'Di Luar Jam Operasional: Tersedia Pre-Order & Jadwal Antar'
+                : 'Outside Opening Hours: Pre-Order & Scheduled Delivery Available'}
           </p>
           <p className="mt-0.5">
             {!merchant?.isStoreOpen
@@ -1026,7 +1023,7 @@ export function CustomerStorefrontClient({
           role="tablist"
           aria-label={lang === 'ID' ? 'Saluran Pemesanan' : 'Order Channel'}
           className={cn(
-            'grid gap-1.5 rounded-2xl bg-[#F5F5F7] p-1',
+            'grid gap-1.5 rounded-2xl bg-sky-50/60 p-1',
             branch?.isSelfDeliveryEnabled ? 'grid-cols-3' : 'grid-cols-2'
           )}
         >
@@ -1083,12 +1080,12 @@ export function CustomerStorefrontClient({
         {/* Dynamic Channel Fields */}
         <div className="mt-3.5">
           {orderType === OrderType.WALK_IN_TABLE && (
-            <div className="flex items-center justify-between rounded-2xl bg-[#F5F5F7]/70 px-4 py-3 text-xs">
+            <div className="flex items-center justify-between rounded-2xl bg-sky-50/70 px-4 py-3 text-xs">
               <span className="font-medium text-zinc-600">
                 {lang === 'ID' ? 'Nomor Meja Anda' : 'Table Number'}
               </span>
               {isTableLocked ? (
-                <span className="inline-flex items-center rounded-full bg-apple-blue/10 px-3 py-1 font-mono font-bold text-apple-blue">
+                <span className="inline-flex items-center rounded-full bg-sky-600/10 px-3 py-1 font-mono font-bold text-sky-700">
                   {tableNumber}
                 </span>
               ) : (
@@ -1097,14 +1094,14 @@ export function CustomerStorefrontClient({
                   value={tableNumber}
                   onChange={(e) => setTableNumber(e.target.value.toUpperCase())}
                   placeholder="Contoh: TABLE 04"
-                  className="w-40 rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-right font-mono text-xs font-bold uppercase"
+                  className="w-40 rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-right font-mono text-xs font-bold"
                 />
               )}
             </div>
           )}
 
           {orderType === OrderType.PRE_ORDER_PICKUP && (
-            <div className="rounded-2xl bg-[#F5F5F7]/70 p-3.5">
+            <div className="rounded-2xl bg-sky-50/70 p-3.5">
               <label htmlFor="pickupTime" className="block text-xs font-semibold text-zinc-700">
                 {lang === 'ID' ? 'Estimasi Waktu Ambil (Pick Up):' : 'Estimated Pick-Up Time:'}
               </label>
@@ -1117,7 +1114,7 @@ export function CustomerStorefrontClient({
           )}
 
           {orderType === OrderType.SELF_DELIVERY && (
-            <div className="space-y-2 rounded-2xl bg-[#F5F5F7]/70 p-3.5">
+            <div className="space-y-2 rounded-2xl bg-sky-50/70 p-3.5">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-semibold text-zinc-800">
                   {lang === 'ID' ? 'Alamat Pengantaran Lengkap' : 'Delivery Address'}
@@ -1149,14 +1146,14 @@ export function CustomerStorefrontClient({
           <MagnifyingGlass
             aria-hidden="true"
             weight="regular"
-            className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-[#515154]"
+            className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-ink-secondary"
           />
           <input
             type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={lang === 'ID' ? 'Cari nasi goreng, kopi, matcha...' : 'Search menu items...'}
-            className="min-h-[44px] w-full rounded-full border border-black/[0.1] bg-white pl-10 pr-4 text-xs text-[#1D1D1F] outline-none focus:border-apple-blue"
+            className="min-h-[44px] w-full rounded-full border border-black/[0.1] bg-white pl-10 pr-4 text-xs text-ink-primary outline-none focus:border-apple-blue"
           />
         </search>
 
@@ -1171,14 +1168,14 @@ export function CustomerStorefrontClient({
               'relative z-10 min-h-[40px] shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition-colors',
               activeCategoryId === 'ALL'
                 ? 'text-white'
-                : 'bg-white text-[#515154] hover:bg-black/[0.05] hover:text-[#1D1D1F]'
+                : 'bg-white text-ink-secondary hover:bg-black/[0.05] hover:text-ink-primary'
             )}
           >
             {activeCategoryId === 'ALL' && (
               <motion.span
                 layoutId="storefront-category-pill"
                 transition={APPLE_SPRINGS.default}
-                className="absolute inset-0 -z-10 rounded-full bg-[#1D1D1F] shadow-sm"
+                className="absolute inset-0 -z-10 rounded-full bg-ink-primary text-cloud shadow-sm"
               />
             )}
             {lang === 'ID' ? 'Semua Menu' : 'All Items'}
@@ -1197,14 +1194,14 @@ export function CustomerStorefrontClient({
                   'relative z-10 min-h-[40px] shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition-colors',
                   isSelected
                     ? 'text-white'
-                    : 'bg-white text-[#515154] hover:bg-black/[0.05] hover:text-[#1D1D1F]'
+                    : 'bg-white text-ink-secondary hover:bg-black/[0.05] hover:text-ink-primary'
                 )}
               >
                 {isSelected && (
                   <motion.span
                     layoutId="storefront-category-pill"
                     transition={APPLE_SPRINGS.default}
-                    className="absolute inset-0 -z-10 rounded-full bg-[#1D1D1F] shadow-sm"
+                    className="absolute inset-0 -z-10 rounded-full bg-ink-primary text-cloud shadow-sm"
                   />
                 )}
                 {lang === 'ID' ? cat.nameId : cat.nameEn || cat.nameId}
@@ -1218,7 +1215,7 @@ export function CustomerStorefrontClient({
       <div className="mt-5 space-y-8 px-4 sm:px-0">
         {filteredMenuByCategory.map(({ category, items }) => (
           <section key={category.id} className="space-y-3">
-            <h2 className="font-serif text-lg font-bold tracking-tight text-[#1D1D1F]">
+            <h2 className="font-serif text-lg font-bold tracking-tight text-ink-primary">
               {lang === 'ID' ? category.nameId : category.nameEn || category.nameId}
             </h2>
 
@@ -1235,7 +1232,7 @@ export function CustomerStorefrontClient({
                   <article
                     key={item.id}
                     className={cn(
-                      'flex gap-3.5 rounded-[20px] border bg-white p-3.5 shadow-apple-sm transition-all',
+                      'flex gap-3.5 rounded-[20px] border bg-white p-3.5 shadow-apple-sm motion-safe:transition-colors',
                       item.isSoldOut
                         ? 'border-zinc-200 opacity-65'
                         : 'border-black/[0.08] hover:shadow-apple-md'
@@ -1253,7 +1250,7 @@ export function CustomerStorefrontClient({
                         />
                       )}
                       {item.isSoldOut && (
-                        <span className="absolute inset-x-1 bottom-1 rounded-full bg-[#D70015] py-0.5 text-center text-[10px] font-bold uppercase text-white">
+                        <span className="absolute inset-x-1 bottom-1 rounded-full bg-scarlet-600 py-0.5 text-center text-[11px] font-bold text-white">
                           {lang === 'ID' ? 'Habis' : 'Sold Out'}
                         </span>
                       )}
@@ -1261,53 +1258,53 @@ export function CustomerStorefrontClient({
 
                     <div className="flex min-w-0 flex-1 flex-col justify-between">
                       <div>
-                        <h3 className="text-sm font-bold leading-snug text-[#1D1D1F]">{title}</h3>
+                        <h3 className="text-sm font-bold leading-snug text-ink-primary">{title}</h3>
                         {desc && (
-                          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[#515154]">
+                          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-ink-secondary">
                             {desc}
                           </p>
                         )}
                       </div>
 
                       <div className="mt-2.5 flex items-center justify-between gap-2">
-                        <span className="font-mono text-sm font-bold tabular-nums text-[#1D1D1F]">
+                        <span className="font-mono text-sm font-bold tabular-nums text-ink-primary">
                           {formatIdr(item.priceIdr)}
                         </span>
 
                         {item.isSoldOut ? (
-                          <span className="rounded-full bg-[#F5F5F7] px-3 py-1.5 text-xs font-semibold text-[#515154]">
+                          <span className="rounded-full bg-sky-50/60 px-3 py-1.5 text-xs font-semibold text-ink-secondary">
                             {lang === 'ID' ? 'Stok Habis' : 'Sold Out'}
                           </span>
                         ) : isStorePaused || (!hoursEval.isWithinHours && isTableLocked) ? (
-                          <span className="rounded-full bg-[#F5F5F7] px-3 py-1.5 text-xs font-semibold text-[#515154]">
+                          <span className="rounded-full bg-sky-50/60 px-3 py-1.5 text-xs font-semibold text-ink-secondary">
                             {lang === 'ID' ? 'Toko Tutup' : 'Closed'}
                           </span>
                         ) : qty === 0 ? (
                           <button
                             type="button"
                             onClick={() => updateCartQty(item.id, 1)}
-                            className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-4 py-2 text-xs font-bold text-white hover:bg-apple-blueHover"
+                            className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-sky-600 px-4 py-2 text-xs font-bold text-white hover:bg-sky-700"
                           >
                             {lang === 'ID' ? '+ Tambah' : '+ Add'}
                           </button>
                         ) : (
-                          <div className="inline-flex min-h-[44px] items-center gap-1 rounded-full bg-apple-blue/10 px-1 py-1 ring-1 ring-apple-blue/30">
+                          <div className="inline-flex min-h-[44px] items-center gap-1 rounded-full bg-sky-600/10 px-1 py-1 ring-1 ring-apple-blue/30">
                             <button
                               type="button"
                               aria-label={lang === 'ID' ? `Kurangi ${title}` : `Decrease ${title}`}
                               onClick={() => updateCartQty(item.id, -1)}
-                              className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#1D1D1F] shadow-sm"
+                              className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-ink-primary shadow-sm"
                             >
                               <Minus aria-hidden="true" weight="bold" className="h-3.5 w-3.5" />
                             </button>
-                            <span className="min-w-[22px] text-center font-mono text-xs font-bold tabular-nums text-apple-blue">
+                            <span className="min-w-[22px] text-center font-mono text-xs font-bold tabular-nums text-sky-700">
                               {qty}
                             </span>
                             <button
                               type="button"
                               aria-label={lang === 'ID' ? `Tambah ${title}` : `Increase ${title}`}
                               onClick={() => updateCartQty(item.id, 1)}
-                              className="flex h-10 w-10 items-center justify-center rounded-full bg-apple-blue text-white shadow-sm"
+                              className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-600 text-white shadow-sm"
                             >
                               <Plus aria-hidden="true" weight="bold" className="h-3.5 w-3.5" />
                             </button>
@@ -1339,7 +1336,7 @@ export function CustomerStorefrontClient({
               className="apple-material-dark apple-interactive flex min-h-[54px] w-full items-center justify-between rounded-full px-5 py-3 text-white hover:brightness-110"
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-apple-blue font-mono text-xs font-bold tabular-nums text-white shadow-sm">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sky-600 font-mono text-xs font-bold tabular-nums text-white shadow-sm">
                   {cartSummary.totalItems}
                 </div>
                 <div className="text-left">
@@ -1365,7 +1362,7 @@ export function CustomerStorefrontClient({
                   {formatIdr(cartSummary.totalAmountIdr)}
                 </span>
                 <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-bold text-white">
-                  {lang === 'ID' ? 'Pesan →' : 'Checkout →'}
+                  {lang === 'ID' ? 'Pesan' : 'Checkout'}
                 </span>
               </div>
             </button>
@@ -1400,19 +1397,19 @@ export function CustomerStorefrontClient({
             <button
               type="button"
               onClick={closeCheckoutDialog}
-              className="apple-interactive relative z-20 inline-flex min-h-[44px] items-center px-2 text-sm font-semibold text-apple-blue hover:underline"
+              className="apple-interactive relative z-20 inline-flex min-h-[44px] items-center px-2 text-sm font-semibold text-sky-700 hover:underline"
             >
               {lang === 'ID' ? 'Batal' : 'Cancel'}
             </button>
             <div className="text-center">
-              <h2 id="checkout-modal-title" className="text-sm font-bold text-[#1D1D1F]">
+              <h2 id="checkout-modal-title" className="text-sm font-bold text-ink-primary">
                 {lang === 'ID' ? 'Konfirmasi Pesanan' : 'Confirm Order'}
               </h2>
-              <p className="hig-caption text-[11px] font-medium text-[#515154]">
+              <p className="hig-caption text-[11px] font-medium text-ink-secondary">
                 {lang === 'ID' ? 'Tanpa Login • Geser untuk Tutup' : 'Zero-Login • Swipe Down to Close'}
               </p>
             </div>
-            <span className="inline-flex min-w-[44px] justify-end font-mono text-xs font-bold tabular-nums text-[#515154]">
+            <span className="inline-flex min-w-[44px] justify-end font-mono text-xs font-bold tabular-nums text-ink-secondary">
               {cartSummary.totalItems}×
             </span>
           </div>
@@ -1426,7 +1423,7 @@ export function CustomerStorefrontClient({
           {checkoutError && (
             <div
               role="alert"
-              className="rounded-2xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-medium text-[#D70015]"
+              className="rounded-2xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-medium text-scarlet-600"
             >
               {checkoutError}
             </div>
@@ -1468,10 +1465,10 @@ export function CustomerStorefrontClient({
                         setCheckoutError(null);
                       }}
                       className={cn(
-                        'min-h-[44px] rounded-2xl border px-3 py-2 text-xs font-bold transition-all',
+                        'min-h-[44px] rounded-2xl border px-3 py-2 text-xs font-bold motion-safe:transition-colors',
                         active
-                          ? 'border-apple-blue bg-apple-blue/10 text-apple-blue ring-2 ring-apple-blue/15'
-                          : 'border-zinc-200 bg-[#F5F5F7]/70 text-zinc-700 hover:bg-zinc-100'
+                          ? 'border-apple-blue bg-sky-600/10 text-sky-700 ring-2 ring-apple-blue/15'
+                          : 'border-zinc-200 bg-sky-50/70 text-zinc-700 hover:bg-zinc-100'
                       )}
                     >
                       {opt.label}
@@ -1505,10 +1502,10 @@ export function CustomerStorefrontClient({
                   }
                 }}
                 placeholder={lang === 'ID' ? 'Contoh: Budi Santoso' : 'e.g. Alex Johnson'}
-                className="mt-1 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/60 px-4 text-sm outline-none focus:border-apple-blue focus:bg-white aria-[invalid=true]:border-[#D70015]"
+                className="mt-1 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-sky-50/60 px-4 text-sm outline-none focus:border-apple-blue focus:bg-white aria-[invalid=true]:border-scarlet-600"
               />
               {fieldErrors.customerName && (
-                <p id="err-custName" className="mt-1 text-[11px] font-semibold text-[#D70015]">
+                <p id="err-custName" className="mt-1 text-[11px] font-semibold text-scarlet-600">
                   {fieldErrors.customerName}
                 </p>
               )}
@@ -1536,10 +1533,10 @@ export function CustomerStorefrontClient({
                   }
                 }}
                 placeholder="0812xxxxxxxx"
-                className="mt-1 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/60 px-4 font-mono text-sm outline-none focus:border-apple-blue focus:bg-white aria-[invalid=true]:border-[#D70015]"
+                className="mt-1 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-sky-50/60 px-4 font-mono text-sm outline-none focus:border-apple-blue focus:bg-white aria-[invalid=true]:border-scarlet-600"
               />
               {fieldErrors.customerWhatsapp ? (
-                <p id="err-custWa" className="mt-1 text-[11px] font-semibold text-[#D70015]">
+                <p id="err-custWa" className="mt-1 text-[11px] font-semibold text-scarlet-600">
                   {fieldErrors.customerWhatsapp}
                 </p>
               ) : (
@@ -1564,10 +1561,10 @@ export function CustomerStorefrontClient({
                   onChange={(e) => setTableNumber(e.target.value.toUpperCase())}
                   placeholder="TABLE 04"
                   className={cn(
-                    'mt-1 min-h-[48px] w-full rounded-2xl border px-3.5 font-mono text-xs font-bold uppercase',
+                    'mt-1 min-h-[48px] w-full rounded-2xl border px-3.5 font-mono text-xs font-bold',
                     isTableLocked
-                      ? 'border-apple-blue/30 bg-apple-blue/5 text-apple-blue'
-                      : 'border-zinc-200 bg-[#F5F5F7]/60 text-zinc-950'
+                      ? 'border-apple-blue/30 bg-sky-600/5 text-sky-700'
+                      : 'border-zinc-200 bg-sky-50/60 text-zinc-950'
                   )}
                 />
               </div>
@@ -1595,7 +1592,7 @@ export function CustomerStorefrontClient({
             )}
 
             {orderType === OrderType.SELF_DELIVERY && (
-              <div className="space-y-3 rounded-2xl border border-zinc-200/80 bg-[#F5F5F7]/50 p-3.5">
+              <div className="space-y-3 rounded-2xl border border-zinc-200/80 bg-sky-50/50 p-3.5">
                 <div>
                   <label
                     htmlFor="modalDeliveryAddress"
@@ -1624,10 +1621,10 @@ export function CustomerStorefrontClient({
                         ? 'Jl. Nama Jalan, No. Rumah, Patokan...'
                         : 'Street address, unit number, landmark...'
                     }
-                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-white p-3 text-xs outline-none focus:border-apple-blue aria-[invalid=true]:border-[#D70015]"
+                    className="mt-1 w-full rounded-2xl border border-zinc-200 bg-white p-3 text-xs outline-none focus:border-apple-blue aria-[invalid=true]:border-scarlet-600"
                   />
                   {fieldErrors.deliveryAddress && (
-                    <p id="err-deliveryAddr" className="mt-1 text-[11px] font-semibold text-[#D70015]">
+                    <p id="err-deliveryAddr" className="mt-1 text-[11px] font-semibold text-scarlet-600">
                       {fieldErrors.deliveryAddress}
                     </p>
                   )}
@@ -1643,7 +1640,7 @@ export function CustomerStorefrontClient({
                       type="button"
                       onClick={handleDetectLocation}
                       disabled={geoLoading}
-                      className="apple-interactive inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-apple-blue/30 bg-white px-3.5 py-1.5 text-xs font-bold text-apple-blue hover:bg-apple-blue/5 disabled:opacity-60"
+                      className="apple-interactive inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-apple-blue/30 bg-white px-3.5 py-1.5 text-xs font-bold text-sky-700 hover:bg-sky-600/5 disabled:opacity-60"
                     >
                       <Crosshair aria-hidden="true" weight="bold" className="h-4 w-4" />
                       {geoLoading
@@ -1696,8 +1693,8 @@ export function CustomerStorefrontClient({
                       className={cn(
                         'rounded-xl px-3 py-2 text-[11px] font-semibold',
                         isOutOfDeliveryRadius
-                          ? 'border border-red-200 bg-red-50 text-[#D70015]'
-                          : 'border border-emerald-200 bg-emerald-50 text-[#1D7D32]'
+                          ? 'border border-red-200 bg-red-50 text-scarlet-600'
+                          : 'border border-emerald-200 bg-emerald-50 text-signal-green'
                       )}
                     >
                       {lang === 'ID'
@@ -1736,9 +1733,9 @@ export function CustomerStorefrontClient({
                           setFieldErrors((prev) => ({ ...prev, scheduledDeliveryTime: undefined }));
                         }}
                         className={cn(
-                          'min-h-[44px] rounded-xl border px-3 py-2 text-[11px] font-bold transition-all',
+                          'min-h-[44px] rounded-xl border px-3 py-2 text-[11px] font-bold motion-safe:transition-colors',
                           deliveryTimingMode === opt.id
-                            ? 'border-apple-blue bg-white text-apple-blue ring-2 ring-apple-blue/15'
+                            ? 'border-apple-blue bg-white text-sky-700 ring-2 ring-apple-blue/15'
                             : 'border-zinc-200 bg-zinc-100/70 text-zinc-600'
                         )}
                       >
@@ -1788,7 +1785,7 @@ export function CustomerStorefrontClient({
                     ? 'Contoh: Sambal dipisah, es sedikit...'
                     : 'e.g. Less ice, spicy on the side...'
                 }
-                className="mt-1 w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/60 p-3 text-xs outline-none focus:border-apple-blue focus:bg-white"
+                className="mt-1 w-full rounded-2xl border border-zinc-200 bg-sky-50/60 p-3 text-xs outline-none focus:border-apple-blue focus:bg-white"
               />
             </div>
           </div>
@@ -1801,9 +1798,9 @@ export function CustomerStorefrontClient({
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
               <label
                 className={cn(
-                  'flex min-h-[48px] cursor-pointer items-center gap-3 rounded-2xl border p-3.5 transition-all',
+                  'flex min-h-[48px] cursor-pointer items-center gap-3 rounded-2xl border p-3.5 motion-safe:transition-colors',
                   paymentType === PaymentType.BANK_TRANSFER_QRIS
-                    ? 'border-apple-blue bg-apple-blue/5 ring-2 ring-apple-blue/15'
+                    ? 'border-apple-blue bg-sky-600/5 ring-2 ring-apple-blue/15'
                     : 'border-zinc-200 bg-white'
                 )}
               >
@@ -1828,9 +1825,9 @@ export function CustomerStorefrontClient({
 
               <label
                 className={cn(
-                  'flex min-h-[48px] cursor-pointer items-center gap-3 rounded-2xl border p-3.5 transition-all',
+                  'flex min-h-[48px] cursor-pointer items-center gap-3 rounded-2xl border p-3.5 motion-safe:transition-colors',
                   paymentType === PaymentType.CASH
-                    ? 'border-apple-blue bg-apple-blue/5 ring-2 ring-apple-blue/15'
+                    ? 'border-apple-blue bg-sky-600/5 ring-2 ring-apple-blue/15'
                     : 'border-zinc-200 bg-white'
                 )}
               >
@@ -1866,7 +1863,7 @@ export function CustomerStorefrontClient({
           </fieldset>
 
           {/* Order Summary Breakdown */}
-          <div className="rounded-2xl border border-black/[0.06] bg-[#F5F5F7] p-4 text-xs">
+          <div className="rounded-2xl border border-black/[0.06] bg-sky-50/60 p-4 text-xs">
             <p className="mb-2 font-bold text-zinc-950">
               {lang === 'ID' ? 'Ringkasan Pesanan' : 'Order Summary'}
             </p>
@@ -1898,7 +1895,7 @@ export function CustomerStorefrontClient({
               )}
               <div className="flex justify-between pt-1 text-sm font-bold text-zinc-950">
                 <span>{lang === 'ID' ? 'Total Tagihan' : 'Total Due'}</span>
-                <span className="font-mono tabular-nums text-apple-blue">
+                <span className="font-mono tabular-nums text-sky-700">
                   {formatIdr(cartSummary.totalAmountIdr)}
                 </span>
               </div>
@@ -1908,7 +1905,7 @@ export function CustomerStorefrontClient({
           <button
             type="submit"
             disabled={submitting}
-            className="apple-interactive flex min-h-[48px] w-full items-center justify-center rounded-full bg-apple-blue px-6 py-3 text-sm font-bold text-white shadow-apple-sm hover:bg-apple-blueHover disabled:opacity-60"
+            className="apple-interactive flex min-h-[48px] w-full items-center justify-center rounded-full bg-sky-600 px-6 py-3 text-sm font-bold text-white shadow-apple-sm hover:bg-sky-700 disabled:opacity-60"
           >
             {submitting
               ? lang === 'ID'

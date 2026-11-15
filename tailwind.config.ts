@@ -62,8 +62,13 @@ const config: Config = {
         ink: {
           primary: '#0C1E36',
           secondary: '#3D5A80',
-          tertiary: '#64748B',
+          tertiary: '#526D82',
           muted: '#94A3B8',
+        },
+        signal: {
+          green: '#1D7D32',
+          amber: '#B25000',
+          red: '#E11D48',
         },
         apple: {
           blue: '#0284C7',

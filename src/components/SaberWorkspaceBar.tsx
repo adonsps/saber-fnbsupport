@@ -17,7 +17,7 @@ const MERCHANT_NAV_ITEMS = [
   },
   {
     href: '/onboarding',
-    label: 'Setup Toko',
+    label: 'Profil Toko',
     match: (p: string) => p.startsWith('/onboarding'),
   },
   {
@@ -32,7 +32,7 @@ const MERCHANT_NAV_ITEMS = [
   },
   {
     href: '/cashier/orders',
-    label: 'Kasir Kanban',
+    label: 'Kasir & Dapur',
     match: (p: string) => p.startsWith('/cashier'),
   },
   {
@@ -220,31 +220,26 @@ export function SaberWorkspaceBar() {
     <header
       ref={headerRef}
       className={cn(
-        'saber-site-header no-print sticky top-0 z-40 px-3 pt-2 sm:px-6 sm:pt-3',
+        'saber-site-header no-print sticky top-0 z-40 border-b border-sky-200/80 bg-cloud',
         isWide && 'is-wide'
       )}
     >
       <div
         ref={innerRef}
-        className="saber-header-inner liquid-glass-bar mx-auto flex max-w-7xl items-center justify-between gap-3 rounded-2xl px-3.5 py-2 sm:rounded-full sm:px-4"
+        className="saber-header-inner mx-auto flex min-h-[64px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8"
       >
-        {/* Brand Lockup + Instant Pointer-Down Feedback (§1) */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-3">
           <Link
             href="/"
+            aria-label="Saber Culinary Beranda"
             onPointerDown={() => triggerCausalHaptic(6)}
             onClick={closePopoverIfCollapsed}
-            className="apple-interactive flex items-center gap-2.5 rounded-full pr-1 active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2"
+            className="apple-interactive flex items-center gap-2.5 rounded-lg py-1 pr-1 active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2"
           >
-            <SaberLogo size="sm" className="sm:h-9 sm:w-9 sm:rounded-[11px]" />
-            <div className="leading-tight">
-              <span className="block text-sm font-bold tracking-tight text-ink-primary">
-                Saber Culinary
-              </span>
-              <span className="hidden text-[11px] font-medium text-ink-secondary sm:block">
-                Pesan Meja QR &amp; Kasir Langsung
-              </span>
-            </div>
+            <SaberLogo size="sm" className="sm:h-9 sm:w-9 sm:rounded-[10px]" />
+            <span className="text-base font-bold tracking-tight text-ink-primary">
+              Saber Culinary
+            </span>
           </Link>
 
           {authenticatedMerchant && activeMerchant && (
@@ -253,17 +248,18 @@ export function SaberWorkspaceBar() {
               onPointerDown={() => triggerCausalHaptic(6)}
               onClick={closePopoverIfCollapsed}
               title={`Toko aktif: ${activeMerchant.name}`}
-              className="hidden items-center gap-1.5 rounded-full border border-sky-200/80 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-ink-secondary active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 lg:inline-flex"
+              className="hidden items-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-medium text-ink-secondary active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 lg:inline-flex"
             >
-              <span className="text-[10px] font-bold text-emerald-700">
-                {activeMerchant.isDemo ? 'demo' : 'aktif'}
+              <span className="font-semibold text-signal-green">
+                {activeMerchant.isDemo ? 'Contoh' : 'Aktif'}
               </span>
-              <span className="max-w-[120px] truncate text-ink-primary">{activeMerchant.name}</span>
+              <span className="max-w-[140px] truncate font-semibold text-ink-primary">
+                {activeMerchant.name}
+              </span>
             </Link>
           )}
         </div>
 
-        {/* Single Semantic Navigation Landmark with Restored Critically-Damped Spring Pill (§4) */}
         <nav aria-label="Navigasi Utama" className="flex items-center gap-2">
           <button
             type="button"
@@ -272,7 +268,7 @@ export function SaberWorkspaceBar() {
             aria-controls="saber-merchant-menu"
             aria-expanded={menuOpen}
             onPointerDown={() => triggerCausalHaptic(6)}
-            className="saber-menu-button apple-interactive inline-flex min-h-[40px] items-center gap-1.5 rounded-full border border-sky-200/80 bg-cloud px-3.5 py-1.5 text-xs font-semibold text-ink-primary shadow-apple-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2"
+            className="saber-menu-button apple-interactive inline-flex min-h-[40px] items-center gap-1.5 rounded-lg border border-sky-200 bg-sky-50 px-3.5 py-1.5 text-sm font-semibold text-ink-primary active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2"
           >
             {menuOpen ? (
               <X aria-hidden="true" weight="bold" className="h-4 w-4" />
@@ -284,14 +280,14 @@ export function SaberWorkspaceBar() {
 
           <ul id="saber-merchant-menu" ref={menuRef} className="saber-site-menu">
             {authenticatedMerchant && activeMerchant && (
-              <li className="saber-mobile-context mb-2 rounded-xl border border-sky-100 bg-sky-50 p-3">
-                <p className="text-[10px] font-semibold text-ink-secondary">
-                  {activeMerchant.isDemo ? 'Mode Simulasi' : 'Restoran Terhubung'}
+              <li className="saber-mobile-context mb-2 rounded-xl bg-sky-50 p-3">
+                <p className="text-xs font-medium text-ink-secondary">
+                  {activeMerchant.isDemo ? 'Toko Contoh' : 'Toko Aktif'}
                 </p>
-                <p className="mt-0.5 truncate text-xs font-bold text-ink-primary">
+                <p className="mt-0.5 truncate text-sm font-bold text-ink-primary">
                   {activeMerchant.name}
                 </p>
-                <p className="font-mono text-[11px] text-sky-700">/{activeMerchant.slug}</p>
+                <p className="font-mono text-xs text-sky-700">/{activeMerchant.slug}</p>
               </li>
             )}
 
@@ -305,19 +301,19 @@ export function SaberWorkspaceBar() {
                     onPointerDown={() => triggerCausalHaptic(6)}
                     onClick={closePopoverIfCollapsed}
                     className={cn(
-                      'apple-interactive relative flex min-h-[42px] items-center justify-between rounded-xl px-3.5 py-2 text-xs font-semibold transition-colors active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 lg:min-h-[38px] lg:rounded-full lg:px-3.5',
+                      'apple-interactive relative flex min-h-[42px] items-center justify-between rounded-lg px-3.5 py-2 text-sm font-medium transition-colors active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 lg:min-h-[38px]',
                       active
                         ? isWide
-                          ? 'text-white'
-                          : 'border-l-4 border-scarlet-600 bg-ink-primary text-white shadow-apple-sm'
-                        : 'text-ink-secondary hover:bg-sky-100/60 hover:text-ink-primary'
+                          ? 'text-cloud'
+                          : 'border-l-4 border-scarlet-600 bg-ink-primary text-cloud'
+                        : 'text-ink-secondary hover:bg-sky-50 hover:text-ink-primary'
                     )}
                   >
                     {active && isWide && (
                       <motion.span
                         layoutId="saber-workspace-active-pill"
                         transition={APPLE_SPRINGS.default}
-                        className="absolute inset-0 -z-10 rounded-full bg-ink-primary shadow-sm"
+                        className="absolute inset-0 -z-10 rounded-lg bg-ink-primary"
                       />
                     )}
                     <span>{item.label}</span>
@@ -326,15 +322,15 @@ export function SaberWorkspaceBar() {
               );
             })}
 
-            <li className="mt-2 border-t border-sky-100 pt-2 lg:ml-1 lg:mt-0 lg:border-l lg:border-t-0 lg:pl-2 lg:pt-0">
+            <li className="mt-2 border-t border-sky-100 pt-2 lg:ml-2 lg:mt-0 lg:border-l lg:border-t-0 lg:pl-3 lg:pt-0">
               {authenticatedMerchant ? (
                 <button
                   type="button"
                   onPointerDown={() => triggerCausalHaptic(6)}
                   onClick={handleLogout}
-                  className="apple-interactive flex min-h-[42px] w-full items-center justify-center gap-1.5 rounded-xl border border-sky-200/80 bg-sky-50 px-3.5 text-xs font-semibold text-scarlet-600 hover:bg-scarlet-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-scarlet-600 focus-visible:ring-offset-2 lg:min-h-[38px] lg:rounded-full"
+                  className="apple-interactive flex min-h-[42px] w-full items-center justify-center gap-1.5 rounded-lg border border-sky-200 bg-sky-50 px-3.5 text-sm font-medium text-scarlet-600 hover:bg-scarlet-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-scarlet-600 focus-visible:ring-offset-2 lg:min-h-[38px]"
                 >
-                  <SignOut aria-hidden="true" weight="regular" className="h-3.5 w-3.5" />
+                  <SignOut aria-hidden="true" weight="regular" className="h-4 w-4" />
                   <span>Keluar</span>
                 </button>
               ) : (
@@ -344,13 +340,13 @@ export function SaberWorkspaceBar() {
                   onPointerDown={() => triggerCausalHaptic(6)}
                   onClick={closePopoverIfCollapsed}
                   className={cn(
-                    'apple-interactive relative flex min-h-[42px] items-center justify-center gap-1.5 rounded-xl px-4 text-xs font-semibold transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 lg:min-h-[38px] lg:rounded-full',
+                    'apple-interactive relative flex min-h-[42px] items-center justify-center gap-1.5 rounded-lg px-4 text-sm font-medium transition-colors active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 lg:min-h-[38px]',
                     pathname.startsWith('/login')
-                      ? 'bg-scarlet-600 text-white shadow-apple-sm'
-                      : 'border border-sky-200/80 bg-cloud text-ink-primary hover:bg-sky-50'
+                      ? 'bg-scarlet-600 text-cloud'
+                      : 'border border-sky-200 bg-sky-50 text-ink-primary hover:bg-sky-100'
                   )}
                 >
-                  <SignIn aria-hidden="true" weight="regular" className="h-3.5 w-3.5" />
+                  <SignIn aria-hidden="true" weight="regular" className="h-4 w-4" />
                   <span>Masuk</span>
                 </Link>
               )}
