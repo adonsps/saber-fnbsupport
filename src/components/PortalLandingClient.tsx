@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CaretDown, CookingPot, SignIn, SignOut, User } from '@phosphor-icons/react';
@@ -32,6 +32,22 @@ interface PortalLandingClientProps {
   whatsappReady: boolean;
 }
 
+const PROMO_DEADLINE_MS = new Date('2026-12-12T00:00:00+07:00').getTime();
+
+function calculatePromoTimeLeft() {
+  const diff = PROMO_DEADLINE_MS - Date.now();
+  if (diff <= 0) {
+    return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
+  }
+  return {
+    days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+    hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+    minutes: Math.floor((diff / (1000 * 60)) % 60),
+    seconds: Math.floor((diff / 1000) % 60),
+    expired: false,
+  };
+}
+
 export function PortalLandingClient({
   activeMerchant,
   authenticatedMerchant,
@@ -41,6 +57,21 @@ export function PortalLandingClient({
 }: PortalLandingClientProps) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [timeLeft, setTimeLeft] = useState({
+    days: 25,
+    hours: 18,
+    minutes: 0,
+    seconds: 0,
+    expired: false,
+  });
+
+  useEffect(() => {
+    setTimeLeft(calculatePromoTimeLeft());
+    const interval = setInterval(() => {
+      setTimeLeft(calculatePromoTimeLeft());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSwitchScope = async (slug: string, redirectTo?: string) => {
     triggerCausalHaptic(8);
@@ -180,12 +211,43 @@ export function PortalLandingClient({
         <div className="relative z-10 grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-12">
           {/* Left Column: Punchline Badge, Headline, Subhead, CTA Buttons, and 2-Sided Quick Show */}
           <div className="min-w-0 lg:col-span-7">
-            {/* Scarlet Red Punchline Highlight — 0% Komisi / 100% Hasil Utuh */}
-            <div className="mb-6 inline-flex items-center gap-2.5 rounded-full border border-scarlet-200 bg-scarlet-50/95 px-4 py-2 text-xs font-semibold text-scarlet-700 shadow-sm backdrop-blur-sm sm:text-sm">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-scarlet-600 text-[10px] font-black text-cloud">
-                %
-              </span>
-              <span>0% Komisi Aplikasi · 100% Hasil Penjualan Utuh Bebas Biaya</span>
+            {/* Big Free Offer Announcement with Strikethrough & Countdown */}
+            <div className="mb-6 rounded-2xl border border-scarlet-200 bg-scarlet-50/95 p-4 sm:p-5 shadow-sm">
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <span className="inline-flex items-center rounded-md bg-scarlet-600 px-2.5 py-0.5 text-xs font-bold text-cloud shadow-xs">
+                  100% Gratis
+                </span>
+                <span className="font-serif text-3xl font-bold tabular-nums text-scarlet-700 sm:text-4xl">
+                  Rp 0
+                </span>
+                <span className="text-base font-semibold tabular-nums text-ink-secondary/70 line-through decoration-scarlet-600 decoration-2">
+                  Rp 3.000.000
+                </span>
+                <span className="text-xs font-medium text-scarlet-800">
+                  Bebas biaya lisensi selamanya
+                </span>
+              </div>
+
+              <div className="mt-3.5 flex flex-wrap items-center justify-between gap-2.5 border-t border-scarlet-200/80 pt-3 text-xs text-ink-secondary">
+                <span className="font-medium text-ink-primary">
+                  Khusus pendaftaran sebelum 12 Desember 2026 (00:00 WIB):
+                </span>
+                {/* Tabular Live Countdown */}
+                <div className="inline-flex items-center gap-1.5 text-xs font-semibold tabular-nums text-scarlet-700">
+                  <span className="rounded border border-scarlet-200 bg-cloud px-1.5 py-0.5 shadow-xs">
+                    {timeLeft.days} hari
+                  </span>
+                  <span className="rounded border border-scarlet-200 bg-cloud px-1.5 py-0.5 shadow-xs">
+                    {String(timeLeft.hours).padStart(2, '0')} jam
+                  </span>
+                  <span className="rounded border border-scarlet-200 bg-cloud px-1.5 py-0.5 shadow-xs">
+                    {String(timeLeft.minutes).padStart(2, '0')} mnt
+                  </span>
+                  <span className="rounded border border-scarlet-200 bg-cloud px-1.5 py-0.5 shadow-xs">
+                    {String(timeLeft.seconds).padStart(2, '0')} dtk
+                  </span>
+                </div>
+              </div>
             </div>
 
             <h1 id="hero-heading" className="apple-display text-ink-primary">
@@ -369,20 +431,8 @@ export function PortalLandingClient({
                 </div>
               </div>
             ) : (
-              /* Contextual badge directly annotating the smartphone and dining scene */
-              <div className="hidden lg:flex min-h-[360px] flex-col justify-end items-end p-2">
-                <div className="inline-flex max-w-xs items-center gap-3.5 rounded-2xl border border-sky-200/80 bg-cloud/90 p-4 shadow-lg backdrop-blur-md">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700 shadow-sm">
-                    <User aria-hidden="true" weight="bold" className="h-5 w-5" />
-                  </span>
-                  <div className="text-left">
-                    <p className="text-xs font-bold text-ink-primary">Menu Digital di Meja</p>
-                    <p className="mt-0.5 text-[11px] leading-tight text-ink-secondary">
-                      Tamu pesan dan bayar QRIS langsung dari smartphone tanpa unduh aplikasi.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              /* Right column left completely unobstructed to showcase the smartphone and plated dining visual */
+              <div aria-hidden="true" className="hidden lg:block min-h-[420px]" />
             )}
           </div>
         </div>
