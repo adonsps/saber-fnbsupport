@@ -5,14 +5,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   BowlFood,
+  CaretDown,
   ChartBar,
   CookingPot,
-  ForkKnife,
   LockSimple,
-  QrCode,
   SignIn,
   SignOut,
-  Storefront,
+  UserPlus,
 } from '@phosphor-icons/react';
 import { formatIdr } from '@/lib/utils';
 import { triggerCausalHaptic } from '@/lib/apple-motion';
@@ -84,74 +83,61 @@ export function PortalLandingClient({
     }
   };
 
-  const modules = [
-    ...(authenticatedMerchant
-      ? [
-          {
-            domain: 'Profil Usaha',
-            title: 'Identitas Toko & Rekening QRIS',
-            route: '/onboarding?mode=edit',
-            description:
-              'Perbarui nama usaha, jam operasional, radius pengiriman mandiri, QRIS Statis, serta rekening bank tujuan transfer.',
-            icon: Storefront,
-            metric: `/${activeMerchant.slug}`,
-          },
-        ]
-      : [
-          {
-            domain: 'Pendaftaran Baru',
-            title: 'Daftarkan Restoran Anda',
-            route: '/onboarding?mode=new',
-            description:
-              'Buat akun pemilik usaha beserta tautan menu /[slug], jam buka harian, serta rekening transfer & QRIS Statis dalam tiga langkah.',
-            icon: Storefront,
-            metric: '3 Langkah Setup',
-          },
-        ]),
+  // Rule of 3: Maksimal 3 modul utama, masing-masing maksimal 3 poin ringkas & maksimal 3 tautan aksi
+  const coreModuleGroups = [
     {
-      domain: 'Katalog & Stok',
-      title: 'Manajemen Menu Dwi-Bahasa & Stok',
-      route: '/admin/menu',
-      description:
-        'Atur daftar hidangan Indonesia & Inggris, urutan kategori, tombol Buka/Tutup sementara, serta saklar Habis (Sold Out) instan.',
+      id: 'menu-qr',
+      domain: '1. Katalog & Meja',
+      title: 'Menu & QR Meja',
+      metric: `${activeMerchant.menuCount} Menu · ${activeMerchant.tableCount} Meja`,
       icon: BowlFood,
-      metric: `${activeMerchant.menuCount} Menu`,
+      summary: 'Atur daftar hidangan, stok harian, dan stiker QR meja pelanggan.',
+      highlights: [
+        'Katalog menu dwi-bahasa (ID/EN) & saklar stok habis instan',
+        'Cetak lembar stiker QR meja PDF A4/A5 beserta info Wi-Fi',
+        'Pratinjau tampilan pemesanan QR langsung dari sisi tamu',
+      ],
+      actions: [
+        { label: 'Kelola Menu', route: '/admin/menu', primary: true },
+        { label: 'Cetak QR Meja', route: '/admin/tables' },
+        { label: 'Layar Tamu', route: `/${activeMerchant.slug}?table=TABLE%2004` },
+      ],
     },
     {
-      domain: 'Meja & Cetak QR',
-      title: 'QR Meja & Cetak Lembar PDF A4/A5',
-      route: '/admin/tables',
-      description:
-        'Pantau status meja Terisi atau Kosong, buat daftar meja secara massal, dan unduh stiker meja QR beserta info Wi-Fi tamu.',
-      icon: QrCode,
-      metric: `${activeMerchant.tableCount} Meja`,
-    },
-    {
-      domain: 'Dapur & Kasir',
-      title: 'Papan Kasir Kanban 5-Tahap & WhatsApp',
-      route: '/cashier/orders',
-      description:
-        'Kelola antrean dapur lima tahap dengan audit stok parsial, verifikasi bukti bayar QRIS, pindah/gabung meja, serta riwayat pesan WhatsApp.',
-      icon: CookingPot,
+      id: 'cashier-kitchen',
+      domain: '2. Operasional',
+      title: 'Kasir & Antrean Dapur',
       metric: `${activeMerchant.activeTicketCount} Antrean Aktif`,
+      icon: CookingPot,
+      summary: 'Kelola pesanan masuk, bukti bayar QRIS, dan status masak real-time.',
+      highlights: [
+        'Papan Kanban antrean pesanan dari masuk hingga disajikan',
+        'Verifikasi bukti bayar QRIS & konfirmasi stok parsial',
+        'Notifikasi status pesanan otomatis via Bot WhatsApp Saber',
+      ],
+      actions: [
+        { label: 'Buka Kasir & Dapur →', route: '/cashier/orders', primary: true },
+      ],
     },
     {
-      domain: 'Laporan Penjualan',
-      title: 'Laporan Shift Harian & Kontrol Toko',
-      route: '/admin/analytics',
-      description:
-        'Ringkasan pendapatan kotor (IDR), rincian metode bayar Tunai vs. QRIS, 5 menu terlaris, pulihkan stok 1 klik, serta ekspor CSV/PDF.',
-      icon: ChartBar,
+      id: 'analytics-profile',
+      domain: '3. Bisnis & Rekening',
+      title: 'Laporan & Profil Toko',
       metric: formatIdr(activeMerchant.revenueIdr),
-    },
-    {
-      domain: 'Tampilan Pelanggan',
-      title: 'Pratinjau Menu Scan QR Tamu',
-      route: `/${activeMerchant.slug}?table=TABLE%2004`,
-      description:
-        'Saat QR dipindai tamu, layar terkunci hanya membuka halaman menu pemesanan & status pesanan tanpa akses ke menu admin/kasir.',
-      icon: ForkKnife,
-      metric: 'Khusus Pelanggan',
+      icon: ChartBar,
+      summary: 'Pantau pemasukan harian 0% komisi dan kelola rekening QRIS toko.',
+      highlights: [
+        'Rekap pendapatan harian Tunai vs. QRIS & ekspor CSV/PDF',
+        'Daftar hidangan terlaris & pemulihan stok 1 klik',
+        'Pengaturan jam buka, kurir toko, & rekening bank/QRIS',
+      ],
+      actions: [
+        { label: 'Laporan Shift', route: '/admin/analytics', primary: true },
+        {
+          label: authenticatedMerchant ? 'Profil & QRIS' : 'Buat Akun Toko',
+          route: authenticatedMerchant ? '/onboarding?mode=edit' : '/onboarding?mode=new',
+        },
+      ],
     },
   ];
 
@@ -169,15 +155,11 @@ export function PortalLandingClient({
               Pemesanan QR Meja &amp; Kasir Dapur Langsung untuk Usaha Kuliner Indonesia.
             </h1>
 
-            <p className="hig-body max-w-[64ch] text-[#515154]">
-              Dirancang khusus untuk warung makan, kafe, restoran makan di tempat, hingga dapur
-              pesan antar. Seluruh pemasukan diterima utuh 0% komisi aplikasi, berjalan di browser
-              tanpa perangkat kasir tambahan, serta dilengkapi verifikasi stok &amp; bukti bayar
-              QRIS dengan notifikasi{' '}
-              <strong className="font-semibold text-[#1D1D1F]">
-                Bot WhatsApp Terpusat Saber
-              </strong>
-              .
+            <p className="hig-body max-w-[54ch] text-[#515154]">
+              <strong className="font-semibold text-[#1D1D1F]">0% komisi aplikasi</strong> &amp; tanpa
+              mesin kasir tambahan. Terima pesanan QR meja, cek bukti bayar QRIS, dan kirim notifikasi{' '}
+              <strong className="font-semibold text-[#1D1D1F]">Bot WhatsApp Saber</strong> otomatis
+              langsung dari browser.
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -217,9 +199,10 @@ export function PortalLandingClient({
                   <Link
                     href="/onboarding?mode=new"
                     onPointerDown={() => triggerCausalHaptic(6)}
-                    className="apple-interactive inline-flex min-h-[46px] items-center rounded-full border border-black/[0.12] bg-[#F5F5F7] px-6 py-3 text-sm font-semibold text-[#1D1D1F] hover:bg-[#EFEFF4]"
+                    className="apple-interactive inline-flex min-h-[46px] items-center gap-1.5 rounded-full border border-black/[0.12] bg-[#F5F5F7] px-6 py-3 text-sm font-semibold text-[#1D1D1F] hover:bg-[#EFEFF4]"
                   >
-                    Daftarkan Restoran Baru
+                    <UserPlus aria-hidden="true" weight="bold" className="h-4 w-4 text-apple-blue" />
+                    <span>Buat Akun Gratis</span>
                   </Link>
                   <Link
                     href="/login"
@@ -365,20 +348,19 @@ export function PortalLandingClient({
           <div className="flex flex-col justify-between rounded-2xl border border-black/[0.06] bg-[#F5F5F7] p-5">
             <div>
               <p className="hig-caption text-[11px] font-semibold uppercase tracking-wider text-[#1D1D1F]">
-                Pemilik Restoran Baru
+                Mulai Cepat (30 Detik)
               </p>
               <h2 className="mt-1 text-sm font-bold text-[#1D1D1F]">
-                Daftarkan Akun &amp; Menu Usaha Anda
+                Buat Akun Dulu, Setup Resto Kemudian
               </h2>
               <p className="mt-1.5 text-xs leading-relaxed text-[#515154]">
-                Buat akun pemilik dengan email &amp; kata sandi, alamat toko{' '}
-                <code className="font-mono text-[#1D1D1F]">/[slug]</code>, QR meja siap cetak, dan
-                QRIS 0% potongan.
+                Daftar akun pemilik gratis dalam 30 detik terlebih dahulu, lalu lanjut atur profil
+                restoran <code className="font-mono text-[#1D1D1F]">/[slug]</code> &amp; QRIS.
               </p>
             </div>
             <div className="mt-4 text-xs font-semibold">
               <Link href="/onboarding?mode=new" className="text-apple-blue hover:underline">
-                Mulai Daftar Restoran →
+                Buat Akun Gratis →
               </Link>
             </div>
           </div>
@@ -431,63 +413,99 @@ export function PortalLandingClient({
         </div>
       </section>
 
-      {/* Kumpulan Modul Operasional */}
-      <section className="mt-10">
-        <div className="mb-5 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
+      {/* Kumpulan Modul Operasional — Rule of 3 (Maks 3 Modul, Terlipat Default, Klik untuk Detail) */}
+      <section className="mt-10" aria-labelledby="modul-pengelolaan-heading">
+        <div className="mb-4 flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
           <div>
             <p className="hig-caption text-xs font-semibold uppercase tracking-[0.05em] text-[#515154]">
-              Area Operasional • {authenticatedMerchant && !activeMerchant.isDemo ? activeMerchant.name : 'Mode Simulasi Demo'}
+              3 Pilar Utama •{' '}
+              {authenticatedMerchant && !activeMerchant.isDemo
+                ? activeMerchant.name
+                : 'Mode Simulasi Demo'}
             </p>
-            <h2 className="hig-title-2 mt-0.5 text-[#1D1D1F]">
+            <h2 id="modul-pengelolaan-heading" className="hig-title-2 mt-0.5 text-[#1D1D1F]">
               Modul Pengelolaan Restoran &amp; Dapur
             </h2>
           </div>
           <p className="text-xs font-medium text-[#515154]">
-            {authenticatedMerchant
-              ? `Seluruh modul di bawah sedang mengelola data usaha ${activeMerchant.name}`
-              : 'Sebelum masuk ke akun usaha Anda, seluruh modul berjalan aman pada restoran contoh'}
+            Klik salah satu modul untuk membuka rincian fitur &amp; pintasan halaman
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {modules.map((mod) => {
-            const Icon = mod.icon;
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+          {coreModuleGroups.map((group) => {
+            const Icon = group.icon;
             return (
-              <Link
-                key={mod.title}
-                href={mod.route}
-                onPointerDown={() => triggerCausalHaptic(6)}
-                className="apple-interactive group flex flex-col justify-between rounded-[20px] border border-black/[0.08] bg-white p-6 shadow-apple-sm hover:-translate-y-0.5 hover:border-black/20 hover:shadow-apple-md"
+              <details
+                key={group.id}
+                className="group rounded-[22px] border border-black/[0.08] bg-white shadow-apple-sm transition-all open:border-apple-blue/35 open:shadow-apple-md"
               >
-                <div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="hig-caption text-[11px] font-semibold uppercase text-[#515154]">
-                      {mod.domain}
-                    </span>
-                    <span className="rounded-full bg-[#F5F5F7] px-2.5 py-0.5 font-mono text-[11px] font-semibold tabular-nums text-[#1D1D1F]">
-                      {mod.metric}
-                    </span>
-                  </div>
-
-                  <div className="mt-4 flex items-center gap-3.5">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#F5F5F7] text-[#1D1D1F] transition-colors group-hover:bg-[#1D1D1F] group-hover:text-white">
+                <summary
+                  onPointerDown={() => triggerCausalHaptic(5)}
+                  className="flex cursor-pointer list-none items-center justify-between gap-3.5 p-5 select-none [&::-webkit-details-marker]:hidden"
+                >
+                  <div className="flex min-w-0 items-center gap-3.5">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#F5F5F7] text-[#1D1D1F] transition-colors group-open:bg-apple-blue group-open:text-white">
                       <Icon aria-hidden="true" weight="duotone" className="h-5 w-5" />
                     </div>
-                    <h3 className="text-base font-bold tracking-tight text-[#1D1D1F] transition-colors group-hover:text-apple-blue">
-                      {mod.title}
-                    </h3>
+                    <div className="min-w-0">
+                      <span className="block text-[11px] font-semibold uppercase tracking-wider text-[#515154]">
+                        {group.domain}
+                      </span>
+                      <span className="mt-0.5 block truncate text-base font-bold tracking-tight text-[#1D1D1F]">
+                        {group.title}
+                      </span>
+                    </div>
                   </div>
 
-                  <p className="mt-3 text-xs leading-relaxed text-[#515154]">{mod.description}</p>
-                </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="rounded-full bg-[#F5F5F7] px-2.5 py-1 font-mono text-[11px] font-semibold tabular-nums text-[#1D1D1F]">
+                      {group.metric}
+                    </span>
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F5F5F7] text-[#515154] transition-transform duration-200 group-open:rotate-180 group-open:bg-apple-blue/10 group-open:text-apple-blue">
+                      <CaretDown aria-hidden="true" weight="bold" className="h-3.5 w-3.5" />
+                    </span>
+                  </div>
+                </summary>
 
-                <div className="mt-5 flex items-center justify-between border-t border-black/[0.06] pt-3.5 text-xs font-semibold text-apple-blue">
-                  <span>Buka Halaman</span>
-                  <span aria-hidden="true" className="font-mono text-xs">
-                    →
-                  </span>
+                <div className="border-t border-black/[0.06] px-5 pb-5 pt-4">
+                  <p className="text-xs leading-relaxed text-[#515154]">{group.summary}</p>
+
+                  {/* Maksimal 3 poin utama (Rule of 3) */}
+                  <ul className="mt-3 space-y-2">
+                    {group.highlights.map((item) => (
+                      <li
+                        key={item}
+                        className="flex items-start gap-2 text-xs leading-snug text-[#1D1D1F]"
+                      >
+                        <span
+                          aria-hidden="true"
+                          className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-apple-blue"
+                        />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* Maksimal 3 tombol pintasan */}
+                  <div className="mt-4 flex flex-wrap items-center gap-2 pt-1">
+                    {group.actions.map((act) => (
+                      <Link
+                        key={act.route}
+                        href={act.route}
+                        onPointerDown={() => triggerCausalHaptic(6)}
+                        className={
+                          act.primary
+                            ? 'apple-interactive inline-flex min-h-[38px] items-center rounded-full bg-apple-blue px-4 py-2 text-xs font-semibold text-white hover:bg-apple-blueHover'
+                            : 'apple-interactive inline-flex min-h-[38px] items-center rounded-full border border-black/[0.12] bg-[#F5F5F7] px-3.5 py-2 text-xs font-semibold text-[#1D1D1F] hover:bg-[#EFEFF4]'
+                        }
+                      >
+                        {act.label}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
-              </Link>
+              </details>
             );
           })}
         </div>

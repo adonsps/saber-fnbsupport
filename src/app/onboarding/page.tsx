@@ -314,19 +314,26 @@ function OnboardingWizardContent() {
   const handleNextStep = () => {
     setErrorMsg(null);
     if (step === 1) {
-      if (!businessName.trim() || !ownerName.trim() || !ownerWhatsapp.trim()) {
-        setErrorMsg('Lengkapi Nama Bisnis, Nama Pemilik, dan Nomor WhatsApp.');
+      if (!ownerName.trim() || !ownerWhatsapp.trim()) {
+        setErrorMsg('Lengkapi Nama Lengkap Pemilik dan Nomor WhatsApp Anda.');
         return;
       }
       if (onboardingMode === 'new') {
         if (!accountEmail.trim() || !accountEmail.includes('@')) {
-          setErrorMsg('Masukkan email pemilik yang valid untuk akun login restoran Anda.');
+          setErrorMsg('Masukkan email pemilik yang valid untuk akun login Anda.');
           return;
         }
         if (accountPassword.length < 8) {
           setErrorMsg('Kata sandi akun minimal 8 karakter.');
           return;
         }
+      }
+      setStep(2);
+      if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (step === 2) {
+      if (!businessName.trim()) {
+        setErrorMsg('Nama Bisnis / Warung / Kafe wajib diisi.');
+        return;
       }
       if (!slugStatus.valid || !slugStatus.available) {
         setErrorMsg('Pastikan alamat URL slug valid dan tersedia sebelum melanjutkan.');
@@ -343,9 +350,6 @@ function OnboardingWizardContent() {
         );
         return;
       }
-      setStep(2);
-      if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else if (step === 2) {
       if (!address.trim()) {
         setErrorMsg('Alamat cabang wajib diisi.');
         return;
@@ -430,25 +434,42 @@ function OnboardingWizardContent() {
   };
 
   const stepsMeta = [
-    { num: 1, title: 'Profil Usaha', subtitle: 'Akun & Alamat Menu', icon: Storefront },
-    { num: 2, title: 'Cabang & Antar', subtitle: 'Jam Buka & Kurir', icon: Clock },
-    { num: 3, title: 'QRIS & Rekening', subtitle: 'Pembayaran Langsung', icon: CreditCard },
+    {
+      num: 1,
+      title: onboardingMode === 'new' ? '1. Buat Akun' : '1. Akun Pemilik',
+      subtitle: 'Registrasi 30 Detik',
+      icon: Storefront,
+    },
+    {
+      num: 2,
+      title: '2. Setup Restoran',
+      subtitle: 'Link Menu & Jam Buka',
+      icon: Clock,
+    },
+    {
+      num: 3,
+      title: '3. QRIS & Bank',
+      subtitle: 'Pembayaran 0% Komisi',
+      icon: CreditCard,
+    },
   ];
 
   return (
     <div className="mx-auto max-w-4xl px-4 pt-14 sm:px-6 sm:pt-12">
       <div className="mb-8 text-center">
         <p className="hig-caption text-xs font-semibold uppercase tracking-[0.06em] text-[#515154]">
-          {onboardingMode === 'new' ? 'Pendaftaran Restoran Baru' : 'Pengaturan Profil Restoran'}
+          {onboardingMode === 'new'
+            ? 'Mulai Cepat — Buat Akun Pemilik Gratis'
+            : 'Pengaturan Profil Restoran'}
         </p>
         <h1 className="hig-culinary-serif mt-2 text-3xl text-[#1D1D1F] sm:text-4xl">
           {onboardingMode === 'new'
-            ? 'Daftarkan Restoran Anda dalam 3 Langkah'
+            ? 'Buat Akun Dulu, Lanjut Setup Restoran'
             : 'Perbarui Profil & Rekening Restoran Anda'}
         </h1>
         <p className="mx-auto mt-2 max-w-xl text-sm text-[#515154]">
           {onboardingMode === 'new'
-            ? 'Buat akun pemilik beserta tautan pemesanan /[nama-resto], cetak QR meja otomatis, dan terima notifikasi WhatsApp tanpa komisi.'
+            ? 'Langkah 1 selesai dalam 30 detik. Buat akun pemilik terlebih dahulu, lalu atur nama restoran, alamat /[slug], dan QRIS 0% komisi.'
             : 'Perbarui identitas usaha, jam operasional harian, rekening bank / QRIS Statis, serta nomor WhatsApp penerima pesanan.'}
         </p>
 
@@ -623,107 +644,25 @@ function OnboardingWizardContent() {
                 exit={{ opacity: 0, x: -12 }}
                 className="space-y-6"
               >
-                <div>
-                  <h2 className="text-xl font-bold tracking-tight text-zinc-950">
-                    Profil Merchant & Link Mini-Site Instan
-                  </h2>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    Data ini menghasilkan link QR toko unik Anda secara otomatis dan rute bot WhatsApp.
-                  </p>
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <h2 className="text-xl font-bold tracking-tight text-zinc-950">
+                      {onboardingMode === 'new'
+                        ? 'Buat Akun Pemilik Restoran'
+                        : 'Akun & Kontak Pemilik Restoran'}
+                    </h2>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      {onboardingMode === 'new'
+                        ? 'Isi 4 kolom singkat untuk mengamankan akun pemilik Anda sebelum mengatur profil restoran.'
+                        : 'Perbarui informasi pemilik, nomor WhatsApp penerima pesanan, dan kredensial login.'}
+                    </p>
+                  </div>
+                  <span className="inline-flex items-center rounded-full bg-emerald-500/12 px-3 py-1 text-[11px] font-semibold text-[#1D7D32]">
+                    ⚡ Selesai dalam 30 Detik
+                  </span>
                 </div>
 
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                  <div className="sm:col-span-2">
-                    <label
-                      htmlFor="businessName"
-                      className="block text-xs font-semibold text-zinc-800"
-                    >
-                      Nama Bisnis / Warung / Kafe <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      id="businessName"
-                      name="businessName"
-                      type="text"
-                      required
-                      value={businessName}
-                      onChange={(e) => handleBusinessNameChange(e.target.value)}
-                      placeholder="Contoh: Warung Kopi Nusantara"
-                      className="mt-1.5 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 px-4 text-sm text-zinc-950 outline-none transition-all focus:border-apple-blue focus:bg-white focus:ring-4 focus:ring-apple-blue/10"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label htmlFor="slug" className="block text-xs font-semibold text-zinc-800">
-                      Storefront URL Slug (<code className="text-apple-blue">^[a-z0-9-]+$</code>){' '}
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <div className="mt-1.5 flex overflow-hidden rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 focus-within:border-apple-blue focus-within:bg-white focus-within:ring-4 focus-within:ring-apple-blue/10">
-                      <span className="flex shrink-0 items-center border-r border-zinc-200 bg-zinc-100/80 px-3.5 font-mono text-xs font-medium text-zinc-600">
-                        {appDisplayOrigin}/
-                      </span>
-                      <input
-                        id="slug"
-                        name="slug"
-                        type="text"
-                        required
-                        autoCorrect="off"
-                        autoCapitalize="none"
-                        spellCheck={false}
-                        value={slug}
-                        onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                        placeholder="contoh-kedai-kopi"
-                        className="min-h-[48px] w-full bg-transparent px-3 font-mono text-sm font-semibold text-zinc-950 outline-none"
-                      />
-                    </div>
-
-                    {/* Live Availability Status Banner */}
-                    <div
-                      aria-live="polite"
-                      className={cn(
-                        'mt-2 rounded-xl px-3.5 py-2 text-xs font-medium',
-                        slugStatus.checking
-                          ? 'bg-zinc-100 text-zinc-600'
-                          : slugStatus.valid && slugStatus.available
-                            ? 'bg-emerald-50 text-[#1D7D32]'
-                            : 'bg-red-50 text-[#D70015]'
-                      )}
-                    >
-                      {slugStatus.checking
-                        ? 'Memeriksa ketersediaan alamat toko...'
-                        : slugStatus.message}
-                    </div>
-
-                    {/* MG4: Explicit Warning When Changing Existing Store Slug (Breaks Printed Table QRs) */}
-                    {onboardingMode === 'edit' &&
-                      editingOriginalSlug &&
-                      slug.trim().toLowerCase() !== editingOriginalSlug.toLowerCase() && (
-                        <div
-                          role="alert"
-                          className="mt-2.5 space-y-2 rounded-xl border border-amber-300 bg-amber-50 p-3.5 text-xs text-amber-950"
-                        >
-                          <p className="font-bold">
-                            Peringatan: Mengubah alamat slug memutus QR Meja lama
-                          </p>
-                          <p className="leading-relaxed text-amber-900">
-                            Semua QR Code meja yang sudah dicetak untuk{' '}
-                            <code className="font-mono font-bold">/{editingOriginalSlug}</code> tidak
-                            akan mengarah ke toko Anda lagi setelah diubah menjadi{' '}
-                            <code className="font-mono font-bold">/{slug}</code>. Pastikan Anda
-                            mencetak ulang stiker QR meja di halaman Kelola Meja.
-                          </p>
-                          <label className="flex cursor-pointer items-center gap-2 font-semibold text-amber-950">
-                            <input
-                              type="checkbox"
-                              checked={confirmSlugQrBreak}
-                              onChange={(e) => setConfirmSlugQrBreak(e.target.checked)}
-                              className="h-4 w-4 accent-amber-700"
-                            />
-                            <span>Saya mengerti &amp; akan mencetak ulang QR meja</span>
-                          </label>
-                        </div>
-                      )}
-                  </div>
-
                   <div>
                     <label htmlFor="ownerName" className="block text-xs font-semibold text-zinc-800">
                       Nama Lengkap Pemilik <span className="text-red-500">*</span>
@@ -736,6 +675,7 @@ function OnboardingWizardContent() {
                       required
                       value={ownerName}
                       onChange={(e) => setOwnerName(e.target.value)}
+                      placeholder="Contoh: Budi Santoso"
                       className="mt-1.5 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 px-4 text-sm text-zinc-950 outline-none transition-all focus:border-apple-blue focus:bg-white focus:ring-4 focus:ring-apple-blue/10"
                     />
                   </div>
@@ -857,12 +797,105 @@ function OnboardingWizardContent() {
               >
                 <div>
                   <h2 className="text-xl font-bold tracking-tight text-zinc-950">
-                    Operasional Cabang, Logo 1:1 & Self-Delivery
+                    Setup Restoran, Tautan Menu QR &amp; Operasional
                   </h2>
                   <p className="mt-1 text-xs text-zinc-500">
-                    Unggah logo toko (otomatis terpotong 1:1), atur jam buka harian, dan opsi pesan
-                    antar mandiri.
+                    Tentukan nama usaha, tautan menu /[slug] otomatis, logo 1:1, jam buka, serta opsi
+                    pengiriman mandiri.
                   </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
+                    <label
+                      htmlFor="businessName"
+                      className="block text-xs font-semibold text-zinc-800"
+                    >
+                      Nama Bisnis / Warung / Kafe <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="businessName"
+                      name="businessName"
+                      type="text"
+                      required
+                      value={businessName}
+                      onChange={(e) => handleBusinessNameChange(e.target.value)}
+                      placeholder="Contoh: Warung Kopi Nusantara"
+                      className="mt-1.5 min-h-[48px] w-full rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 px-4 text-sm text-zinc-950 outline-none transition-all focus:border-apple-blue focus:bg-white focus:ring-4 focus:ring-apple-blue/10"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label htmlFor="slug" className="block text-xs font-semibold text-zinc-800">
+                      Storefront URL Slug (<code className="text-apple-blue">^[a-z0-9-]+$</code>){' '}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <div className="mt-1.5 flex overflow-hidden rounded-2xl border border-zinc-200 bg-[#F5F5F7]/50 focus-within:border-apple-blue focus-within:bg-white focus-within:ring-4 focus-within:ring-apple-blue/10">
+                      <span className="flex shrink-0 items-center border-r border-zinc-200 bg-zinc-100/80 px-3.5 font-mono text-xs font-medium text-zinc-600">
+                        {appDisplayOrigin}/
+                      </span>
+                      <input
+                        id="slug"
+                        name="slug"
+                        type="text"
+                        required
+                        autoCorrect="off"
+                        autoCapitalize="none"
+                        spellCheck={false}
+                        value={slug}
+                        onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                        placeholder="contoh-kedai-kopi"
+                        className="min-h-[48px] w-full bg-transparent px-3 font-mono text-sm font-semibold text-zinc-950 outline-none"
+                      />
+                    </div>
+
+                    {/* Live Availability Banner */}
+                    <div
+                      aria-live="polite"
+                      className={cn(
+                        'mt-2 rounded-xl px-3.5 py-2 text-xs font-medium',
+                        slugStatus.checking
+                          ? 'bg-zinc-100 text-zinc-600'
+                          : slugStatus.valid && slugStatus.available
+                            ? 'bg-emerald-50 text-[#1D7D32]'
+                            : 'bg-red-50 text-[#D70015]'
+                      )}
+                    >
+                      {slugStatus.checking
+                        ? 'Memeriksa ketersediaan alamat toko...'
+                        : slugStatus.message}
+                    </div>
+
+                    {/* MG4: Explicit Warning When Changing Existing Store Slug (Breaks Printed Table QRs) */}
+                    {onboardingMode === 'edit' &&
+                      editingOriginalSlug &&
+                      slug.trim().toLowerCase() !== editingOriginalSlug.toLowerCase() && (
+                        <div
+                          role="alert"
+                          className="mt-2.5 space-y-2 rounded-xl border border-amber-300 bg-amber-50 p-3.5 text-xs text-amber-950"
+                        >
+                          <p className="font-bold">
+                            Peringatan: Mengubah alamat slug memutus QR Meja lama
+                          </p>
+                          <p className="leading-relaxed text-amber-900">
+                            Semua QR Code meja yang sudah dicetak untuk{' '}
+                            <code className="font-mono font-bold">/{editingOriginalSlug}</code> tidak
+                            akan mengarah ke toko Anda lagi setelah diubah menjadi{' '}
+                            <code className="font-mono font-bold">/{slug}</code>. Pastikan Anda
+                            mencetak ulang stiker QR meja di halaman Kelola Meja.
+                          </p>
+                          <label className="flex cursor-pointer items-center gap-2 font-semibold text-amber-950">
+                            <input
+                              type="checkbox"
+                              checked={confirmSlugQrBreak}
+                              onChange={(e) => setConfirmSlugQrBreak(e.target.checked)}
+                              className="h-4 w-4 accent-amber-700"
+                            />
+                            <span>Saya mengerti &amp; akan mencetak ulang QR meja</span>
+                          </label>
+                        </div>
+                      )}
+                  </div>
                 </div>
 
                 {/* Store Logo Upload with 1:1 Auto-Crop */}
@@ -1264,9 +1297,13 @@ function OnboardingWizardContent() {
               <button
                 type="button"
                 onClick={handleNextStep}
-                className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-zinc-950 px-6 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800"
+                className="apple-interactive inline-flex min-h-[44px] items-center rounded-full bg-apple-blue px-6 py-2.5 text-sm font-semibold text-white shadow-apple-sm hover:bg-apple-blueHover"
               >
-                Langkah Berikutnya
+                {step === 1
+                  ? onboardingMode === 'new'
+                    ? 'Buat Akun & Lanjut Setup Restoran →'
+                    : 'Lanjut ke Setup Restoran →'
+                  : 'Lanjut ke Pembayaran QRIS →'}
               </button>
             ) : (
               <button
