@@ -26,7 +26,7 @@ import {
   slugify,
 } from '@/lib/utils';
 import { APPLE_SPRINGS, triggerCausalHaptic } from '@/lib/apple-motion';
-import { buildOsmEmbedUrl, parseLatLng } from '@/lib/geo';
+import { buildOsmEmbedUrl, parseLatLng, parseGoogleMapsUrlOrCoords } from '@/lib/geo';
 
 const INDONESIAN_BANKS = [
   'BCA (Bank Central Asia)',
@@ -99,6 +99,8 @@ function OnboardingWizardContent() {
   const [address, setAddress] = useState('');
   const [branchLatInput, setBranchLatInput] = useState('');
   const [branchLngInput, setBranchLngInput] = useState('');
+  const [mapsLinkInput, setMapsLinkInput] = useState('');
+  const [resolvingMaps, setResolvingMaps] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoNotice, setGeoNotice] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState('/hero-bg.webp');
@@ -362,7 +364,7 @@ function OnboardingWizardContent() {
   const handleDetectBranchLocation = () => {
     setGeoNotice(null);
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      setGeoNotice('Browser tidak mendukung GPS. Masukkan koordinat manual jika diperlukan.');
+      setGeoNotice('Browser tidak mendukung GPS. Masukkan koordinat manual atau tempel tautan Google Maps.');
       return;
     }
     setGeoLoading(true);
@@ -371,14 +373,61 @@ function OnboardingWizardContent() {
         setBranchLatInput(String(Math.round(pos.coords.latitude * 1_000_000) / 1_000_000));
         setBranchLngInput(String(Math.round(pos.coords.longitude * 1_000_000) / 1_000_000));
         setGeoLoading(false);
-        setGeoNotice('Titik lokasi cabang berhasil dikunci.');
+        setGeoNotice('Titik GPS cabang berhasil dikunci.');
       },
       () => {
         setGeoLoading(false);
-        setGeoNotice('Izin GPS ditolak. Isi Latitude & Longitude cabang secara manual.');
+        setGeoNotice('Izin GPS ditolak. Silakan tempel tautan Google Maps atau isi koordinat secara manual.');
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
+  };
+
+  const handleResolveMapsLink = async () => {
+    const query = mapsLinkInput.trim() || address.trim();
+    if (!query) {
+      setGeoNotice('Masukkan tautan Google Maps, koordinat, atau isi alamat lengkap terlebih dahulu.');
+      return;
+    }
+
+    // Direct client-side regex check
+    const directCoords = parseGoogleMapsUrlOrCoords(query);
+    if (directCoords) {
+      setBranchLatInput(String(directCoords.lat));
+      setBranchLngInput(String(directCoords.lng));
+      setGeoNotice('Titik koordinat berhasil diterapkan langsung.');
+      setMapsLinkInput('');
+      return;
+    }
+
+    setResolvingMaps(true);
+    setGeoNotice(null);
+
+    try {
+      const res = await fetch('/api/v1/geo/resolve-maps-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: query }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Gagal mendeteksi lokasi dari tautan/alamat.');
+      }
+      if (typeof data.lat === 'number' && typeof data.lng === 'number') {
+        setBranchLatInput(String(data.lat));
+        setBranchLngInput(String(data.lng));
+        setGeoNotice(
+          data.source === 'geocoded_address'
+            ? 'Titik koordinat berhasil ditemukan dari pencarian alamat.'
+            : 'Titik koordinat berhasil diekstrak dari Google Maps.'
+        );
+        setMapsLinkInput('');
+      }
+    } catch (err: any) {
+      setGeoNotice(err.message || 'Gagal memproses tautan Google Maps.');
+    } finally {
+      setResolvingMaps(false);
+    }
   };
 
   const handleLaunch = async (e: React.FormEvent) => {
@@ -932,20 +981,141 @@ function OnboardingWizardContent() {
                   </div>
                 </div>
 
-                <div>
-                  <label htmlFor="address" className="block text-xs font-semibold text-zinc-800">
-                    Alamat Lengkap Cabang <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    id="address"
-                    name="address"
-                    rows={2}
-                    required
-                    autoComplete="street-address"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-sky-50/60 px-4 py-3 text-sm text-zinc-950 outline-none motion-safe:transition-colors focus:border-sky-600 focus:bg-white focus:ring-4 focus:ring-sky-600/10"
-                  />
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="address" className="block text-xs font-semibold text-zinc-800">
+                      Alamat Lengkap Cabang <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      id="address"
+                      name="address"
+                      rows={2}
+                      required
+                      autoComplete="street-address"
+                      placeholder="Contoh: Jl. Boulevard Bintaro Jaya Blok B7 No. 12, Tangerang Selatan"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      className="mt-1.5 w-full rounded-2xl border border-zinc-200 bg-sky-50/60 px-4 py-3 text-sm text-zinc-950 outline-none motion-safe:transition-colors focus:border-sky-600 focus:bg-white focus:ring-4 focus:ring-sky-600/10"
+                    />
+                  </div>
+
+                  {/* Branch Location & Google Maps Integration */}
+                  <div className="space-y-4 rounded-2xl border border-black/[0.08] bg-sky-50/60 p-4 sm:p-5">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-sm font-bold text-zinc-950">
+                          Lokasi &amp; Titik GPS Cabang
+                        </p>
+                        <p className="text-xs text-zinc-500">
+                          Pasang titik lokasi resto dari tautan Google Maps, koordinat GPS, atau alamat lengkap untuk akurasi peta dan radius pengantaran.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleDetectBranchLocation}
+                        disabled={geoLoading || resolvingMaps}
+                        className="apple-interactive inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-full border border-sky-300 bg-sky-100/80 px-4 py-2 text-xs font-semibold text-sky-950 shadow-xs hover:bg-sky-200/80 hover:border-sky-400 active:scale-[0.98] transition-colors disabled:opacity-50"
+                      >
+                        <Crosshair aria-hidden="true" weight="bold" className="h-4 w-4 text-sky-700" />
+                        <span>{geoLoading ? 'Mendeteksi...' : 'Gunakan GPS Lokasi'}</span>
+                      </button>
+                    </div>
+
+                    {/* Google Maps Link / Geocode Input */}
+                    <div className="space-y-1.5">
+                      <label htmlFor="mapsLink" className="block text-xs font-medium text-zinc-700">
+                        Tautan Google Maps atau Cari dari Alamat
+                      </label>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <div className="relative flex-1">
+                          <input
+                            id="mapsLink"
+                            type="text"
+                            value={mapsLinkInput}
+                            onChange={(e) => setMapsLinkInput(e.target.value)}
+                            placeholder="Tempel tautan Google Maps (maps.app.goo.gl/...) atau koordinat"
+                            className="min-h-[44px] w-full rounded-xl border border-zinc-200 bg-white px-3.5 text-xs text-zinc-900 placeholder:text-zinc-400 focus:border-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-600/20"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleResolveMapsLink}
+                          disabled={resolvingMaps || geoLoading || (!mapsLinkInput.trim() && !address.trim())}
+                          className="apple-interactive inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-xl bg-sky-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-sky-700 active:scale-[0.98] transition-colors disabled:opacity-50"
+                        >
+                          {resolvingMaps
+                            ? 'Memproses...'
+                            : mapsLinkInput.trim()
+                            ? 'Terapkan Link'
+                            : 'Cari dari Alamat'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Coordinates Grid */}
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor="branchLat" className="block text-[11px] font-medium text-zinc-600">
+                          Latitude Cabang
+                        </label>
+                        <input
+                          id="branchLat"
+                          type="text"
+                          inputMode="decimal"
+                          value={branchLatInput}
+                          onChange={(e) => setBranchLatInput(e.target.value)}
+                          placeholder="-6.200000"
+                          className="mt-1 min-h-[44px] w-full rounded-xl border border-zinc-200 bg-white px-3 font-mono text-xs text-zinc-900 focus:border-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-600/20"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="branchLng" className="block text-[11px] font-medium text-zinc-600">
+                          Longitude Cabang
+                        </label>
+                        <input
+                          id="branchLng"
+                          type="text"
+                          inputMode="decimal"
+                          value={branchLngInput}
+                          onChange={(e) => setBranchLngInput(e.target.value)}
+                          placeholder="106.816666"
+                          className="mt-1 min-h-[44px] w-full rounded-xl border border-zinc-200 bg-white px-3 font-mono text-xs text-zinc-900 focus:border-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-600/20"
+                        />
+                      </div>
+                    </div>
+
+                    {geoNotice && (
+                      <div className="rounded-xl border border-sky-200 bg-sky-50 px-3.5 py-2 text-xs text-sky-900">
+                        {geoNotice}
+                      </div>
+                    )}
+
+                    {parsedBranchCoords && (
+                      <div className="space-y-2">
+                        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xs">
+                          <iframe
+                            title="Pratinjau Pin Lokasi Cabang"
+                            src={buildOsmEmbedUrl(parsedBranchCoords.lat, parsedBranchCoords.lng)}
+                            className="h-44 w-full border-0"
+                            loading="lazy"
+                          />
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] text-zinc-500">
+                          <span>
+                            Titik koordinat terkunci ({parsedBranchCoords.lat.toFixed(5)}, {parsedBranchCoords.lng.toFixed(5)})
+                          </span>
+                          <a
+                            href={`https://www.google.com/maps?q=${parsedBranchCoords.lat},${parsedBranchCoords.lng}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-sky-700 hover:underline"
+                          >
+                            Lihat di Google Maps
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Operational Hours Array */}
@@ -1090,72 +1260,28 @@ function OnboardingWizardContent() {
                         </div>
                       </div>
 
-                      <div className="space-y-2 rounded-xl border border-zinc-200 bg-white p-3.5">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="rounded-xl border border-zinc-200 bg-white p-3.5">
+                        <div className="flex items-start justify-between gap-3">
                           <div>
                             <p className="text-xs font-bold text-zinc-900">
-                              Titik Koordinat Cabang (Validasi Radius Haversine)
+                              Validasi Jarak Otomatis (Radius Haversine)
                             </p>
-                            <p className="text-[11px] text-zinc-500">
-                              Digunakan untuk menghitung jarak otomatis saat pelanggan memesan layanan antar.
+                            <p className="mt-0.5 text-[11px] text-zinc-500">
+                              {parsedBranchCoords
+                                ? `Menggunakan titik koordinat cabang (${parsedBranchCoords.lat.toFixed(4)}, ${parsedBranchCoords.lng.toFixed(4)}) untuk membatasi order dalam radius maksimal ${maxDeliveryRadiusKmInput || '5'} km.`
+                                : 'Belum ada titik koordinat yang dikunci. Pasang titik lokasi cabang di bagian atas agar sistem bisa menghitung jarak pengantaran.'}
                             </p>
                           </div>
-                          <button
-                            type="button"
-                            onClick={handleDetectBranchLocation}
-                            disabled={geoLoading}
-                            className="apple-interactive inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-sky-600/30 bg-scarlet-600 text-cloud/5 px-3.5 py-1.5 text-xs font-bold text-sky-700 hover:bg-scarlet-600 text-cloud/10 disabled:opacity-60"
-                          >
-                            <Crosshair aria-hidden="true" weight="bold" className="h-4 w-4" />
-                            {geoLoading ? 'Mendeteksi...' : 'Gunakan Lokasi Cabang (GPS)'}
-                          </button>
+                          {parsedBranchCoords ? (
+                            <span className="inline-flex shrink-0 items-center rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 border border-emerald-200">
+                              GPS Terkunci
+                            </span>
+                          ) : (
+                            <span className="inline-flex shrink-0 items-center rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-800 border border-amber-200">
+                              Perlu Koordinat
+                            </span>
+                          )}
                         </div>
-
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                          <div>
-                            <label htmlFor="branchLat" className="block text-[11px] font-medium text-zinc-600">
-                              Latitude Cabang
-                            </label>
-                            <input
-                              id="branchLat"
-                              type="text"
-                              inputMode="decimal"
-                              value={branchLatInput}
-                              onChange={(e) => setBranchLatInput(e.target.value)}
-                              placeholder="-6.200000"
-                              className="mt-1 min-h-[44px] w-full rounded-xl border border-zinc-200 bg-sky-50/60 px-3 font-mono text-xs"
-                            />
-                          </div>
-                          <div>
-                            <label htmlFor="branchLng" className="block text-[11px] font-medium text-zinc-600">
-                              Longitude Cabang
-                            </label>
-                            <input
-                              id="branchLng"
-                              type="text"
-                              inputMode="decimal"
-                              value={branchLngInput}
-                              onChange={(e) => setBranchLngInput(e.target.value)}
-                              placeholder="106.816666"
-                              className="mt-1 min-h-[44px] w-full rounded-xl border border-zinc-200 bg-sky-50/60 px-3 font-mono text-xs"
-                            />
-                          </div>
-                        </div>
-
-                        {geoNotice && (
-                          <p className="text-[11px] font-medium text-zinc-600">{geoNotice}</p>
-                        )}
-
-                        {parsedBranchCoords && (
-                          <div className="overflow-hidden rounded-xl border border-zinc-200">
-                            <iframe
-                              title="Pratinjau Pin Lokasi Cabang"
-                              src={buildOsmEmbedUrl(parsedBranchCoords.lat, parsedBranchCoords.lng)}
-                              className="h-36 w-full border-0"
-                              loading="lazy"
-                            />
-                          </div>
-                        )}
                       </div>
                     </div>
                   )}
