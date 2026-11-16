@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CaretDown, CookingPot, SignIn, SignOut, User } from '@phosphor-icons/react';
+import { Button, Badge } from '@/components/ui';
 import { formatIdr } from '@/lib/utils';
 import { triggerCausalHaptic } from '@/lib/apple-motion';
 
@@ -214,10 +215,10 @@ export function PortalLandingClient({
             {/* Big Free Offer Announcement with Strikethrough & Countdown */}
             <div className="mb-6 rounded-2xl border border-scarlet-200 bg-scarlet-50/95 p-4 sm:p-5 shadow-sm">
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <span className="inline-flex items-center rounded-md bg-scarlet-600 px-2.5 py-0.5 text-xs font-bold text-cloud shadow-xs">
+                <Badge variant="scarlet" className="text-xs font-semibold">
                   100% Gratis
-                </span>
-                <span className="font-serif text-3xl font-bold tabular-nums text-scarlet-700 sm:text-4xl">
+                </Badge>
+                <span className="text-3xl font-bold tracking-tight tabular-nums text-scarlet-700 sm:text-4xl">
                   Rp 0
                 </span>
                 <span className="text-base font-semibold tabular-nums text-ink-secondary/70 line-through decoration-scarlet-600 decoration-2">
@@ -261,45 +262,75 @@ export function PortalLandingClient({
             <div className="mt-8 flex flex-wrap items-center gap-3">
               {authenticatedMerchant ? (
                 <>
-                  <Link
-                    href="/cashier/orders"
-                    onPointerDown={() => triggerCausalHaptic(8)}
-                    className="apple-interactive inline-flex min-h-[48px] items-center justify-center whitespace-nowrap rounded-full bg-scarlet-600 px-6 py-3 text-base font-semibold text-cloud shadow-sm hover:bg-scarlet-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-scarlet-600 focus-visible:ring-offset-2 motion-safe:transition-colors"
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="scarlet"
+                    className="min-h-[48px] rounded-full px-6 py-3 text-base font-semibold shadow-sm"
                   >
-                    Buka Kasir &amp; Dapur
-                  </Link>
-                  <Link
-                    href={`/${authenticatedMerchant.slug}?table=Demo`}
-                    onPointerDown={() => triggerCausalHaptic(6)}
-                    className="apple-interactive inline-flex min-h-[48px] items-center justify-center whitespace-nowrap rounded-full border border-sky-300 bg-cloud px-5 py-3 text-base font-semibold text-ink-primary shadow-sm hover:bg-sky-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 motion-safe:transition-colors"
+                    <Link
+                      href="/cashier/orders"
+                      onPointerDown={() => triggerCausalHaptic(8)}
+                    >
+                      Buka Kasir &amp; Dapur
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="outline"
+                    className="min-h-[48px] rounded-full border-sky-300 bg-cloud px-5 py-3 text-base font-semibold text-ink-primary shadow-sm hover:bg-sky-50"
                   >
-                    Lihat Menu Tamu
-                  </Link>
-                  <Link
-                    href="/onboarding?mode=edit"
-                    onPointerDown={() => triggerCausalHaptic(6)}
-                    className="apple-interactive inline-flex min-h-[48px] items-center justify-center whitespace-nowrap rounded-full border border-sky-300 bg-cloud px-5 py-3 text-base font-semibold text-ink-primary shadow-sm hover:bg-sky-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 motion-safe:transition-colors"
+                    <Link
+                      href={`/${authenticatedMerchant.slug}?table=Demo`}
+                      onPointerDown={() => triggerCausalHaptic(6)}
+                    >
+                      Lihat Menu Tamu
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="outline"
+                    className="min-h-[48px] rounded-full border-sky-300 bg-cloud px-5 py-3 text-base font-semibold text-ink-primary shadow-sm hover:bg-sky-50"
                   >
-                    Atur Profil Toko
-                  </Link>
+                    <Link
+                      href="/onboarding?mode=edit"
+                      onPointerDown={() => triggerCausalHaptic(6)}
+                    >
+                      Atur Profil Toko
+                    </Link>
+                  </Button>
                 </>
               ) : (
                 <>
-                  <Link
-                    href="/onboarding?mode=new"
-                    onPointerDown={() => triggerCausalHaptic(8)}
-                    className="apple-interactive inline-flex min-h-[48px] items-center justify-center whitespace-nowrap rounded-full bg-scarlet-600 px-6 py-3 text-base font-semibold text-cloud shadow-sm hover:bg-scarlet-700 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-scarlet-600 focus-visible:ring-offset-2 motion-safe:transition-colors"
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="scarlet"
+                    className="min-h-[48px] rounded-full px-6 py-3 text-base font-semibold shadow-sm"
                   >
-                    Daftarkan Restoran Baru
-                  </Link>
-                  <Link
-                    href="/login"
-                    onPointerDown={() => triggerCausalHaptic(6)}
-                    className="apple-interactive inline-flex min-h-[48px] items-center justify-center gap-2 whitespace-nowrap rounded-full border border-sky-300 bg-cloud px-5 py-3 text-base font-semibold text-ink-primary shadow-sm hover:bg-sky-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2 motion-safe:transition-colors"
+                    <Link
+                      href="/onboarding?mode=new"
+                      onPointerDown={() => triggerCausalHaptic(8)}
+                    >
+                      Daftarkan Restoran Baru
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="outline"
+                    className="min-h-[48px] gap-2 rounded-full border-sky-300 bg-cloud px-5 py-3 text-base font-semibold text-ink-primary shadow-sm hover:bg-sky-50"
                   >
-                    <SignIn aria-hidden="true" weight="bold" className="h-4 w-4 text-ink-secondary" />
-                    <span>Masuk Pemilik Resto</span>
-                  </Link>
+                    <Link
+                      href="/login"
+                      onPointerDown={() => triggerCausalHaptic(6)}
+                    >
+                      <SignIn aria-hidden="true" weight="bold" className="h-4 w-4 text-ink-secondary" />
+                      <span>Masuk Pemilik Resto</span>
+                    </Link>
+                  </Button>
                 </>
               )}
             </div>
@@ -310,9 +341,11 @@ export function PortalLandingClient({
                 <div className="flex items-center justify-between gap-3 border-b border-sky-100 pb-3">
                   <div className="min-w-0">
                     <p className="text-xs font-medium text-ink-secondary">Simulasi langsung 2 sisi</p>
-                    <p className="mt-0.5 truncate font-serif text-base font-bold text-ink-primary">{demoMerchant.name}</p>
+                    <p className="mt-0.5 truncate text-base font-bold text-ink-primary">{demoMerchant.name}</p>
                   </div>
-                  <span className="shrink-0 rounded-lg bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700">Toko Contoh</span>
+                  <Badge variant="skySubtle" className="shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold">
+                    Toko Contoh
+                  </Badge>
                 </div>
 
                 <div className="mt-3.5 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -356,7 +389,7 @@ export function PortalLandingClient({
                       <p className="text-xs font-medium text-ink-secondary">
                         {activeMerchant.isDemo ? 'Menampilkan Toko Contoh' : 'Toko Terhubung'}
                       </p>
-                      <h2 className="mt-0.5 truncate font-serif text-xl font-bold text-ink-primary">
+                      <h2 className="mt-0.5 truncate text-xl font-bold text-ink-primary">
                         {activeMerchant.name}
                       </h2>
                     </div>
@@ -460,7 +493,7 @@ export function PortalLandingClient({
                   onPointerDown={() => triggerCausalHaptic(5)}
                   className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 select-none hover:bg-sky-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-600 [&::-webkit-details-marker]:hidden"
                 >
-                  <span className="font-serif text-xl font-bold text-ink-primary">
+                  <span className="text-xl font-bold text-ink-primary">
                     {group.title}
                   </span>
 
