@@ -12,7 +12,7 @@ services:
       - PORT=3040
       - DATABASE_URL=${DATABASE_URL:-postgresql://saber:saber@postgres:5432/saber_fnbsupport}
       - NEXT_PUBLIC_APP_DOMAIN=${NEXT_PUBLIC_APP_DOMAIN:-fnbsupport.saberconsulting.id}
-      - FONNTE_API_TOKEN=${FONNTE_API_TOKEN:-}
+      - FONNTE_API_TOKEN=${FONNTE_API_TOKEN:-ZWEMu3nev6yseWFUf5RG}
     depends_on:
       postgres:
         condition: service_healthy
